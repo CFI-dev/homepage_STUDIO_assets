@@ -1,52 +1,38 @@
-/* ================= CFI COMMON v1.0 / 2026-08-13 =================
-   BREAKPOINT MAP（STUDIO設定値 → 適用域）
-   1280px = 1141px〜 / 1140px = 992〜1140 / 768px = 691〜991
-   424px  = 391〜690 / 320px  = 〜390
-   ※Embedはiframeのため、幅はEmbedボックス幅で評価される
-   ================================================================ */
+/* ============================================================
+   CFI COMMON CSS v2.0 / 2026-08-13
+   BREAKPOINT MAP（STUDIO設定値 → 本CSSの適用域）
+   1280px … 1141px以上 / 1140px … 992〜1140px / 768px … 691〜991px
+   424px  … 391〜690px / 320px  … 390px以下
+   ※Embedはiframeなので、メディアクエリはEmbedボックス幅で評価される
+   ============================================================ */
 
-/* ---------- tokens / base ---------- */
+/* ---------- 1. トークン ---------- */
 :root{
 --ink:#071019;--navy:#0d1b2a;--navy-2:#16304a;--navy-3:#0a3a5c;
---accent:#0f6be0;--accent-2:#00c2a8;--txt:#e9eff6;--muted:#a5b7c9;
---line:rgba(255,255,255,.11);
+--accent:#0f6be0;--accent-2:#00c2a8;
+--txt:#e9eff6;--muted:#a5b7c9;--line:rgba(255,255,255,.11);
 --panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
 --grad:linear-gradient(115deg,var(--accent) 0%,var(--accent-2) 100%);
---max:1180px;--pad:24px;--sec-y:112px;--hd:72px;--hero-h:760px;
---f-en:"Barlow",sans-serif;--f-mono:"JetBrains Mono",ui-monospace,monospace;
+--max:1180px;--pad:24px;--hd:72px;--hero-h:760px;--sec-y:112px;
+--f-en:"Barlow",sans-serif;
+--f-mono:"JetBrains Mono",ui-monospace,monospace;
 --f-jp:"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{font-family:var(--f-jp);background:var(--navy);color:var(--txt);line-height:1.9;
-font-size:15px;-webkit-font-smoothing:antialiased;min-width:320px;overflow-x:hidden}
+html{scroll-behavior:smooth;scroll-padding-top:24px;-webkit-text-size-adjust:100%}
+body{font-family:var(--f-jp);background:var(--navy);color:var(--txt);
+line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased;
+min-width:320px;overflow-x:hidden;display:flow-root}
 a{color:inherit;text-decoration:none}
 li{list-style:none}
 img,svg,canvas{display:block;max-width:100%}
 .wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
+.mono{font-family:var(--f-mono);letter-spacing:.04em}
 .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--accent-2);
-display:flex;align-items:center;gap:12px;margin-bottom:26px}
-.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:none}
-.btn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;
-padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;cursor:pointer;white-space:nowrap}
-.btn-p{background:var(--grad);color:#04121c;box-shadow:0 6px 24px rgba(15,107,224,.32)}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,194,168,.4)}
-.btn-g{border-color:rgba(255,255,255,.28);color:var(--txt)}
-.btn-g:hover{border-color:var(--accent-2);color:var(--accent-2)}
-.sec{padding:var(--sec-y) 0;position:relative}
-.sec-ink{background:var(--ink)}
-.sec-grid{background:var(--ink);
-background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-background-size:64px 64px;background-position:center}
-.sec-head{max-width:44em;margin-bottom:56px}
-.sec-head h2{font-size:clamp(23px,3.1vw,38px);line-height:1.4;font-weight:700;margin-top:16px;letter-spacing:-.01em}
-.sec-head p{margin-top:18px;color:var(--muted);font-size:14.5px}
-.rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
-.rv.on{opacity:1;transform:none}
+.mk use{fill:url(#gBrand);stroke:url(#gBrand)}
 
-/* ---------- B0 header ---------- */
-header{position:relative;z-index:100;height:var(--hd);background:var(--ink);
-border-bottom:1px solid var(--line)}
+/* ---------- 2. ヘッダー（iframe対策：fixed→relative） ---------- */
+header{position:relative;z-index:100;height:var(--hd);
+background:rgba(7,16,25,.94);border-bottom:1px solid var(--line)}
 .hd-in{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:100%;
 display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px}
@@ -54,13 +40,18 @@ display:flex;align-items:center;justify-content:space-between}
 .logo:hover .mark{transform:rotate(120deg)}
 .logo b{font-family:var(--f-en);font-size:21px;letter-spacing:.02em;display:block;line-height:1}
 .logo small{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.16em;color:var(--muted);display:block;margin-top:4px}
-.mk use{fill:url(#gBrand);stroke:url(#gBrand)}
 nav ul{display:flex;align-items:center;gap:26px}
 nav a.gnav{font-family:var(--f-en);font-size:13px;font-weight:500;letter-spacing:.04em;
 position:relative;padding:8px 0;display:block;color:var(--txt);white-space:nowrap}
 nav a.gnav span{display:block;font-family:var(--f-jp);font-size:9.5px;color:var(--muted);letter-spacing:.06em}
 nav a.gnav::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--grad);transition:.3s}
 nav a.gnav:hover::after{width:100%}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;
+padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--grad);color:#04121c;box-shadow:0 6px 24px rgba(15,107,224,.32)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,194,168,.4)}
+.btn-g{border-color:rgba(255,255,255,.28);color:var(--txt)}
+.btn-g:hover{border-color:var(--accent-2);color:var(--accent-2)}
 .burger{display:none;width:28px;height:20px;position:relative;background:none;border:0;cursor:pointer;flex:none}
 .burger span{position:absolute;left:0;width:100%;height:2px;background:var(--txt);transition:.3s}
 .burger span:nth-child(1){top:0}.burger span:nth-child(2){top:9px}.burger span:nth-child(3){top:18px}
@@ -68,13 +59,16 @@ nav a.gnav:hover::after{width:100%}
 .burger.on span:nth-child(2){opacity:0}
 .burger.on span:nth-child(3){top:9px;transform:rotate(-45deg)}
 
-/* ---------- B1 hero ---------- */
+/* ---------- 3. ヒーロー ---------- */
 .hero{position:relative;min-height:var(--hero-h);display:flex;align-items:center;padding:72px 0;
 background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);overflow:hidden}
 #heroCv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
 background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
 .hero .wrap{position:relative;z-index:2;width:100%}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--accent-2);
+display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:none}
 .hero h1{font-size:clamp(28px,4.7vw,60px);line-height:1.28;font-weight:700;letter-spacing:-.01em;max-width:16em}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
@@ -88,14 +82,24 @@ font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted
 background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
 @keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
 
-/* ---------- B2 ticker ---------- */
+/* ---------- 4. ティッカー ---------- */
 .ticker{background:var(--ink);border-block:1px solid var(--line);padding:16px 0;overflow:hidden}
 .ticker ul{display:flex;gap:52px;width:max-content;animation:tk 38s linear infinite}
 .ticker li{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:#7d94ab;white-space:nowrap}
 .ticker li::before{content:"◆";color:var(--accent-2);margin-right:14px;font-size:8px;vertical-align:middle}
 @keyframes tk{to{transform:translateX(-50%)}}
 
-/* ---------- B3 service ---------- */
+/* ---------- 5. セクション共通 ---------- */
+.sec{padding:var(--sec-y) 0;position:relative}
+.sec-ink{background:var(--ink)}
+.sec-grid{background:var(--ink);
+background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+background-size:64px 64px;background-position:center}
+.sec-head{max-width:44em;margin-bottom:56px}
+.sec-head h2{font-size:clamp(23px,3.1vw,38px);line-height:1.4;font-weight:700;margin-top:16px;letter-spacing:-.01em}
+.sec-head p{margin-top:18px;color:var(--muted);font-size:14.5px}
+
+/* ---------- 6. サービス ---------- */
 .svc{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
 border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .svc article{background:var(--navy);padding:40px 32px;position:relative;transition:.35s}
@@ -114,7 +118,7 @@ color:var(--muted);letter-spacing:.1em;margin-top:6px}
 .svc ul.tags li{font-family:var(--f-mono);font-size:10px;color:#8ba3ba;
 border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
-/* ---------- B4 architecture ---------- */
+/* ---------- 7. アーキテクチャ図 ---------- */
 .arch{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:16px;align-items:stretch}
 .lyr{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:22px;
 background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
@@ -134,7 +138,7 @@ justify-content:center;padding:20px 12px}
 .arch-rail p{writing-mode:vertical-rl;font-family:var(--f-en);font-size:13px;font-weight:600;
 letter-spacing:.16em;color:var(--accent-2);white-space:nowrap}
 
-/* ---------- B5 approach ---------- */
+/* ---------- 8. アプローチ ---------- */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;margin-top:12px}
 .flow::before{content:"";position:absolute;top:26px;left:6%;right:6%;height:1px;
 background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4}
@@ -148,7 +152,7 @@ letter-spacing:.14em;margin-bottom:6px}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
 .flow .dur{margin-top:14px;font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
 
-/* ---------- B6 works ---------- */
+/* ---------- 9. 実績 ---------- */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
 .case{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:32px 28px;transition:.35s}
 .case:hover{border-color:rgba(0,194,168,.45);transform:translateY(-5px)}
@@ -159,7 +163,7 @@ letter-spacing:.14em;margin-bottom:6px}
 .case dt{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
 .case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
 
-/* ---------- B7 numbers / tech ---------- */
+/* ---------- 10. 数字 / 技術 ---------- */
 .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
 border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .nums div{background:var(--ink);padding:40px 20px;text-align:center}
@@ -170,20 +174,16 @@ border:1px solid var(--line);border-radius:4px;overflow:hidden}
 border-radius:2px;padding:9px 16px;background:rgba(255,255,255,.03);transition:.25s}
 .stack li:hover{border-color:var(--accent-2);color:var(--accent-2)}
 
-/* ---------- B8 company ---------- */
+/* ---------- 11. 会社概要 / CTA / フッター ---------- */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);vertical-align:top}
 .tbl th{width:180px;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:.06em}
-
-/* ---------- B9 CTA ---------- */
 .cta{background:linear-gradient(115deg,#0d1b2a,#16304a 55%,#0a3a5c);position:relative;overflow:hidden;text-align:center}
 .cta::before{content:"";position:absolute;width:620px;height:620px;right:-160px;top:-260px;border-radius:50%;
 background:radial-gradient(circle,rgba(0,194,168,.18),transparent 65%);pointer-events:none}
 .cta h2{font-size:clamp(21px,3.1vw,36px);line-height:1.5;font-weight:700;position:relative}
 .cta p{margin:20px auto 0;max-width:38em;color:#c8d6e4;font-size:14.5px;position:relative}
-.cta-btns{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px;justify-content:center;position:relative}
-
-/* ---------- B10 footer ---------- */
+.cta .hero-cta{justify-content:center;position:relative}
 footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32px}
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
 .ft-nav{display:flex;flex-wrap:wrap;gap:52px}
@@ -194,26 +194,40 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
 font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
 
-/* ============ 1140px : STUDIO「スモール」 ============ */
-@media(max-width:1140px){
-:root{--max:1140px;--pad:28px;--sec-y:96px;--hero-h:720px}
+/* ---------- 12. 出現アニメーション（JS非依存フォールバック付き） ----------
+   JSが全く動かない → .js が付かず、初期状態から表示される
+   JSは動くがcommon.js未達 → 2.5秒後にCSSアニメで自動表示
+   正常時 → common.js が .on を付与（1.8秒のフェイルセーフあり）        */
+.rv{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(20px);animation:rvIn .8s cubic-bezier(.22,1,.36,1) 2.5s both}
+.js .rv.on{animation:none;opacity:1;transform:none;
+transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
+@keyframes rvIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   13. レスポンシブ
+   ============================================================ */
+
+/* --- スモール（設定値1140px / 992〜1140px） --- */
+@media (max-width:1140px){
+:root{--max:1140px;--pad:28px;--hero-h:720px;--sec-y:96px}
 nav ul{gap:20px}
 .btn{padding:12px 20px;font-size:13px}
-.hero-kpi{gap:34px}
 .svc article{padding:36px 26px}
-.arch{grid-template-columns:minmax(0,1fr) 140px}
+.hero-kpi{gap:34px}
 .lyr{grid-template-columns:136px minmax(0,1fr);gap:18px;padding:20px 22px}
+.arch{grid-template-columns:minmax(0,1fr) 140px}
 .works{gap:18px}
-.case{padding:28px 24px}}
+.case{padding:28px 24px}
+}
 
-/* ============ 991px : STUDIO「タブレット(768)」 ============ */
-@media(max-width:991px){
-:root{--pad:32px;--sec-y:76px;--hd:64px;--hero-h:620px}
-.sec-head{margin-bottom:44px}
-.sec-grid{background-size:48px 48px}
+/* --- タブレット（設定値768px / 691〜991px） --- */
+@media (max-width:991px){
+:root{--pad:32px;--hd:64px;--hero-h:620px;--sec-y:76px}
 .burger{display:block}
-nav{position:absolute;left:0;right:0;top:100%;background:rgba(7,16,25,.98);
-border-bottom:1px solid var(--line);padding:8px var(--pad) 28px;transform:translateY(-8px);
+nav{position:absolute;left:0;right:0;top:100%;
+background:rgba(7,16,25,.98);border-bottom:1px solid var(--line);
+padding:8px var(--pad) 28px;transform:translateY(-8px);
 opacity:0;visibility:hidden;transition:.3s}
 nav.open{transform:none;opacity:1;visibility:visible}
 nav ul{flex-direction:column;gap:0;align-items:stretch}
@@ -227,26 +241,26 @@ nav .btn{margin-top:20px;width:100%;justify-content:center}
 .hero p.lead{font-size:14.5px;margin-top:22px}
 .hero-kpi{gap:28px;margin-top:44px}
 .hero-kpi div b{font-size:28px}
+.sec-head{margin-bottom:44px}
 .svc{grid-template-columns:repeat(2,1fr)}
+.works{grid-template-columns:repeat(2,1fr)}
+.works .case:nth-child(3){grid-column:1 / -1}
+.flow{grid-template-columns:repeat(2,1fr);row-gap:40px}
+.flow::before{display:none}
+.nums{grid-template-columns:repeat(2,1fr)}
+.nums b{font-size:36px}
 .arch{grid-template-columns:1fr}
 .arch-rail{padding:14px;order:2}
 .arch-rail p{writing-mode:horizontal-tb}
 .lyr{grid-template-columns:130px minmax(0,1fr)}
-.flow{grid-template-columns:repeat(2,1fr);row-gap:40px}
-.flow::before{display:none}
-.works{grid-template-columns:repeat(2,1fr)}
-.works .case:nth-child(3){grid-column:1/-1}
-.nums{grid-template-columns:repeat(2,1fr)}
-.nums b{font-size:36px}
 .tbl th{width:140px}
-.ft-nav{gap:36px}}
+.ft-nav{gap:36px}
+.sec-grid{background-size:48px 48px}
+}
 
-/* ============ 690px : STUDIO「モバイル(424)」 ============ */
-@media(max-width:690px){
-:root{--pad:20px;--sec-y:56px;--hd:60px;--hero-h:560px}
-.sec-head{margin-bottom:36px}
-.sec-head p{font-size:13.5px}
-.sec-grid{background-size:40px 40px}
+/* --- モバイル（設定値424px / 391〜690px） --- */
+@media (max-width:690px){
+:root{--pad:20px;--hd:60px;--hero-h:560px;--sec-y:56px}
 .hero{padding:48px 0 56px}
 .hero h1{font-size:clamp(26px,7vw,32px);line-height:1.35}
 .hero-cta{gap:10px;margin-top:30px}
@@ -257,60 +271,63 @@ nav .btn{margin-top:20px;width:100%;justify-content:center}
 .scroll-hint{display:none}
 .ticker li{font-size:11px}
 .ticker ul{gap:36px}
-.svc{grid-template-columns:1fr}
+.sec-head{margin-bottom:36px}
+.sec-head p{font-size:13.5px}
+.svc,.works{grid-template-columns:1fr}
+.works .case:nth-child(3){grid-column:auto}
 .svc article{padding:30px 22px}
-.lyr{grid-template-columns:1fr;gap:12px;padding:18px}
 .flow{grid-template-columns:1fr;row-gap:30px}
 .flow .dot{width:44px;height:44px;font-size:13px}
 .flow h3{margin-top:18px}
-.works{grid-template-columns:1fr}
-.works .case:nth-child(3){grid-column:auto}
-.case{padding:26px 20px}
-.case dl{gap:20px}
-.case dd{font-size:23px}
+.nums{grid-template-columns:repeat(2,1fr)}
 .nums div{padding:30px 14px}
 .nums b{font-size:32px}
 .nums small{font-size:10.5px;margin-top:8px}
-.stack{gap:8px;margin-top:26px}
+.lyr{grid-template-columns:1fr;gap:12px;padding:18px 18px}
+.case{padding:26px 20px}
+.case dl{gap:20px}
+.case dd{font-size:23px}
 .tbl th,.tbl td{display:block;width:100%}
 .tbl th{padding:16px 0 0;border-bottom:0}
 .tbl td{padding:4px 0 16px}
-.cta-btns{gap:10px;margin-top:30px}
-.cta-btns .btn{width:100%;justify-content:center}
-footer{padding:48px 0 28px}
 .ft-top{gap:28px}
 .ft-nav{gap:24px 32px}
-.ft-btm{margin-top:36px}}
+.stack{gap:8px;margin-top:26px}
+.sec-grid{background-size:40px 40px}
+}
 
-/* ============ 390px : STUDIO「ミニ(320)」 ============ */
-@media(max-width:390px){
-:root{--pad:16px;--sec-y:48px;--hero-h:520px}
+/* --- ミニ（設定値320px / 390px以下） --- */
+@media (max-width:390px){
+:root{--pad:16px;--hero-h:520px;--sec-y:48px}
 body{font-size:14px;line-height:1.85}
+.logo b{font-size:19px}
 .eyebrow{font-size:10px;letter-spacing:.16em;margin-bottom:20px}
 .eyebrow::before{width:24px}
-.sec-head h2{font-size:21px}
-.btn{padding:12px 18px;font-size:13px}
-.logo b{font-size:19px}
 .hero h1{font-size:25px}
 .hero p.lead{font-size:13.5px}
 .hero-kpi{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:20px}
-.hero-kpi div:last-child{grid-column:1/-1}
+.hero-kpi div:last-child{grid-column:1 / -1}
 .hero-kpi div b{font-size:22px}
+.sec-head h2{font-size:21px}
 .svc article{padding:26px 18px}
 .svc h3{font-size:16px}
-.lyr .items span{font-size:10.5px;padding:4px 9px}
-.case{padding:24px 18px}
-.case h3{font-size:15.5px}
-.case dl{flex-direction:column;gap:16px}
 .nums{grid-template-columns:1fr}
 .nums div{padding:26px 14px}
 .nums b{font-size:30px}
+.case{padding:24px 18px}
+.case h3{font-size:15.5px}
+.case dl{flex-direction:column;gap:16px}
 .stack li{font-size:11px;padding:7px 12px}
-.cta h2{font-size:20px}
+.lyr .items span{font-size:10.5px;padding:4px 9px}
 .ft-nav{flex-direction:column;gap:22px}
-.ft-btm{flex-direction:column;gap:6px}}
+.ft-btm{flex-direction:column;gap:6px}
+.cta h2{font-size:20px}
+.btn{padding:12px 18px;font-size:13px}
+}
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
 *,*::before,*::after{animation-duration:.001ms!important;
 animation-iteration-count:1!important;transition-duration:.001ms!important}
-.rv{opacity:1;transform:none}}
+html{scroll-behavior:auto}
+.rv,.js .rv{opacity:1;transform:none;animation:none}
+}
