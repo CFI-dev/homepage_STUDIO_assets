@@ -14,10 +14,20 @@
 <style>
   html{scroll-behavior:auto;scroll-padding-top:0}
   body{overflow-x:hidden}
+
   /* 100svh は iframe 高さを基準にしてしまうため固定寸法へ */
   .hero{min-height:clamp(520px,74vw,760px)}
-  /* 親スクロールに追従しないため影演出は無効化 */
-  header#hd{box-shadow:none!important}
+
+  /* 擬似fixedヘッダー：JSが transform でスクロール量ぶん押し下げる */
+  header#hd{
+    position:absolute!important;top:0;left:0;right:0;
+    transform:translate3d(0,0,0);will-change:transform;
+    backface-visibility:hidden
+  }
+
+  /* モバイルメニューが 100vh 等で高さを取る場合の防御
+     （--vph には親の実ビューポート高さが入る） */
+  #nav.open{max-height:calc(var(--vph,100vh) - var(--hd));overflow-y:auto}
 </style>
 
 <!-- IntersectionObserver シム：common.js より必ず先に読み込む -->
@@ -431,6 +441,7 @@
   if(window.parent===window)return;
   var last=0;
   function post(msg){msg.channel="cfi-embed";parent.postMessage(msg,"*");}
+
   function sendHeight(){
     var h=Math.ceil(document.documentElement.getBoundingClientRect().height);
     if(h&&Math.abs(h-last)>1){last=h;post({type:"height",value:h});}
@@ -441,12 +452,27 @@
   setInterval(sendHeight,1000);
   sendHeight();
 
+  /* 擬似fixedヘッダー：親のスクロール量ぶん押し下げる */
+  var hd=document.getElementById("hd"),prev=-1;
+  function syncHeader(top){
+    if(!hd||top===prev)return;
+    prev=top;
+    hd.style.transform="translate3d(0,"+top+"px,0)";
+    hd.classList.toggle("scr",top>8);
+  }
+
   addEventListener("message",function(e){
     var d=e.data;
     if(!d||d.channel!=="cfi-host")return;
-    if(d.type==="viewport"&&window.__cfiVP)window.__cfiVP(d.top,d.height);
+    if(d.type==="viewport"){
+      var top=Math.max(0,Math.round(d.top));
+      syncHeader(top);
+      document.documentElement.style.setProperty("--vph",d.height+"px");
+      if(window.__cfiVP)window.__cfiVP(top,d.height);
+    }
   });
 
+  /* アンカーは親のスクロールコンテナへ委譲（ヘッダー高72px＋余白12px） */
   document.addEventListener("click",function(e){
     var a=e.target.closest&&e.target.closest('a[href^="#"]');
     if(!a)return;
@@ -455,7 +481,7 @@
     var el=document.getElementById(id);
     if(!el)return;
     e.preventDefault();
-    post({type:"scrollto",value:Math.round(el.getBoundingClientRect().top)-12});
+    post({type:"scrollto",value:Math.round(el.getBoundingClientRect().top)-84});
   },true);
 
   post({type:"ready"});
