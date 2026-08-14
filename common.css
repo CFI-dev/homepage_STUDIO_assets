@@ -1,128 +1,153 @@
-/* ============================================================
-   CFI COMMON CSS v2.0 / 2026-08-13
-   BREAKPOINT MAP（STUDIO設定値 → 本CSSの適用域）
-   1280px … 1141px以上 / 1140px … 992〜1140px / 768px … 691〜991px
-   424px  … 391〜690px / 320px  … 390px以下
-   ※Embedはiframeなので、メディアクエリはEmbedボックス幅で評価される
-   ============================================================ */
+@charset "UTF-8";
 
-/* ---------- 1. トークン ---------- */
+/* ============================================================
+   1. トークン（ブレークポイントで可変にする値は変数化）
+   ============================================================ */
 :root{
---ink:#071019;--navy:#0d1b2a;--navy-2:#16304a;--navy-3:#0a3a5c;
---accent:#0f6be0;--accent-2:#00c2a8;
---txt:#e9eff6;--muted:#a5b7c9;--line:rgba(255,255,255,.11);
---panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
---grad:linear-gradient(115deg,var(--accent) 0%,var(--accent-2) 100%);
---max:1180px;--pad:24px;--hd:72px;--hero-h:760px;--sec-y:112px;
---f-en:"Barlow",sans-serif;
---f-mono:"JetBrains Mono",ui-monospace,monospace;
---f-jp:"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:24px;-webkit-text-size-adjust:100%}
+  --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a; --navy-3:#0a3a5c;
+  --accent:#0f6be0; --accent-2:#00c2a8;
+  --txt:#e9eff6; --muted:#a5b7c9; --line:rgba(255,255,255,.11);
+  --panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  --grad:linear-gradient(115deg,var(--accent) 0%,var(--accent-2) 100%);
+
+  --max:1180px;   /* コンテンツ最大幅 */
+  --pad:24px;     /* 左右余白 */
+  --hd:72px;      /* ヘッダー高 */
+  --sec:112px;    /* セクション上下余白 */
+  --gap:22px;     /* カード間隔 */
+
+  --f-en:"Barlow",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --f-jp:"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;min-width:0}
+html{scroll-behavior:smooth;scroll-padding-top:var(--hd)}
 body{font-family:var(--f-jp);background:var(--navy);color:var(--txt);
-line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased;
-min-width:320px;overflow-x:hidden;display:flow-root}
+  line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 li{list-style:none}
 img,svg,canvas{display:block;max-width:100%}
-.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
+h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
 .mono{font-family:var(--f-mono);letter-spacing:.04em}
 .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .mk use{fill:url(#gBrand);stroke:url(#gBrand)}
 
-/* ---------- 2. ヘッダー（iframe対策：fixed→relative） ---------- */
-header{position:relative;z-index:100;height:var(--hd);
-background:rgba(7,16,25,.94);border-bottom:1px solid var(--line)}
+/* インラインstyleから移設したユーティリティ */
+.link-strong{font-weight:700}
+.eyebrow-center{justify-content:center}
+.sec-head-tech{margin:76px 0 0}
+.ft-desc{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:22em}
+.case dd .unit{font-size:13px}
+
+/* ============================================================
+   2. ヘッダー
+   ============================================================ */
+header{position:fixed;inset:0 0 auto 0;z-index:100;height:var(--hd);
+  background:rgba(7,16,25,.72);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);transition:background .3s,box-shadow .3s}
+header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .hd-in{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:100%;
-display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:10px}
-.logo .mark{transition:transform .7s cubic-bezier(.22,1,.36,1);flex:none}
+  display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.logo .mark{transition:transform .7s cubic-bezier(.22,1,.36,1)}
 .logo:hover .mark{transform:rotate(120deg)}
 .logo b{font-family:var(--f-en);font-size:21px;letter-spacing:.02em;display:block;line-height:1}
 .logo small{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.16em;color:var(--muted);display:block;margin-top:4px}
 nav ul{display:flex;align-items:center;gap:26px}
 nav a.gnav{font-family:var(--f-en);font-size:13px;font-weight:500;letter-spacing:.04em;
-position:relative;padding:8px 0;display:block;color:var(--txt);white-space:nowrap}
+  position:relative;padding:8px 0;display:block;color:var(--txt);white-space:nowrap}
 nav a.gnav span{display:block;font-family:var(--f-jp);font-size:9.5px;color:var(--muted);letter-spacing:.06em}
 nav a.gnav::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--grad);transition:.3s}
 nav a.gnav:hover::after{width:100%}
-.btn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;
-padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13.5px;font-weight:700;line-height:1.5;
+  padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;cursor:pointer;white-space:nowrap}
 .btn-p{background:var(--grad);color:#04121c;box-shadow:0 6px 24px rgba(15,107,224,.32)}
 .btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,194,168,.4)}
 .btn-g{border-color:rgba(255,255,255,.28);color:var(--txt)}
 .btn-g:hover{border-color:var(--accent-2);color:var(--accent-2)}
-.burger{display:none;width:28px;height:20px;position:relative;background:none;border:0;cursor:pointer;flex:none}
+.burger{display:none;width:28px;height:20px;position:relative;background:none;border:0;cursor:pointer;flex:0 0 auto}
 .burger span{position:absolute;left:0;width:100%;height:2px;background:var(--txt);transition:.3s}
 .burger span:nth-child(1){top:0}.burger span:nth-child(2){top:9px}.burger span:nth-child(3){top:18px}
 .burger.on span:nth-child(1){top:9px;transform:rotate(45deg)}
 .burger.on span:nth-child(2){opacity:0}
 .burger.on span:nth-child(3){top:9px;transform:rotate(-45deg)}
 
-/* ---------- 3. ヒーロー ---------- */
-.hero{position:relative;min-height:var(--hero-h);display:flex;align-items:center;padding:72px 0;
-background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);overflow:hidden}
+/* ============================================================
+   3. ヒーロー
+   ============================================================ */
+.hero{position:relative;min-height:100svh;display:flex;align-items:center;
+  padding:calc(var(--hd) + 60px) 0 72px;
+  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);overflow:hidden}
 #heroCv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
-.hero .wrap{position:relative;z-index:2;width:100%}
+  background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
+.hero .wrap{position:relative;z-index:2}
 .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--accent-2);
-display:flex;align-items:center;gap:12px;margin-bottom:26px}
-.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:none}
-.hero h1{font-size:clamp(28px,4.7vw,60px);line-height:1.28;font-weight:700;letter-spacing:-.01em;max-width:16em}
+  display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:0 0 auto}
+.hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
-.hero-kpi{display:flex;flex-wrap:wrap;gap:44px;margin-top:56px;padding-top:32px;border-top:1px solid var(--line)}
-.hero-kpi div b{font-family:var(--f-en);font-size:34px;line-height:1;letter-spacing:-.02em;display:block}
+.hero-kpi{display:flex;flex-wrap:wrap;gap:44px;margin-top:60px;padding-top:32px;border-top:1px solid var(--line)}
+.hero-kpi div b{font-family:var(--f-en);font-size:34px;line-height:1;letter-spacing:-.02em}
 .hero-kpi div small{display:block;margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.08em}
-.scroll-hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:2;
-font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
-.scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;
-background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
+.scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
+.scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
 @keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
 
-/* ---------- 4. ティッカー ---------- */
+/* ============================================================
+   4. ティッカー
+   ============================================================ */
 .ticker{background:var(--ink);border-block:1px solid var(--line);padding:16px 0;overflow:hidden}
 .ticker ul{display:flex;gap:52px;width:max-content;animation:tk 38s linear infinite}
 .ticker li{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:#7d94ab;white-space:nowrap}
 .ticker li::before{content:"◆";color:var(--accent-2);margin-right:14px;font-size:8px;vertical-align:middle}
 @keyframes tk{to{transform:translateX(-50%)}}
 
-/* ---------- 5. セクション共通 ---------- */
-.sec{padding:var(--sec-y) 0;position:relative}
+/* ============================================================
+   5. セクション共通
+   ============================================================ */
+.sec{padding:var(--sec) 0;position:relative}
 .sec-ink{background:var(--ink)}
 .sec-grid{background:var(--ink);
-background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-background-size:64px 64px;background-position:center}
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;background-position:center}
 .sec-head{max-width:44em;margin-bottom:56px}
-.sec-head h2{font-size:clamp(23px,3.1vw,38px);line-height:1.4;font-weight:700;margin-top:16px;letter-spacing:-.01em}
+.sec-head h2{font-size:clamp(22px,3.4vw,38px);line-height:1.45;font-weight:700;margin-top:16px;letter-spacing:-.01em}
 .sec-head p{margin-top:18px;color:var(--muted);font-size:14.5px}
 
-/* ---------- 6. サービス ---------- */
+/* ============================================================
+   6. サービス
+   ============================================================ */
 .svc{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
-border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .svc article{background:var(--navy);padding:40px 32px;position:relative;transition:.35s}
 .svc article:hover{background:var(--navy-2)}
 .svc article::before{content:"";position:absolute;inset:auto 0 0 0;height:2px;background:var(--grad);
-transform:scaleX(0);transform-origin:left;transition:.45s}
+  transform:scaleX(0);transform-origin:left;transition:.45s}
 .svc article:hover::before{transform:scaleX(1)}
 .svc .no{font-family:var(--f-mono);font-size:11px;color:var(--accent-2);letter-spacing:.12em}
 .svc .ico{width:44px;height:44px;margin:20px 0 22px;color:var(--accent-2);stroke:currentColor;
-fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+  fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
 .svc h3{font-size:17px;font-weight:700;line-height:1.6}
 .svc h3 span{display:block;font-family:var(--f-en);font-size:11px;font-weight:500;
-color:var(--muted);letter-spacing:.1em;margin-top:6px}
+  color:var(--muted);letter-spacing:.1em;margin-top:6px}
 .svc p{margin-top:16px;font-size:13.5px;color:var(--muted);line-height:1.95}
 .svc ul.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
 .svc ul.tags li{font-family:var(--f-mono);font-size:10px;color:#8ba3ba;
-border:1px solid var(--line);border-radius:2px;padding:3px 8px}
+  border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
-/* ---------- 7. アーキテクチャ図 ---------- */
-.arch{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:16px;align-items:stretch}
-.lyr{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:22px;
-background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
-border-radius:3px;padding:22px 26px;margin-bottom:12px;transition:.3s}
+/* ============================================================
+   7. アーキテクチャ図
+   ============================================================ */
+.arch{display:grid;grid-template-columns:1fr 168px;gap:16px;align-items:stretch}
+.lyr{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:22px;
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:3px;padding:22px 26px;margin-bottom:12px;transition:.3s}
 .lyr:hover{border-left-color:var(--accent-2);transform:translateX(4px)}
 .lyr:nth-child(2){border-left-color:#2f83e8}
 .lyr:nth-child(3){border-left-color:#0f9fc4}
@@ -131,30 +156,34 @@ border-radius:3px;padding:22px 26px;margin-bottom:12px;transition:.3s}
 .lyr .ttl small{display:block;font-family:var(--f-jp);font-size:11px;color:var(--muted);margin-top:3px}
 .lyr .items{display:flex;flex-wrap:wrap;gap:8px}
 .lyr .items span{font-family:var(--f-mono);font-size:11px;color:#c0d0df;
-background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:2px;padding:5px 11px}
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:2px;padding:5px 11px}
 .arch-rail{background:linear-gradient(180deg,rgba(15,107,224,.16),rgba(0,194,168,.16));
-border:1px solid rgba(0,194,168,.34);border-radius:3px;display:flex;align-items:center;
-justify-content:center;padding:20px 12px}
+  border:1px solid rgba(0,194,168,.34);border-radius:3px;display:flex;align-items:center;justify-content:center;padding:20px 12px}
 .arch-rail p{writing-mode:vertical-rl;font-family:var(--f-en);font-size:13px;font-weight:600;
-letter-spacing:.16em;color:var(--accent-2);white-space:nowrap}
+  letter-spacing:.16em;color:var(--accent-2);white-space:nowrap}
 
-/* ---------- 8. アプローチ ---------- */
+/* ============================================================
+   8. アプローチ
+   ============================================================ */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;margin-top:12px}
 .flow::before{content:"";position:absolute;top:26px;left:6%;right:6%;height:1px;
-background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4}
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4}
 .flow .st{position:relative}
 .flow .dot{width:52px;height:52px;border-radius:50%;background:var(--ink);
-border:1px solid var(--accent-2);display:grid;place-items:center;position:relative;z-index:1;
-font-family:var(--f-en);font-size:15px;font-weight:700;color:var(--accent-2)}
+  border:1px solid var(--accent-2);display:grid;place-items:center;position:relative;z-index:1;
+  font-family:var(--f-en);font-size:15px;font-weight:700;color:var(--accent-2)}
 .flow h3{margin-top:24px;font-size:16px;font-weight:700}
 .flow h3 span{display:block;font-family:var(--f-mono);font-size:10px;color:var(--accent-2);
-letter-spacing:.14em;margin-bottom:6px}
+  letter-spacing:.14em;margin-bottom:6px}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
 .flow .dur{margin-top:14px;font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
 
-/* ---------- 9. 実績 ---------- */
-.works{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.case{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:32px 28px;transition:.35s}
+/* ============================================================
+   9. 実績
+   ============================================================ */
+.works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
+.case{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:32px 28px;transition:.35s}
 .case:hover{border-color:rgba(0,194,168,.45);transform:translateY(-5px)}
 .case .cat{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;color:var(--accent-2)}
 .case h3{margin-top:14px;font-size:16.5px;font-weight:700;line-height:1.65}
@@ -163,171 +192,189 @@ letter-spacing:.14em;margin-bottom:6px}
 .case dt{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
 .case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
 
-/* ---------- 10. 数字 / 技術 ---------- */
+/* ============================================================
+   10. 数字 / 技術
+   ============================================================ */
 .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.nums div{background:var(--ink);padding:40px 20px;text-align:center}
-.nums b{font-family:var(--f-en);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em;display:block}
+  border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.nums div{background:var(--ink);padding:40px 24px;text-align:center}
+.nums b{font-family:var(--f-en);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em}
 .nums small{display:block;margin-top:12px;font-size:11.5px;color:var(--muted);letter-spacing:.08em}
 .stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
 .stack li{font-family:var(--f-mono);font-size:12px;color:#b9cbdb;border:1px solid var(--line);
-border-radius:2px;padding:9px 16px;background:rgba(255,255,255,.03);transition:.25s}
+  border-radius:2px;padding:9px 16px;background:rgba(255,255,255,.03);transition:.25s}
 .stack li:hover{border-color:var(--accent-2);color:var(--accent-2)}
 
-/* ---------- 11. 会社概要 / CTA / フッター ---------- */
+/* ============================================================
+   11. 会社概要 / CTA / フッター
+   ============================================================ */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);vertical-align:top}
 .tbl th{width:180px;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:.06em}
 .cta{background:linear-gradient(115deg,#0d1b2a,#16304a 55%,#0a3a5c);position:relative;overflow:hidden;text-align:center}
 .cta::before{content:"";position:absolute;width:620px;height:620px;right:-160px;top:-260px;border-radius:50%;
-background:radial-gradient(circle,rgba(0,194,168,.18),transparent 65%);pointer-events:none}
-.cta h2{font-size:clamp(21px,3.1vw,36px);line-height:1.5;font-weight:700;position:relative}
+  background:radial-gradient(circle,rgba(0,194,168,.18),transparent 65%)}
+.cta h2{font-size:clamp(21px,3.4vw,36px);line-height:1.55;font-weight:700;position:relative}
 .cta p{margin:20px auto 0;max-width:38em;color:#c8d6e4;font-size:14.5px;position:relative}
 .cta .hero-cta{justify-content:center;position:relative}
 footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32px}
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
 .ft-nav{display:flex;flex-wrap:wrap;gap:52px}
 .ft-nav h4{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:var(--accent-2);margin-bottom:16px}
-.ft-nav a{font-size:13px;color:var(--muted);line-height:2.3;transition:.2s}
+.ft-nav a{display:block;font-size:13px;color:var(--muted);line-height:2.3;transition:.2s}
 .ft-nav a:hover{color:var(--txt)}
 .ft-btm{margin-top:52px;padding-top:24px;border-top:1px solid var(--line);
-display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
-font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+  font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
 
-/* ---------- 12. 出現アニメーション（JS非依存フォールバック付き） ----------
-   JSが全く動かない → .js が付かず、初期状態から表示される
-   JSは動くがcommon.js未達 → 2.5秒後にCSSアニメで自動表示
-   正常時 → common.js が .on を付与（1.8秒のフェイルセーフあり）        */
-.rv{opacity:1;transform:none}
-.js .rv{opacity:0;transform:translateY(20px);animation:rvIn .8s cubic-bezier(.22,1,.36,1) 2.5s both}
-.js .rv.on{animation:none;opacity:1;transform:none;
-transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
-@keyframes rvIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+/* ============================================================
+   12. 出現アニメーション
+   ============================================================ */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
+.rv.on{opacity:1;transform:none}
 
 /* ============================================================
    13. レスポンシブ
+      1280 / 1140 / 768 / 424 / 320 を検証基準に設計
    ============================================================ */
 
-/* --- スモール（設定値1140px / 992〜1140px） --- */
-@media (max-width:1140px){
-:root{--max:1140px;--pad:28px;--hero-h:720px;--sec-y:96px}
-nav ul{gap:20px}
-.btn{padding:12px 20px;font-size:13px}
-.svc article{padding:36px 26px}
-.hero-kpi{gap:34px}
-.lyr{grid-template-columns:136px minmax(0,1fr);gap:18px;padding:20px 22px}
-.arch{grid-template-columns:minmax(0,1fr) 140px}
-.works{gap:18px}
-.case{padding:28px 24px}
+/* ---- ~1280px：小型デスクトップ ---- */
+@media (max-width:1280px){
+  :root{--pad:28px}
+  nav ul{gap:22px}
 }
 
-/* --- タブレット（設定値768px / 691〜991px） --- */
-@media (max-width:991px){
-:root{--pad:32px;--hd:64px;--hero-h:620px;--sec-y:76px}
-.burger{display:block}
-nav{position:absolute;left:0;right:0;top:100%;
-background:rgba(7,16,25,.98);border-bottom:1px solid var(--line);
-padding:8px var(--pad) 28px;transform:translateY(-8px);
-opacity:0;visibility:hidden;transition:.3s}
-nav.open{transform:none;opacity:1;visibility:visible}
-nav ul{flex-direction:column;gap:0;align-items:stretch}
-nav ul li{border-bottom:1px solid var(--line)}
-nav ul li:last-child{border-bottom:0}
-nav a.gnav{padding:15px 0}
-nav .btn{margin-top:20px;width:100%;justify-content:center}
-.logo small{display:none}
-.hero{padding:60px 0}
-.hero h1{font-size:clamp(28px,4.6vw,40px)}
-.hero p.lead{font-size:14.5px;margin-top:22px}
-.hero-kpi{gap:28px;margin-top:44px}
-.hero-kpi div b{font-size:28px}
-.sec-head{margin-bottom:44px}
-.svc{grid-template-columns:repeat(2,1fr)}
-.works{grid-template-columns:repeat(2,1fr)}
-.works .case:nth-child(3){grid-column:1 / -1}
-.flow{grid-template-columns:repeat(2,1fr);row-gap:40px}
-.flow::before{display:none}
-.nums{grid-template-columns:repeat(2,1fr)}
-.nums b{font-size:36px}
-.arch{grid-template-columns:1fr}
-.arch-rail{padding:14px;order:2}
-.arch-rail p{writing-mode:horizontal-tb}
-.lyr{grid-template-columns:130px minmax(0,1fr)}
-.tbl th{width:140px}
-.ft-nav{gap:36px}
-.sec-grid{background-size:48px 48px}
+/* ---- ~1140px：ノートPC（1140px検証） ---- */
+@media (max-width:1180px){
+  :root{--sec:96px;--gap:18px}
+  nav ul{gap:18px}
+  .hero-kpi{gap:36px}
+  .svc article{padding:34px 26px}
+  .case{padding:28px 24px}
+  .case dl{gap:20px}
+  .lyr{grid-template-columns:134px 1fr;gap:18px;padding:20px 22px}
+  .arch{grid-template-columns:1fr 140px}
+  .sec-head{margin-bottom:48px}
 }
 
-/* --- モバイル（設定値424px / 391〜690px） --- */
-@media (max-width:690px){
-:root{--pad:20px;--hd:60px;--hero-h:560px;--sec-y:56px}
-.hero{padding:48px 0 56px}
-.hero h1{font-size:clamp(26px,7vw,32px);line-height:1.35}
-.hero-cta{gap:10px;margin-top:30px}
-.hero-cta .btn{width:100%;justify-content:center}
-.hero-kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:38px;padding-top:24px}
-.hero-kpi div b{font-size:24px}
-.hero-kpi div small{font-size:10px;letter-spacing:.02em;margin-top:6px}
-.scroll-hint{display:none}
-.ticker li{font-size:11px}
-.ticker ul{gap:36px}
-.sec-head{margin-bottom:36px}
-.sec-head p{font-size:13.5px}
-.svc,.works{grid-template-columns:1fr}
-.works .case:nth-child(3){grid-column:auto}
-.svc article{padding:30px 22px}
-.flow{grid-template-columns:1fr;row-gap:30px}
-.flow .dot{width:44px;height:44px;font-size:13px}
-.flow h3{margin-top:18px}
-.nums{grid-template-columns:repeat(2,1fr)}
-.nums div{padding:30px 14px}
-.nums b{font-size:32px}
-.nums small{font-size:10.5px;margin-top:8px}
-.lyr{grid-template-columns:1fr;gap:12px;padding:18px 18px}
-.case{padding:26px 20px}
-.case dl{gap:20px}
-.case dd{font-size:23px}
-.tbl th,.tbl td{display:block;width:100%}
-.tbl th{padding:16px 0 0;border-bottom:0}
-.tbl td{padding:4px 0 16px}
-.ft-top{gap:28px}
-.ft-nav{gap:24px 32px}
-.stack{gap:8px;margin-top:26px}
-.sec-grid{background-size:40px 40px}
+/* ---- ~1024px：タブレット横 ---- */
+@media (max-width:1024px){
+  :root{--sec:88px}
+  .svc{grid-template-columns:repeat(2,1fr)}
+  .works{grid-template-columns:repeat(2,1fr)}
+  .works .case:last-child{grid-column:1/-1}
+  .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
+  .flow::before{display:none}
+  .arch{grid-template-columns:1fr}
+  .arch-rail{padding:14px}
+  .arch-rail p{writing-mode:horizontal-tb}
+  .hero h1{max-width:14em}
 }
 
-/* --- ミニ（設定値320px / 390px以下） --- */
-@media (max-width:390px){
-:root{--pad:16px;--hero-h:520px;--sec-y:48px}
-body{font-size:14px;line-height:1.85}
-.logo b{font-size:19px}
-.eyebrow{font-size:10px;letter-spacing:.16em;margin-bottom:20px}
-.eyebrow::before{width:24px}
-.hero h1{font-size:25px}
-.hero p.lead{font-size:13.5px}
-.hero-kpi{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:20px}
-.hero-kpi div:last-child{grid-column:1 / -1}
-.hero-kpi div b{font-size:22px}
-.sec-head h2{font-size:21px}
-.svc article{padding:26px 18px}
-.svc h3{font-size:16px}
-.nums{grid-template-columns:1fr}
-.nums div{padding:26px 14px}
-.nums b{font-size:30px}
-.case{padding:24px 18px}
-.case h3{font-size:15.5px}
-.case dl{flex-direction:column;gap:16px}
-.stack li{font-size:11px;padding:7px 12px}
-.lyr .items span{font-size:10.5px;padding:4px 9px}
-.ft-nav{flex-direction:column;gap:22px}
-.ft-btm{flex-direction:column;gap:6px}
-.cta h2{font-size:20px}
-.btn{padding:12px 18px;font-size:13px}
+/* ---- ~960px：ここからハンバーガーメニュー（JSのMQ_DESKと同値） ---- */
+@media (max-width:960px){
+  .burger{display:block}
+  nav{position:fixed;inset:var(--hd) 0 auto 0;background:rgba(7,16,25,.98);
+    border-bottom:1px solid var(--line);padding:8px var(--pad) 30px;
+    max-height:calc(100svh - var(--hd));overflow-y:auto;
+    transform:translateY(-150%);transition:transform .42s cubic-bezier(.22,1,.36,1)}
+  nav.open{transform:none}
+  nav ul{flex-direction:column;gap:0;align-items:stretch}
+  nav ul li{border-bottom:1px solid var(--line)}
+  nav ul li:last-child{border-bottom:0}
+  nav a.gnav{padding:16px 0}
+  nav .btn{margin-top:20px;width:100%}
+}
+
+/* ---- 768px：タブレット縦（768px検証） ---- */
+@media (max-width:768px){
+  :root{--hd:64px;--sec:76px}
+  .logo small{display:none}
+  .hero{padding:calc(var(--hd) + 52px) 0 64px}
+  .hero-kpi{gap:32px;margin-top:44px;padding-top:26px}
+  .hero-kpi div b{font-size:29px}
+  .scroll-hint{display:none}
+  .nums{grid-template-columns:repeat(2,1fr)}
+  .nums div{padding:34px 18px}
+  .nums b{font-size:38px}
+  .lyr{grid-template-columns:1fr;gap:14px;padding:20px}
+  .sec-head{margin-bottom:40px}
+  .sec-head-tech{margin-top:64px}
+  .ticker ul{gap:38px}
+  .tbl th{width:150px}
+  footer{padding:56px 0 28px}
+  .ft-btm{margin-top:40px}
+}
+
+/* ---- ~600px：1カラム化 ---- */
+@media (max-width:600px){
+  :root{--sec:64px;--pad:20px}
+  .brpc{display:none}          /* 見出しの強制改行を解除 */
+  .svc{grid-template-columns:1fr}
+  .works{grid-template-columns:1fr}
+  .works .case:last-child{grid-column:auto}
+  .flow{grid-template-columns:1fr;row-gap:34px}
+  .sec-head p{font-size:14px}
+  /* 会社概要テーブルを縦積みに */
+  .tbl,.tbl tbody,.tbl tr,.tbl th,.tbl td{display:block;width:100%}
+  .tbl tr{padding:16px 0;border-bottom:1px solid var(--line)}
+  .tbl th,.tbl td{padding:0;border:0}
+  .tbl th{margin-bottom:6px;font-size:12px}
+}
+
+/* ---- 424px：スマートフォン（424px検証） ---- */
+@media (max-width:480px){
+  body{font-size:14.5px;line-height:1.85}
+  .hero-cta{flex-direction:column;align-items:stretch;gap:12px}
+  .btn{width:100%;padding:14px 18px}
+  .hero p.lead{margin-top:20px;font-size:14.5px}
+  .hero-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .hero-kpi div b{font-size:24px}
+  .hero-kpi div small{margin-top:6px;font-size:10px;letter-spacing:.02em}
+  .eyebrow{margin-bottom:20px;font-size:10px;letter-spacing:.18em}
+  .eyebrow::before{width:26px}
+  .svc article{padding:30px 22px}
+  .svc .ico{width:38px;height:38px;margin:16px 0 18px}
+  .case{padding:26px 20px}
+  .case dl{gap:18px}
+  .case dd{font-size:22px}
+  .nums div{padding:28px 12px}
+  .nums b{font-size:34px}
+  .nums small{font-size:11px;letter-spacing:.02em}
+  .lyr .items span{font-size:10.5px;padding:4px 9px}
+  .ft-top{gap:32px}
+  .ft-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 18px;width:100%}
+  .ft-btm{flex-direction:column;gap:8px;margin-top:32px}
+}
+
+/* ---- 320px：最小幅（320px検証） ---- */
+@media (max-width:360px){
+  :root{--pad:16px;--sec:56px;--hd:60px}
+  body{font-size:14px}
+  .logo b{font-size:19px}
+  .logo .mark{width:28px;height:28px}
+  .hero p.lead{font-size:13.5px}
+  .hero-kpi{gap:8px}
+  .hero-kpi div b{font-size:21px}
+  .hero-kpi div small{font-size:9.5px;letter-spacing:0}
+  .btn{font-size:13px;padding:13px 14px}
+  .svc article{padding:26px 18px}
+  .svc h3{font-size:16px}
+  .svc p{font-size:13px}
+  .case h3{font-size:15.5px}
+  .case dd{font-size:20px}
+  .nums div{padding:24px 8px}
+  .nums b{font-size:30px}
+  .nums small{font-size:10px}
+  .flow .dot{width:46px;height:46px;font-size:14px}
+  .stack li{font-size:11px;padding:7px 12px}
+  .ticker li{font-size:11px}
+  .ticker ul{gap:28px}
+  .sec-grid{background-size:48px 48px}
 }
 
 @media (prefers-reduced-motion:reduce){
-*,*::before,*::after{animation-duration:.001ms!important;
-animation-iteration-count:1!important;transition-duration:.001ms!important}
-html{scroll-behavior:auto}
-.rv,.js .rv{opacity:1;transform:none;animation:none}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
 }
