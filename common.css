@@ -378,3 +378,56 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   html{scroll-behavior:auto}
   .rv{opacity:1;transform:none}
 }
+
+/* ============================================================
+   14. PHOTO EXTENSION  2026-08 追加
+       ※ 1〜13 の既存ルールは一切変更しないこと
+   ============================================================ */
+.ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
+.ph-fig img{width:100%;height:100%;object-fit:cover;
+  transition:transform .7s cubic-bezier(.22,1,.36,1)}
+.ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
+
+/* ---- ② Works サムネイル（.case の padding に完全追従） ---- */
+.case{--cpx:28px;--cpy:32px;overflow:hidden}
+.case .ph-fig{aspect-ratio:16/9;
+  margin:calc(var(--cpy) * -1) calc(var(--cpx) * -1) 22px;
+  border-radius:3px 3px 0 0}
+.case:hover .ph-fig img{transform:scale(1.05)}
+
+/* ---- ③ Company 写真 ---- */
+.cmp-wrap{display:grid;grid-template-columns:1.35fr .8fr;gap:calc(var(--gap) + 16px);
+  align-items:start}
+.cmp-wrap .ph-fig{aspect-ratio:4/3;border:1px solid var(--line);border-radius:4px}
+
+/* ---- ④ フルブリード帯 ---- */
+.band{position:relative;overflow:hidden;background:var(--ink);
+  height:clamp(190px,28vw,340px);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.band img{width:100%;height:100%;object-fit:cover;
+  opacity:.3;filter:saturate(.55) contrast(1.05)}
+.band::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,rgba(15,107,224,.26),rgba(0,194,168,.16))}
+
+/* ---- ⑤ Approach ステップ写真 ---- */
+.flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
+  border:1px solid var(--line)}
+.flow .st:hover .ph-fig img{transform:scale(1.04)}
+
+/* ---- レスポンシブ（既存の検証幅に合わせる） ---- */
+@media (max-width:1180px){.case{--cpx:24px;--cpy:28px}}
+@media (max-width:768px){
+  .cmp-wrap{grid-template-columns:1fr;gap:var(--gap)}
+  .cmp-wrap .ph-fig{max-width:520px}
+}
+@media (max-width:600px){
+  .flow .st .ph-fig{max-width:340px}
+}
+@media (max-width:480px){
+  .case{--cpx:20px;--cpy:26px}
+  .band{height:clamp(160px,42vw,220px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ph-fig img{transition:none!important;transform:none!important}
+}
