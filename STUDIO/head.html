@@ -1,37 +1,75 @@
 <!-- ============================================================
-     CFI CORPORATE / STUDIO CUSTOM CODE  [HEAD]
-     rev: 2026-08-27c
-       - logo mark : assets/logo/header_logo_BackClear.png (476x428)
-       - logo name : assets/logo/Name_BlackBackGroundBackClear.png (399x211)
-       - CFI文字のCSS組版（グラデーション）は全廃
+     CFI CONTACT / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27g
+     ※ トップページ用の cfi-on 系コードとは別物。/contact のみに設定すること
      ============================================================ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827g">
+
 <style>
-  /* --- STUDIO ラッパー無効化（必須・変更禁止） --- */
-  html.cfi-on{margin:0;padding:0;background:#0d1b2a;height:auto;overflow-x:hidden;overflow-y:auto;position:static}
-  html.cfi-on body{margin:0;padding:0;background:#0d1b2a;height:auto;overflow-x:hidden;overflow-y:visible;position:static;display:block}
-  html.cfi-on #cfi-root{display:block;visibility:visible;opacity:1;position:relative;z-index:1;width:100%;overflow:visible}
-  html.cfi-fallback .rv{opacity:1;transform:none}
+/* --- ページ土台（STUDIO本体は消さない） --- */
+html.cfi-sub{background:#071019;scroll-behavior:smooth;scroll-padding-top:72px}
+html.cfi-sub body{margin:0;padding:0;background:#071019;height:auto;
+  overflow-x:hidden;overflow-y:visible;position:static;display:block}
+/* STUDIOルートを通常フローに戻す（フォームが崩れる場合はこの1行ずつ外して切り分け） */
+html.cfi-sub #__nuxt{position:static;height:auto;min-height:0;width:100%;
+  background:transparent;overflow:visible}
+html.cfi-fallback .rv{opacity:1;transform:none}
 
-  /* --- ロゴ：マーク＋社名を2枚の透過PNGで構成 --- */
-  html.cfi-on .logo{display:flex;align-items:center;gap:10px}
+/* --- ロゴ（トップページと同一） --- */
+html.cfi-sub .logo{display:flex;align-items:center;gap:10px}
+html.cfi-sub .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
+html.cfi-sub .logo:hover .mark{transform:translateX(4px)}
+@media (prefers-reduced-motion:reduce){html.cfi-sub .logo:hover .mark{transform:none}}
+html.cfi-sub .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
+html.cfi-sub .cfi-ft .logo .logo-name{height:31px}
+@media (max-width:360px){
+  html.cfi-sub .logo{gap:8px}
+  html.cfi-sub .logo .mark{height:26px}
+  html.cfi-sub .logo .logo-name{height:27px}
+}
 
-  /* マーク（シェブロン）476x428 */
-  html.cfi-on .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
-  html.cfi-on .logo:hover .mark{transform:translateX(4px)}   /* common.css の rotate(120deg) を上書き */
-  @media (prefers-reduced-motion:reduce){html.cfi-on .logo:hover .mark{transform:none}}
+/* --- ページヒーロー --- */
+html.cfi-sub .page-hero{padding:calc(72px + 84px) 0 64px;
+  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 60%,#0a3a5c 100%);
+  border-bottom:1px solid rgba(255,255,255,.11)}
+html.cfi-sub .page-hero h1{font-size:clamp(26px,4.6vw,44px);line-height:1.35;font-weight:700}
+html.cfi-sub .page-hero p.lead{margin-top:20px;max-width:34em;color:#c8d6e4;font-size:15px}
 
-  /* 社名ロックアップ 399x211 */
-  html.cfi-on .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
-  html.cfi-on footer .logo .logo-name{height:31px}
+/* --- 相談内容カード --- */
+html.cfi-sub .ct-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.11);
+  border-radius:4px;overflow:hidden;margin-top:40px}
+html.cfi-sub .ct-cards article{background:#0d1b2a;padding:30px 26px}
+html.cfi-sub .ct-cards h3{font-size:15.5px;font-weight:700;line-height:1.6}
+html.cfi-sub .ct-cards p{margin-top:12px;font-size:13px;color:#a5b7c9;line-height:1.95}
+@media (max-width:768px){html.cfi-sub .ct-cards{grid-template-columns:1fr}}
 
-  /* 狭幅対応 */
-  @media (max-width:360px){
-    html.cfi-on .logo{gap:8px}
-    html.cfi-on .logo .mark{height:26px;width:auto}
-    html.cfi-on .logo .logo-name{height:27px;width:auto}
-  }
+/* --- フォーム前後の帯 --- */
+html.cfi-sub .form-lead{padding:88px 0 28px;background:#071019}
+html.cfi-sub .form-lead h2{font-size:clamp(20px,3vw,30px);font-weight:700;line-height:1.5}
+html.cfi-sub .form-lead p{margin-top:14px;color:#a5b7c9;font-size:14px}
+html.cfi-sub .note{margin-top:18px;font-size:12px;color:#8ba3ba;line-height:1.9}
+html.cfi-sub .note a{color:#00c2a8;text-decoration:underline}
+
+/* --- 連絡先ブロック --- */
+html.cfi-sub .ct-info{padding:72px 0 88px;background:#071019;
+  border-top:1px solid rgba(255,255,255,.11)}
+html.cfi-sub .ct-info dl{display:grid;grid-template-columns:170px 1fr;gap:14px 24px;
+  margin-top:28px;font-size:14px}
+html.cfi-sub .ct-info dt{color:#a5b7c9;font-size:12.5px;letter-spacing:.06em}
+@media (max-width:600px){html.cfi-sub .ct-info dl{grid-template-columns:1fr;gap:4px 0}
+  html.cfi-sub .ct-info dd{margin-bottom:14px}}
+
+/* --- フッター（暫定・トップの footer を流用する場合は差し替え） --- */
+html.cfi-sub .cfi-ft{background:#04101a;border-top:1px solid rgba(255,255,255,.11);
+  padding:56px 0 30px;color:#e9eff6}
+html.cfi-sub .cfi-ft .ft-in{display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between}
+html.cfi-sub .cfi-ft nav ul{display:flex;flex-wrap:wrap;gap:20px}
+html.cfi-sub .cfi-ft a{font-size:13px;color:#a5b7c9}
+html.cfi-sub .cfi-ft a:hover{color:#00c2a8}
+html.cfi-sub .cfi-ft .copy{margin-top:36px;padding-top:20px;
+  border-top:1px solid rgba(255,255,255,.11);
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:#7d94ab;letter-spacing:.08em}
 </style>
