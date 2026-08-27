@@ -1,8 +1,8 @@
 <!-- ============================================================
      CFI CORPORATE / STUDIO CUSTOM CODE  [BODY]
-     rev: 2026-08-27d
-       - お問い合わせ導線を STUDIO の /contact ページへ遷移させる
-       - トップページ以外では自動的に無効化するパスガードを追加
+     rev: 2026-08-27e
+       - 【修正】パスガードを既定で無効化（真っ白バグの原因）
+       - お問い合わせ導線は STUDIO のページへ遷移
      ============================================================ -->
 <div id="cfi-root">
 
@@ -45,7 +45,7 @@
           <li><a class="gnav" href="#approach">APPROACH<span>進め方</span></a></li>
           <li><a class="gnav" href="#works">WORKS<span>実績</span></a></li>
           <li><a class="gnav" href="#company">COMPANY<span>会社概要</span></a></li>
-          <!-- ▼ STUDIOのお問い合わせページへ遷移（パスは実際のページ設定に合わせる） -->
+          <!-- ▼ STUDIOのお問い合わせページのパスに合わせて要変更 -->
           <li><a class="btn btn-p" href="/contact">お問い合わせ</a></li>
         </ul>
       </nav>
@@ -411,19 +411,25 @@
 <!-- ===== SCRIPTS（この順序を厳守） ===== -->
 <script>
 (function () {
-  /* --- 設定：このカスタムコードを適用するページのパス --- */
-  /*    トップページのみなら ['', '/', '/index.html'] のままでOK      */
-  var ALLOW_PATHS = ['', '/', '/index.html'];
+  /* ============================================================
+     パスガード設定
+     空配列 [] = ガード無効（＝どのページでも動作する）
+     カスタムコードを「ページ単体」に設定している場合は [] のままでOK。
+     もし「サイト全体」に設定するなら、動作させたいパスを列挙する。
+       例) var ALLOW_PATHS = ['/test_page'];
+     ※ここを間違えると画面が真っ白になります。
+     ============================================================ */
+  var ALLOW_PATHS = [];
 
   var root = document.getElementById('cfi-root');
   if (!root) return;
 
-  /* --- パスガード：許可パス以外では何もせず自分を削除する --- */
-  /*    （カスタムコードを誤ってサイト全体に設定した場合の保険） */
-  var p = location.pathname.replace(/\/+$/, '');
-  if (ALLOW_PATHS.indexOf(p) === -1 && ALLOW_PATHS.indexOf(location.pathname) === -1) {
-    root.parentNode && root.parentNode.removeChild(root);
-    return;
+  if (ALLOW_PATHS.length) {
+    var p = location.pathname.replace(/\/+$/, '') || '/';
+    if (ALLOW_PATHS.indexOf(p) === -1 && ALLOW_PATHS.indexOf(location.pathname) === -1) {
+      root.parentNode && root.parentNode.removeChild(root);
+      return;
+    }
   }
 
   if (root.parentNode !== document.body) document.body.appendChild(root);
@@ -437,4 +443,4 @@
   }, 2500);
 })();
 </script>
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827d"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827e"></script>
