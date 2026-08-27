@@ -3,8 +3,35 @@
 <link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 
 <script>
-/* クロークは廃止。cfi-on の付与のみ行う（描画前に確定させる） */
-document.documentElement.classList.add('cfi-on');
+(function(){
+  var h = document.documentElement;
+  h.classList.add('cfi-on');
+
+  /* 離脱時にコンテンツを伏せる。
+     bfcache は pagehide 完了後のDOM状態を保存するため、
+     復元直後の最初の描画でコンテンツが見えなくなる */
+  function hide(){
+    var r = document.getElementById('cfi-root');
+    if (r) r.style.visibility = 'hidden';
+    document.documentElement.style.background = '#071019';
+    if (document.body) document.body.style.background = '#071019';
+  }
+  function show(){
+    var r = document.getElementById('cfi-root');
+    if (r) r.style.visibility = '';
+  }
+
+  window.addEventListener('pagehide', hide);
+
+  window.addEventListener('pageshow', function(e){
+    if (e.persisted){
+      hide();          /* 復元直後に念のため再適用 */
+      location.reload();
+    } else {
+      show();          /* 通常読み込み時は必ず表示状態に戻す */
+    }
+  });
+})();
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
