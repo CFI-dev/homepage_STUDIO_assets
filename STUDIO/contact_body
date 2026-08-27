@@ -1,0 +1,181 @@
+<!-- ============================================================
+     CFI CONTACT / STUDIO CUSTOM CODE [BODY]  rev: 2026-08-27p
+       - 構成：ヘッダー ＋ CONTACTヒーロー → STUDIOフォーム → フッター
+       - フッターは /test_page と同一構成（.ft-top / .ft-nav / .ft-btm）
+       - クローク解除はSTUDIOキャンバス描画＋配色注入の完了後
+       - 黒帯対策：#__nuxt 直下ラッパーの縦余白を実測して打ち消す
+     ============================================================ -->
+<div id="cfi-top">
+
+  <!-- ===== HEADER ===== -->
+  <header id="hd">
+    <div class="hd-in">
+      <a class="logo" href="/test_page" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+        <img class="mark"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
+             width="36" height="32" decoding="async" alt="">
+        <img class="logo-name"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827c"
+             width="64" height="34" decoding="async" alt="">
+      </a>
+
+      <button class="burger" id="burger" type="button" aria-controls="nav" aria-expanded="false" aria-label="メニューを開く">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav id="nav">
+        <ul>
+          <li><a class="gnav" href="/test_page#service">SERVICE<span>サービス</span></a></li>
+          <li><a class="gnav" href="/test_page#architecture">ARCHITECTURE<span>提供構造</span></a></li>
+          <li><a class="gnav" href="/test_page#approach">APPROACH<span>進め方</span></a></li>
+          <li><a class="gnav" href="/test_page#works">WORKS<span>実績</span></a></li>
+          <li><a class="gnav" href="/test_page#company">COMPANY<span>会社概要</span></a></li>
+          <li><a class="btn btn-p" href="#form">お問い合わせ</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== HERO（トップと同じ背景＋canvas） ===== -->
+  <section class="hero hero-sub" id="top">
+    <canvas id="heroCv" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <p class="eyebrow mono rv">GET IN TOUCH</p>
+      <h1 class="rv">CONTACT<span>お問い合わせ</span></h1>
+      <p class="lead rv">ご相談・お見積り・資料請求はこちらから。<br class="brpc">
+        検討段階のご相談でも構いません。内容を確認のうえ、通常2営業日以内に担当者よりご連絡いたします。</p>
+    </div>
+  </section>
+
+  <!-- ヘッダーCTA「お問い合わせ」のスクロール先アンカー -->
+  <span id="form" aria-hidden="true"></span>
+
+</div>
+<!-- ↑ ここまでが STUDIO フォームの「上」 -->
+
+
+<div id="cfi-bottom">
+
+  <!-- ===== FOOTER（/test_page と同一構成） ===== -->
+  <footer>
+    <div class="wrap">
+      <div class="ft-top">
+        <div>
+          <a class="logo" href="/test_page" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+            <img class="mark"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
+                 width="36" height="32" loading="lazy" decoding="async" alt="">
+            <img class="logo-name"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827c"
+                 width="59" height="31" loading="lazy" decoding="async" alt="">
+          </a>
+          <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
+        </div>
+
+        <div class="ft-nav">
+          <div>
+            <h4>SERVICE</h4>
+            <a href="/test_page#service">DX戦略・ロードマップ</a>
+            <a href="/test_page#service">データ基盤構築</a>
+            <a href="/test_page#service">クラウドアーキテクチャ</a>
+            <a href="/test_page#service">ゼロトラストセキュリティ</a>
+          </div>
+          <div>
+            <h4>COMPANY</h4>
+            <a href="/test_page#company">会社概要</a>
+            <a href="/test_page#works">実績</a>
+            <a href="/test_page#approach">進め方</a>
+            <a href="/contact">お問い合わせ</a>
+          </div>
+          <div>
+            <h4>LEGAL</h4>
+            <a href="#" data-cfi-todo="プライバシーポリシーURL">プライバシーポリシー</a>
+            <a href="#" data-cfi-todo="情報セキュリティ方針URL">情報セキュリティ方針</a>
+            <a href="#" data-cfi-todo="特定商取引法表記URL">特定商取引法に基づく表記</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="ft-btm">
+        <p>© 2026 CFI Inc. All rights reserved.</p>
+        <p>CREATE FROM IDEAS</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+
+<!-- ============================================================
+     SCRIPT 1：DOM配置 ＋ クローク解除
+     ============================================================ -->
+<script>
+(function(){
+  var html = document.documentElement;
+  var top  = document.getElementById('cfi-top');
+  var nuxt = document.getElementById('__nuxt');
+
+  /* ① ヘッダー＋ヒーローを __nuxt の直前へ移動 */
+  if (top) {
+    if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
+    else document.body.insertBefore(top, document.body.firstChild);
+  }
+  html.classList.add('cfi-sub');
+
+  /* ② クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） */
+  function reveal(){
+    if (!html.classList.contains('cfi-boot')) return;
+    html.classList.add('cfi-boot-out');
+    setTimeout(function(){ html.classList.remove('cfi-boot','cfi-boot-out'); }, 300);
+  }
+
+  var waited = 0;
+  var poll = setInterval(function(){
+    waited += 50;
+    var canvas = document.querySelector('#__nuxt .StudioCanvas, #__nuxt .sd');
+    if (canvas || waited >= 2000) {
+      clearInterval(poll);
+      /* STUDIO側の .3s〜.4s transition が終わり切るまで待つ */
+      setTimeout(reveal, 480);
+    }
+  }, 50);
+
+  window.addEventListener('load', function(){ setTimeout(reveal, 480); });
+  setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
+
+  /* ③ リビール演出のフォールバック */
+  setTimeout(function(){
+    var rv = document.querySelector('#cfi-top .rv, #cfi-bottom .rv');
+    if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
+  }, 2500);
+})();
+</script>
+
+
+<!-- ============================================================
+     SCRIPT 2：黒帯対策（STUDIO側ラッパーの縦余白を打ち消す）
+     ============================================================ -->
+<script>
+(function(){
+  function trim(){
+    var nuxt = document.getElementById('__nuxt');
+    if (!nuxt) return;
+    var kids = nuxt.children;
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+      var cs = getComputedStyle(el);
+      if (parseFloat(cs.paddingTop)    > 0) el.style.paddingTop    = '0px';
+      if (parseFloat(cs.paddingBottom) > 0) el.style.paddingBottom = '0px';
+      if (parseFloat(cs.marginTop)     > 0) el.style.marginTop     = '0px';
+      if (parseFloat(cs.marginBottom)  > 0) el.style.marginBottom  = '0px';
+      if (cs.minHeight !== '0px' && cs.minHeight !== 'auto') el.style.minHeight = '0px';
+    }
+  }
+  var n = 0, t = setInterval(function(){ trim(); if (++n > 20) clearInterval(t); }, 300);
+  document.addEventListener('DOMContentLoaded', trim);
+  window.addEventListener('load', trim);
+})();
+</script>
+
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827p"></script>
