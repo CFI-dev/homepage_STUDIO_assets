@@ -70,8 +70,13 @@ header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 /* ロゴ実寸：ここを唯一の正とする（各ページのHEADで再定義しない） */
 .logo .mark{height:var(--logo-mark);width:auto;flex:0 0 auto;object-fit:contain;
-  transition:transform .7s cubic-bezier(.22,1,.36,1)}
-.logo:hover .mark{transform:rotate(120deg)}
+  transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.logo:hover .mark{transform:translateX(6px)}
+
+@media (prefers-reduced-motion:reduce){
+  .logo .mark{transition:none}
+  .logo:hover .mark{transform:none}
+}
 .logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;object-fit:contain;display:block}
 footer .logo .logo-name{height:31px}
 .logo b{font-family:var(--f-en);font-size:21px;letter-spacing:.02em;display:block;line-height:1}
