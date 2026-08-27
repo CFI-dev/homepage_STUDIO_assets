@@ -13,38 +13,23 @@
 
 <!-- ① 最速でクラス付与（インライン＝パース時に即実行） -->
 <script>
+<script>
 (function(){
   var h = document.documentElement;
-  h.className += ' cfi-on';
+  h.className += ' cfi-on cfi-boot';
 
-  var BF_MS = 700;   /* 戻る／進むで復元されたときの表示時間 */
-  var MAX_MS = 3500; /* 通常読み込み時の保険 */
-  var timer = null;
+  /* 保険：BODY側が動かなくても3.5秒で必ずクローク解除 */
+  setTimeout(function(){ h.classList.remove('cfi-boot'); }, 3500);
 
-  function on(){
-    h.classList.remove('cfi-boot-out');
-    h.classList.add('cfi-boot');
-  }
-  function off(){
-    h.classList.add('cfi-boot-out');
-    setTimeout(function(){ h.classList.remove('cfi-boot','cfi-boot-out'); }, 280);
-  }
-  function run(ms){
-    clearTimeout(timer);
-    on();
-    timer = setTimeout(off, ms);
-  }
-
-  /* 通常の読み込み */
-  run(MAX_MS);
-
-  /* bfcache から復元された場合はスクリプトが再実行されないため
-     pageshow で明示的に再生する */
+  /* 戻る／進むで bfcache から復元された場合は
+     スクリプトが再実行されないため、明示的に再読込して
+     クローク〜各種演出を最初から動かす */
   addEventListener('pageshow', function(e){
-    if (e.persisted) run(BF_MS);
+    if (e.persisted) location.reload();
   });
 })();
 </script>
+
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
