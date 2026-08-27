@@ -1,0 +1,438 @@
+<!-- ============================================================
+     CFI HomePage / STUDIO custom code : BODY
+     rev: 2026-08-27b  (photo extension ②③④⑤ 適用済み / ロゴ差し替え)
+     編集ルール
+       1. #cfi-root の id とタグは変更しない
+       2. 末尾の script 2本は必ずこの順序で </div> の後ろに置く
+       3. common.js の登録はサイト全体を含め 1 箇所のみ
+       4. 新規セクションには class="rv" を付ける
+       5. PC のみの改行は <br class="brpc">
+       6. 本欄は 30,000 文字上限
+     変更履歴
+       2026-08-27  : #mk-aperture を廃止し、ロゴを PNG 画像へ差し替え
+       2026-08-27b : ロゴを assets/logo/logo_right_BackClear.png
+                     （694x584 / PNG-8 indexed + tRNS 透過）へ変更。
+                     高さ32px・幅auto（比率1.188）で表示。
+     ============================================================ -->
+<div id="cfi-root">
+
+<!-- SVGスプライト -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gBrand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f6be0"></stop>
+      <stop offset="100%" stop-color="#00c2a8"></stop>
+    </linearGradient>
+    <symbol id="i-strategy" viewBox="0 0 48 48">
+      <path d="M6 40h36M10 40V26M20 40V16M30 40V22M40 40V10"></path>
+      <circle cx="10" cy="26" r="2.4"></circle><circle cx="20" cy="16" r="2.4"></circle>
+      <circle cx="30" cy="22" r="2.4"></circle><circle cx="40" cy="10" r="2.4"></circle>
+    </symbol>
+    <symbol id="i-data" viewBox="0 0 48 48">
+      <ellipse cx="24" cy="12" rx="15" ry="6"></ellipse>
+      <path d="M9 12v11c0 3.3 6.7 6 15 6s15-2.7 15-6V12M9 23v11c0 3.3 6.7 6 15 6s15-2.7 15-6V23"></path>
+    </symbol>
+    <symbol id="i-cloud" viewBox="0 0 48 48">
+      <path d="M14 36a9 9 0 0 1-.6-18 13 13 0 0 1 24.6 4A8 8 0 0 1 36 36z"></path>
+      <path d="M20 27l4-4 4 4M24 23v11"></path>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 48 48">
+      <path d="M24 5l15 6v11c0 10-6.5 17.6-15 21-8.5-3.4-15-11-15-21V11z"></path>
+      <path d="M17 24l5 5 10-10"></path>
+    </symbol>
+    <symbol id="i-privacy" viewBox="0 0 48 48">
+      <rect x="10" y="21" width="28" height="20" rx="3"></rect>
+      <path d="M17 21v-6a7 7 0 0 1 14 0v6M24 29v5"></path>
+    </symbol>
+    <symbol id="i-martech" viewBox="0 0 48 48">
+      <circle cx="12" cy="12" r="5"></circle><circle cx="36" cy="12" r="5"></circle>
+      <circle cx="24" cy="36" r="5"></circle>
+      <path d="M16 15l6 17M32 15l-6 17M17 12h14"></path>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ヘッダー -->
+<header id="hd">
+  <div class="hd-in">
+    <a href="#top" class="logo" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+      <img class="mark" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/logo_right_BackClear.png" width="38" height="32" decoding="async" alt="">
+      <span><b>CFI</b><small>CREATE FROM IDEAS</small></span>
+    </a>
+    <nav id="nav" aria-label="グローバルナビゲーション">
+      <ul>
+        <li><a class="gnav" href="#service">Service<span>サービス</span></a></li>
+        <li><a class="gnav" href="#architecture">Architecture<span>支援領域</span></a></li>
+        <li><a class="gnav" href="#approach">Approach<span>進め方</span></a></li>
+        <li><a class="gnav" href="#works">Works<span>支援実績</span></a></li>
+        <li><a class="gnav" href="#company">Company<span>会社概要</span></a></li>
+        <li><a class="btn btn-p" href="#contact">無料相談</a></li>
+      </ul>
+    </nav>
+    <button class="burger" id="burger" aria-label="メニューを開く" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ヒーロー -->
+<section class="hero" id="top">
+  <canvas id="heroCv" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <p class="eyebrow">MARKETING × IT × PRIVACY</p>
+    <h1>技術と法務を、<br /><em>経営の意思決定</em>に接続する。</h1>
+    <p class="lead">構想だけで終わらせない。CFIは、DX戦略の立案からデータ基盤の実装、セキュリティ・プライバシー体制の運用定着までを、同じチームで一気通貫に伴走するITコンサルティングファームです。</p>
+    <div class="hero-cta">
+      <a class="btn btn-p" href="#contact">無料相談を申し込む →</a>
+      <a class="btn btn-g" href="#service">サービスを見る</a>
+    </div>
+    <div class="hero-kpi">
+      <div><b class="grad-txt" data-count="120" data-suffix="+">0</b><small>累計支援社数</small></div>
+      <div><b class="grad-txt" data-count="94" data-suffix="%">0</b><small>プロジェクト継続率</small></div>
+      <div><b class="grad-txt" data-count="15" data-suffix="年">0</b><small>平均コンサル経験年数</small></div>
+    </div>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">SCROLL<i></i></div>
+</section>
+
+<!-- ティッカー -->
+<div class="ticker" aria-hidden="true">
+  <ul id="tk">
+    <li>DX Strategy</li><li>Data Platform</li><li>Cloud Architecture</li>
+    <li>Zero Trust</li><li>Privacy Governance</li><li>MarTech Integration</li>
+    <li>Generative AI</li><li>SRE / Observability</li><li>IT Due Diligence</li>
+    <li>System Modernization</li>
+  </ul>
+</div>
+
+<!-- サービス -->
+<section class="sec sec-ink" id="service">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <p class="eyebrow">SERVICE</p>
+      <h2>6つの専門領域を、<br class="brpc" />ひとつのチームで束ねる。</h2>
+      <p>戦略・実装・法務が分断されると、DXは必ず停滞します。CFIは上流の投資判断から下流の運用設計までを同一チームが担当し、意思決定のスピードと実装の一貫性を両立させます。</p>
+    </div>
+    <div class="svc">
+      <article class="rv">
+        <p class="no">01</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-strategy"></use></svg>
+        <h3>DX戦略・IT投資計画<span>DX STRATEGY</span></h3>
+        <p>既存システム資産と業務プロセスを棚卸しし、3年後のあるべき姿から逆算した投資計画とロードマップを策定します。</p>
+        <ul class="tags"><li>As-Is/To-Be</li><li>IT DD</li><li>ROI設計</li></ul>
+      </article>
+      <article class="rv">
+        <p class="no">02</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-data"></use></svg>
+        <h3>データ基盤構築・BI<span>DATA PLATFORM</span></h3>
+        <p>各部門に分散したデータをクラウドDWHへ統合。ELTパイプラインからダッシュボードまで実装し、意思決定に使える状態で引き渡します。</p>
+        <ul class="tags"><li>BigQuery</li><li>dbt</li><li>Looker</li></ul>
+      </article>
+      <article class="rv">
+        <p class="no">03</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-cloud"></use></svg>
+        <h3>クラウド／アーキテクチャ設計<span>CLOUD ARCHITECTURE</span></h3>
+        <p>可用性・コスト・運用負荷の三点でトレードオフを可視化し、移行計画とIaC化までを設計・伴走します。</p>
+        <ul class="tags"><li>AWS</li><li>Google Cloud</li><li>Terraform</li></ul>
+      </article>
+      <article class="rv">
+        <p class="no">04</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-shield"></use></svg>
+        <h3>セキュリティ／ゼロトラスト<span>ZERO TRUST</span></h3>
+        <p>ID管理・端末管理・ログ監視を軸に、現場の生産性を落とさず実運用に耐える多層防御を設計します。</p>
+        <ul class="tags"><li>IAM</li><li>SIEM</li><li>ISMS支援</li></ul>
+      </article>
+      <article class="rv">
+        <p class="no">05</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-privacy"></use></svg>
+        <h3>プライバシーガバナンス<span>PRIVACY GOVERNANCE</span></h3>
+        <p>個人情報保護法や各種Cookie規制を踏まえ、同意管理基盤の導入と社内規程・運用フローの整備を支援します。</p>
+        <ul class="tags"><li>CMP導入</li><li>データマッピング</li><li>規程整備</li></ul>
+      </article>
+      <article class="rv">
+        <p class="no">06</p>
+        <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-martech"></use></svg>
+        <h3>マーケティングテクノロジー<span>MARTECH</span></h3>
+        <p>CDP・MA・広告計測を正しく接続し、プライバシー要件を満たしたうえで再現性のある獲得基盤をつくります。</p>
+        <ul class="tags"><li>CDP</li><li>GA4 / GTM</li><li>サーバーサイド計測</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- アーキテクチャ -->
+<section class="sec sec-grid" id="architecture">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <p class="eyebrow">SUPPORT ARCHITECTURE</p>
+      <h2>レイヤーを横断して、<br class="brpc" />全体最適で設計する。</h2>
+      <p>ツール単位の部分最適はコストだけを増やします。CFIは業務レイヤーからインフラレイヤーまでを一枚の構成図として捉え、セキュリティとプライバシーを全層に横串で通します。</p>
+    </div>
+    <div class="arch rv">
+      <div>
+        <div class="lyr">
+          <p class="ttl">Business<small>業務・戦略</small></p>
+          <div class="items"><span>KPI設計</span><span>業務プロセス再構築</span><span>IT投資評価</span><span>組織・体制設計</span></div>
+        </div>
+        <div class="lyr">
+          <p class="ttl">Application<small>アプリケーション</small></p>
+          <div class="items"><span>基幹システム刷新</span><span>SaaS選定</span><span>API連携</span><span>内製開発支援</span></div>
+        </div>
+        <div class="lyr">
+          <p class="ttl">Data<small>データ</small></p>
+          <div class="items"><span>DWH / データレイク</span><span>ELT</span><span>メタデータ管理</span><span>BI / 可視化</span></div>
+        </div>
+        <div class="lyr">
+          <p class="ttl">Infrastructure<small>基盤</small></p>
+          <div class="items"><span>クラウド移行</span><span>IaC</span><span>監視 / SRE</span><span>コスト最適化</span></div>
+        </div>
+      </div>
+      <div class="arch-rail"><p>SECURITY &amp; PRIVACY</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- アプローチ ★⑤ ステップ写真を追加 -->
+<section class="sec sec-ink" id="approach">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <p class="eyebrow">APPROACH</p>
+      <h2>4つのフェーズで、<br class="brpc" />内製化までを見据える。</h2>
+      <p>提案書を納品して終わりにはしません。最終フェーズでは運用ドキュメントと人材育成までを含め、CFIがいなくても回る状態を目標に設計します。</p>
+    </div>
+    <div class="flow">
+      <div class="st rv">
+        <div class="dot">01</div>
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp"
+               width="640" height="480" loading="lazy" decoding="async" alt="">
+        </figure>
+        <h3><span>ASSESS</span>現状診断</h3>
+        <p>システム構成・データ・体制・コストを横断で棚卸しし、課題を構造化して優先順位をつけます。</p>
+        <p class="dur">目安：2〜4週間</p>
+      </div>
+      <div class="st rv">
+        <div class="dot">02</div>
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp"
+               width="640" height="480" loading="lazy" decoding="async" alt="">
+        </figure>
+        <h3><span>DESIGN</span>構想設計</h3>
+        <p>To-Be像とアーキテクチャ、投資対効果、実行体制を含むロードマップとして具体化します。</p>
+        <p class="dur">目安：4〜8週間</p>
+      </div>
+      <div class="st rv">
+        <div class="dot">03</div>
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp"
+               width="640" height="480" loading="lazy" decoding="async" alt="">
+        </figure>
+        <h3><span>BUILD</span>実装・導入</h3>
+        <p>PoCで前提を検証したうえで段階的に本実装。ベンダー選定と進行管理も担います。</p>
+        <p class="dur">目安：3〜9か月</p>
+      </div>
+      <div class="st rv">
+        <div class="dot">04</div>
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp"
+               width="640" height="480" loading="lazy" decoding="async" alt="">
+        </figure>
+        <h3><span>RUN</span>運用・内製化</h3>
+        <p>運用設計とドキュメント整備、社内人材の育成を行い、自走できる体制へ移行します。</p>
+        <p class="dur">継続支援</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 実績 ★② サムネイルを追加 -->
+<section class="sec" id="works">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <p class="eyebrow">WORKS</p>
+      <h2>成果は、数字で確認する。</h2>
+      <p>すべてのプロジェクトで開始前にKPIを定義し、四半期ごとに達成度をレビューします。以下はサンプル表記のため、実案件の数値・社名に差し替えてご利用ください。</p>
+    </div>
+    <div class="works">
+      <article class="case rv">
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp"
+               width="1200" height="675" loading="lazy" decoding="async"
+               alt="製造業のデータ統合プロジェクトのイメージ">
+        </figure>
+        <p class="cat">MANUFACTURING / DATA</p>
+        <h3>10システムに分散した実績データを統合し、月次レポートを自動化</h3>
+        <p>手作業のExcel集計をクラウドDWHとBIに置換。経営会議の資料作成工数を大幅に削減しました。</p>
+        <dl>
+          <div><dt>集計工数</dt><dd class="grad-txt">-80h<span class="unit">/月</span></dd></div>
+          <div><dt>レポート提供</dt><dd class="grad-txt">翌営業日</dd></div>
+        </dl>
+      </article>
+      <article class="case rv">
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp"
+               width="1200" height="675" loading="lazy" decoding="async"
+               alt="D2Cブランドのマーケティング基盤刷新のイメージ">
+        </figure>
+        <p class="cat">D2C / MARTECH</p>
+        <h3>CDPと広告計測を再設計し、獲得効率とLTVを同時に改善</h3>
+        <p>同意管理を前提としたサーバーサイド計測へ移行。データの欠損を抑えつつ配信精度を高めました。</p>
+        <dl>
+          <div><dt>CPA</dt><dd class="grad-txt">-34%</dd></div>
+          <div><dt>LTV</dt><dd class="grad-txt">+21%</dd></div>
+        </dl>
+      </article>
+      <article class="case rv">
+        <figure class="ph-fig">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp"
+               width="1200" height="675" loading="lazy" decoding="async"
+               alt="金融機関のプライバシーガバナンス構築のイメージ">
+        </figure>
+        <p class="cat">FINANCE / PRIVACY</p>
+        <h3>個人データの取扱いを可視化し、監査に耐える運用体制を構築</h3>
+        <p>データマッピングと規程整備、社内研修までを一体で実施。監査対応の負荷を継続的に低減しています。</p>
+        <dl>
+          <div><dt>同意取得率</dt><dd class="grad-txt">92%</dd></div>
+          <div><dt>監査指摘</dt><dd class="grad-txt">0件</dd></div>
+        </dl>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ★④ フルブリード帯 -->
+<div class="band" aria-hidden="true">
+  <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp"
+       width="2400" height="800" loading="lazy" decoding="async" alt="">
+</div>
+
+<!-- 数字・技術 -->
+<section class="sec sec-ink">
+  <div class="wrap">
+    <div class="nums rv">
+      <div><b class="grad-txt" data-count="120" data-suffix="+">0</b><small>累計支援社数</small></div>
+      <div><b class="grad-txt" data-count="38" data-suffix="%">0</b><small>平均CV改善率</small></div>
+      <div><b class="grad-txt" data-count="94" data-suffix="%">0</b><small>プロジェクト継続率</small></div>
+      <div><b class="grad-txt" data-count="15" data-suffix="年">0</b><small>平均コンサル経験</small></div>
+    </div>
+    <div class="sec-head sec-head-tech rv">
+      <p class="eyebrow">TECHNOLOGY</p>
+      <h2>特定ベンダーに依存しない技術選定。</h2>
+      <p>要件と運用体制に合わせて最適な構成を選びます。以下は主な採用実績のある技術・サービスです。</p>
+      <ul class="stack">
+        <li>AWS</li><li>Google Cloud</li><li>Microsoft Azure</li><li>Snowflake</li>
+        <li>BigQuery</li><li>dbt</li><li>Terraform</li><li>Kubernetes</li>
+        <li>Databricks</li><li>Looker</li><li>Tableau</li><li>Salesforce</li>
+        <li>HubSpot</li><li>Okta</li><li>Datadog</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 会社概要 ★③ 写真を追加（rv は .cmp-wrap 側へ移動） -->
+<section class="sec" id="company">
+  <div class="wrap">
+    <div class="sec-head rv"><p class="eyebrow">COMPANY</p><h2>会社概要</h2></div>
+    <div class="cmp-wrap rv">
+      <table class="tbl">
+        <tbody>
+          <tr><th>会社名</th><td>株式会社CFI（Create From Ideas）</td></tr>
+          <tr><th>事業内容</th><td>ITコンサルティング、DX戦略立案、データ基盤構築、クラウド／セキュリティ設計、プライバシーガバナンス支援、マーケティングテクノロジー支援</td></tr>
+          <tr><th>所在地</th><td>※要記入</td></tr>
+          <tr><th>設立</th><td>※要記入</td></tr>
+          <tr><th>代表者</th><td>※要記入</td></tr>
+          <tr><th>お問い合わせ</th><td><a href="https://cfi-holding.com/" class="grad-txt link-strong">cfi-holding.com</a></td></tr>
+        </tbody>
+      </table>
+      <figure class="ph-fig">
+        <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp"
+             width="1200" height="900" loading="lazy" decoding="async"
+             alt="株式会社CFIのオフィス">
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec cta" id="contact">
+  <div class="wrap">
+    <p class="eyebrow eyebrow-center rv">CONTACT</p>
+    <h2 class="rv">「何から手をつけるべきか」の段階から、<br class="brpc" />ご相談ください。</h2>
+    <p class="rv">初回のオンライン相談（60分）は無料です。現状の課題を伺い、優先度と概算スケジュールの初期見立てをその場でお伝えします。</p>
+    <div class="hero-cta rv">
+      <a class="btn btn-p" href="mailto:info@cfi-holding.com">メールで相談する →</a>
+      <a class="btn btn-g" href="#service">資料をダウンロード</a>
+    </div>
+  </div>
+</section>
+
+<!-- フッター -->
+<footer>
+  <div class="wrap">
+    <div class="ft-top">
+      <div>
+        <a href="#top" class="logo" aria-label="株式会社CFI トップへ">
+          <img class="mark" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/logo_right_BackClear.png" width="38" height="32" loading="lazy" decoding="async" alt="">
+          <span><b>CFI</b><small>CREATE FROM IDEAS</small></span>
+        </a>
+        <p class="ft-desc">アイデアを、実装可能な戦略へ。<br />マーケティング・IT・プライバシーの交点から事業を支援します。</p>
+      </div>
+      <div class="ft-nav">
+        <div><h4>SERVICE</h4>
+          <a href="#service">DX戦略</a><a href="#service">データ基盤</a>
+          <a href="#service">クラウド設計</a><a href="#service">セキュリティ</a>
+        </div>
+        <div><h4>COMPANY</h4>
+          <a href="#company">会社概要</a><a href="#works">支援実績</a>
+          <a href="#approach">進め方</a><a href="#contact">お問い合わせ</a>
+        </div>
+        <div><h4>LEGAL</h4>
+          <a href="#">プライバシーポリシー</a><a href="#">情報セキュリティ方針</a>
+          <a href="#">サイトポリシー</a>
+        </div>
+      </div>
+    </div>
+    <div class="ft-btm">
+      <p>© 2026 CFI Inc. All rights reserved.</p>
+      <p>MARKETING × IT × PRIVACY</p>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /#cfi-root -->
+
+<!-- STUDIO(Nuxt) のラッパーから脱出し、兄弟要素のみを隠す -->
+<script>
+(function(){
+  function apply(){
+    var root = document.getElementById('cfi-root');
+    if(!root) return;
+
+    /* 核心：STUDIO のラッパー div から脱出して body 直下へ移動する */
+    if(root.parentElement !== document.body){
+      document.body.appendChild(root);
+    }
+    document.documentElement.classList.add('cfi-on');
+
+    /* 兄弟だけを隠す（root は絶対に対象外） */
+    [].forEach.call(document.body.children, function(el){
+      if(el === root) return;
+      var t = el.tagName;
+      if(t==='SCRIPT'||t==='STYLE'||t==='LINK'||t==='NOSCRIPT'||t==='TEMPLATE') return;
+      el.classList.add('cfi-hide');
+    });
+  }
+  apply();
+  addEventListener('load', apply);
+  new MutationObserver(apply).observe(document.body, {childList:true});
+
+  setTimeout(function(){
+    var rv = document.querySelectorAll('.rv');
+    if(rv.length && !document.querySelector('.rv.on')){
+      document.documentElement.classList.add('cfi-fallback');
+      console.warn('[CFI] reveal fallback applied');
+    }
+  }, 2500);
+})();
+</script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
