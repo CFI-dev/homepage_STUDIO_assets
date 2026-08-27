@@ -1,6 +1,21 @@
 @charset "UTF-8";
 
 /* ============================================================
+   CFI コーポレートサイト 共通スタイル   rev: 2026-08-27r1
+   ------------------------------------------------------------
+   旧版からの変更点
+     - 2章：ロゴ実寸（height）を追加。各ページのHEADに散在して
+       いた定義をここへ集約（唯一の正とする）
+     - 12章：html.cfi-fallback .rv のフォールバックを追加
+       （16-2 が既に cfi-fallback を参照しており定義場所を統一）
+     - 13章：WORKS 3枚目の全幅化を解除（769〜1024pxで画像が
+       過大表示される崩れの修正）。検証幅のコメントも実装に合わせ修正
+     - 13章 360px：.logo .mark の width/height 同値指定を廃止
+       （36×32のロゴが正方形に潰れていた）
+     - 15章（従来欠番）：:focus-visible とユーティリティを新設
+   ============================================================ */
+
+/* ============================================================
    1. トークン（ブレークポイントで可変にする値は変数化）
    ============================================================ */
 :root{
@@ -15,6 +30,9 @@
   --hd:72px;      /* ヘッダー高 */
   --sec:112px;    /* セクション上下余白 */
   --gap:22px;     /* カード間隔 */
+
+  --logo-mark:32px;   /* ロゴマーク高（ヘッダー） */
+  --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
 
   --f-en:"Barlow",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
@@ -50,8 +68,12 @@ header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .hd-in{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:100%;
   display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-.logo .mark{transition:transform .7s cubic-bezier(.22,1,.36,1)}
+/* ロゴ実寸：ここを唯一の正とする（各ページのHEADで再定義しない） */
+.logo .mark{height:var(--logo-mark);width:auto;flex:0 0 auto;object-fit:contain;
+  transition:transform .7s cubic-bezier(.22,1,.36,1)}
 .logo:hover .mark{transform:rotate(120deg)}
+.logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;object-fit:contain;display:block}
+footer .logo .logo-name{height:31px}
 .logo b{font-family:var(--f-en);font-size:21px;letter-spacing:.02em;display:block;line-height:1}
 .logo small{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.16em;color:var(--muted);display:block;margin-top:4px}
 nav ul{display:flex;align-items:center;gap:26px}
@@ -232,10 +254,13 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
    ============================================================ */
 .rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
 .rv.on{opacity:1;transform:none}
+/* JSが発火しなかった場合の保険（各ページのHEADから移設） */
+html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
    13. レスポンシブ
-      1280 / 1140 / 768 / 424 / 320 を検証基準に設計
+      1280 / 1180 / 1024 / 960 / 768 / 600 / 480 / 360 を検証基準に設計
+      ※ 960px はハンバーガー切替点。JSの MQ_DESK と必ず一致させること
    ============================================================ */
 
 /* ---- ~1280px：小型デスクトップ ---- */
@@ -244,7 +269,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   nav ul{gap:22px}
 }
 
-/* ---- ~1140px：ノートPC（1140px検証） ---- */
+/* ---- ~1180px：ノートPC ---- */
 @media (max-width:1180px){
   :root{--sec:96px;--gap:18px}
   nav ul{gap:18px}
@@ -261,8 +286,8 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 @media (max-width:1024px){
   :root{--sec:88px}
   .svc{grid-template-columns:repeat(2,1fr)}
+  /* WORKS は3枚目も1カラム幅に揃える（全幅化すると写真が過大になる） */
   .works{grid-template-columns:repeat(2,1fr)}
-  .works .case:last-child{grid-column:1/-1}
   .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
   .flow::before{display:none}
   .arch{grid-template-columns:1fr}
@@ -286,7 +311,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   nav .btn{margin-top:20px;width:100%}
 }
 
-/* ---- 768px：タブレット縦（768px検証） ---- */
+/* ---- 768px：タブレット縦 ---- */
 @media (max-width:768px){
   :root{--hd:64px;--sec:76px}
   .logo small{display:none}
@@ -312,7 +337,6 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .svc{grid-template-columns:1fr}
   .works{grid-template-columns:1fr}
-  .works .case:last-child{grid-column:auto}
   .flow{grid-template-columns:1fr;row-gap:34px}
   .sec-head p{font-size:14px}
   /* 会社概要テーブルを縦積みに */
@@ -322,7 +346,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   .tbl th{margin-bottom:6px;font-size:12px}
 }
 
-/* ---- 424px：スマートフォン（424px検証） ---- */
+/* ---- 480px：スマートフォン ---- */
 @media (max-width:480px){
   body{font-size:14.5px;line-height:1.85}
   .hero-cta{flex-direction:column;align-items:stretch;gap:12px}
@@ -347,12 +371,12 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   .ft-btm{flex-direction:column;gap:8px;margin-top:32px}
 }
 
-/* ---- 320px：最小幅（320px検証） ---- */
+/* ---- 360px：最小幅 ---- */
 @media (max-width:360px){
-  :root{--pad:16px;--sec:56px;--hd:60px}
+  :root{--pad:16px;--sec:56px;--hd:60px;--logo-mark:26px;--logo-name:27px}
   body{font-size:14px}
+  .logo{gap:8px}
   .logo b{font-size:19px}
-  .logo .mark{width:28px;height:28px}
   .hero p.lead{font-size:13.5px}
   .hero-kpi{gap:8px}
   .hero-kpi div b{font-size:21px}
@@ -431,6 +455,28 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 @media (prefers-reduced-motion:reduce){
   .ph-fig img{transition:none!important;transform:none!important}
 }
+
+/* ============================================================
+   15. アクセシビリティ / 状態表現  2026-08-27r1 追加
+       （従来 15 は欠番だった）
+   ============================================================ */
+
+/* 15-1 キーボードフォーカス（マウス操作時には出さない） */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--accent-2);outline-offset:3px;border-radius:2px}
+.btn:focus-visible{outline-offset:4px}
+nav a.gnav:focus-visible::after{width:100%}
+
+/* 15-2 スクリーンリーダー専用テキスト */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* 15-3 未確定リンク／未記入項目（各ページのHEADから移設）
+        URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
+a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
+a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
+  font-size:10px;letter-spacing:.06em}
+.is-todo-text{color:#ffb4a2}
 
 /* ============================================================
    16. VISUAL-FIRST  2026-08 追加
