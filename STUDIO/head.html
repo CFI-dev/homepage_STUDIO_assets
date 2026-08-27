@@ -1,6 +1,9 @@
 <!-- ============================================================
      CFI CORPORATE / STUDIO CUSTOM CODE  [HEAD]
-     rev: 2026-08-27  (logo -> assets/logo/header_logo.png)
+     rev: 2026-08-27c
+       - logo mark : assets/logo/header_logo_BackClear.png (476x428)
+       - logo name : assets/logo/Name_BlackBackGroundBackClear.png (399x211)
+       - CFI文字のCSS組版（グラデーション）は全廃
      ============================================================ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,9 +16,22 @@
   html.cfi-on #cfi-root{display:block;visibility:visible;opacity:1;position:relative;z-index:1;width:100%;overflow:visible}
   html.cfi-fallback .rv{opacity:1;transform:none}
 
-  /* --- 2026-08-27 ロゴ差し替え：header_logo.png (476x428 / PNG+tRNS) --- */
+  /* --- ロゴ：マーク＋社名を2枚の透過PNGで構成 --- */
+  html.cfi-on .logo{display:flex;align-items:center;gap:10px}
+
+  /* マーク（シェブロン）476x428 */
   html.cfi-on .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
-  html.cfi-on .logo:hover .mark{transform:translateX(4px)}   /* 旧 rotate(120deg) を上書き */
+  html.cfi-on .logo:hover .mark{transform:translateX(4px)}   /* common.css の rotate(120deg) を上書き */
   @media (prefers-reduced-motion:reduce){html.cfi-on .logo:hover .mark{transform:none}}
-  @media (max-width:360px){html.cfi-on .logo .mark{height:26px;width:auto}}
+
+  /* 社名ロックアップ 399x211 */
+  html.cfi-on .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
+  html.cfi-on footer .logo .logo-name{height:31px}
+
+  /* 狭幅対応 */
+  @media (max-width:360px){
+    html.cfi-on .logo{gap:8px}
+    html.cfi-on .logo .mark{height:26px;width:auto}
+    html.cfi-on .logo .logo-name{height:27px;width:auto}
+  }
 </style>
