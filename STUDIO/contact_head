@@ -1,0 +1,144 @@
+<!-- ============================================================
+     CFI CONTACT / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27p
+       - 起動クローク（フォームのチラつき／FOUC防止）
+       - 白フラッシュ対策（STUDIO内部の #e5e5e5 と全プロパティtransition）
+       - 黒帯除去（#__nuxt の上下 padding を変数化・既定0）
+     ============================================================ -->
+
+<!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
+<script>
+(function(){
+  var h = document.documentElement;
+  h.className += ' cfi-sub cfi-boot';
+  /* 保険：BODYコードが動かなくても3.5秒で必ず解除 */
+  setTimeout(function(){ h.classList.remove('cfi-boot'); }, 3500);
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827p">
+
+<style>
+/* ============================================================
+   1. 土台
+   ============================================================ */
+html{background:#071019}          /* クラス付与前でも白フラッシュを防ぐ */
+html.cfi-sub{
+  background:#071019;
+  scroll-behavior:smooth;
+  scroll-padding-top:72px;
+
+  /* ▼▼ 間隔の調整ダイヤル（ここだけ触れば黒帯の量が変わります） ▼▼ */
+  --cfi-gap-top:0px;      /* ヒーロー下端 ⇄ フォーム上端 */
+  --cfi-gap-bottom:0px;   /* フォーム下端 ⇄ フッター上端 */
+  /* ▲▲ 少し空けたい場合は 24px / 32px などに ▲▲ */
+
+  /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す） */
+  --rebranding-loading-bg:#071019;
+  --rebranding-loading-bar:#00c2a8;
+}
+html.cfi-sub body{margin:0;padding:0;background:#071019;height:auto;
+  overflow-x:hidden;overflow-y:visible;position:static;display:block}
+html.cfi-fallback .rv{opacity:1;transform:none}
+
+/* ============================================================
+   2. 起動クローク（フォームのチラつき防止）
+   ============================================================ */
+html.cfi-boot{overflow:hidden}
+html.cfi-boot #__nuxt,
+html.cfi-boot #teleports{visibility:hidden !important}
+
+html.cfi-boot body::before{
+  content:"";
+  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
+  background:
+    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
+    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
+    #071019;
+  opacity:1;transition:opacity .28s ease
+}
+html.cfi-boot body::after{
+  content:"CONTACT";
+  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
+  text-align:center;
+  font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
+  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
+  color:#fff;opacity:.92;transition:opacity .28s ease
+}
+html.cfi-boot.cfi-boot-out body::before,
+html.cfi-boot.cfi-boot-out body::after{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
+}
+
+/* ============================================================
+   3. 白フラッシュ対策（STUDIOキャンバス側）
+   ============================================================ */
+/* 起動中はSTUDIOの transition:all（.3s〜.4s）を停止 */
+html.cfi-boot .StudioCanvas,
+html.cfi-boot .render-canvas *,
+html.cfi-boot .sd,
+html.cfi-boot .sd *{transition:none !important;animation:none !important}
+
+/* キャンバスの地色を先に暗くしておく */
+html.cfi-sub #__nuxt,
+html.cfi-sub .StudioCanvas{background-color:#071019}
+
+/* 100dvh の巨大ブロックを作らせない（白帯・黒帯の両方に効く） */
+html.cfi-sub .StudioCanvas{min-height:0 !important}
+html.cfi-sub .StudioCanvas > .sd{min-height:0 !important}
+
+/* ============================================================
+   4. スタッキング順（ヘッダーを最前面に）
+   ============================================================ */
+html.cfi-sub #__nuxt{position:relative;z-index:1;height:auto;min-height:0;
+  width:100%;overflow:visible;
+  padding:var(--cfi-gap-top) 0 var(--cfi-gap-bottom) !important}
+html.cfi-sub #cfi-top{position:relative;z-index:2}
+html.cfi-sub #cfi-bottom{position:relative;z-index:2;margin-top:0 !important}
+html.cfi-sub header#hd{z-index:2147483000}
+
+/* 黒帯除去：STUDIO側ラッパーの余白を打ち消す */
+html.cfi-sub #__nuxt > *:first-child{margin-top:0 !important}
+html.cfi-sub #__nuxt > *:last-child{margin-bottom:0 !important}
+
+/* ============================================================
+   5. ロゴ
+   ============================================================ */
+html.cfi-sub .logo{display:flex;align-items:center;gap:10px}
+html.cfi-sub .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
+html.cfi-sub .logo:hover .mark{transform:translateX(4px)}
+@media (prefers-reduced-motion:reduce){html.cfi-sub .logo:hover .mark{transform:none}}
+html.cfi-sub .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
+html.cfi-sub footer .logo .logo-name{height:31px}
+@media (max-width:360px){
+  html.cfi-sub .logo{gap:8px}
+  html.cfi-sub .logo .mark{height:26px}
+  html.cfi-sub .logo .logo-name{height:27px}
+}
+
+/* ============================================================
+   6. 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める）
+   ============================================================ */
+html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
+html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
+  line-height:1.02;letter-spacing:.02em;font-weight:700;max-width:none}
+html.cfi-sub .hero-sub h1 span{display:block;font-family:var(--f-jp);
+  font-size:clamp(15px,2.2vw,20px);font-weight:700;color:#c8d6e4;
+  letter-spacing:.08em;margin-top:18px}
+html.cfi-sub .hero-sub p.lead{margin-top:24px}
+
+/* ============================================================
+   7. フォームのアンカー用オフセット
+   ============================================================ */
+html.cfi-sub #form{display:block;position:relative;top:calc(var(--hd) * -1);height:0}
+
+/* ============================================================
+   8. フッター（見た目は common.css の footer 定義に一任）
+   ============================================================ */
+html.cfi-sub footer{margin-top:0 !important}
+html.cfi-sub .cfi-ft{margin-top:0 !important}   /* 旧クラス残存時の保険 */
+</style>
