@@ -7,28 +7,47 @@
   var h = document.documentElement;
   h.classList.add('cfi-on');
 
-  /* 離脱時にコンテンツを伏せる。
-     bfcache は pagehide 完了後のDOM状態を保存するため、
-     復元直後の最初の描画でコンテンツが見えなくなる */
-  function hide(){
-    var r = document.getElementById('cfi-root');
-    if (r) r.style.visibility = 'hidden';
-    document.documentElement.style.background = '#071019';
-    if (document.body) document.body.style.background = '#071019';
-  }
-  function show(){
-    var r = document.getElementById('cfi-root');
-    if (r) r.style.visibility = '';
+  var OV_ID = 'cfi-ov';
+
+  /* 復元フレームに確実に残るよう、実DOM要素＋インラインスタイルで構成する */
+  function cloak(){
+    var el = document.getElementById(OV_ID);
+    if (!el){
+      el = document.createElement('div');
+      el.id = OV_ID;
+      el.setAttribute('aria-hidden','true');
+      el.style.cssText =
+        'position:fixed;inset:0;z-index:2147483640;pointer-events:none;' +
+        'background:' +
+          'radial-gradient(1200px 600px at 18% 0%,rgba(15,107,224,.28),transparent 62%),' +
+          'radial-gradient(900px 500px at 92% 18%,rgba(0,194,168,.18),transparent 62%),' +
+          '#071019;';
+      el.innerHTML =
+        '<div style="position:absolute;left:0;right:0;top:44%;text-align:center;' +
+        'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
+        'font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;' +
+        'color:#a5b7c9;opacity:.9">CREATE FROM IDEAS</div>';
+      (document.body || h).appendChild(el);
+    }
+    el.style.display = 'block';
+    h.style.overflow = 'hidden';
+    return el;
   }
 
-  window.addEventListener('pagehide', hide);
+  /* 離脱時にクロークを貼る。
+     bfcache は pagehide 完了後のDOM状態を保存するため、
+     戻る／進むで復元された最初の描画からクロークが見える */
+  window.addEventListener('pagehide', cloak);
 
   window.addEventListener('pageshow', function(e){
     if (e.persisted){
-      hide();          /* 復元直後に念のため再適用 */
+      cloak();          /* 復元直後に念のため再適用 */
       location.reload();
     } else {
-      show();          /* 通常読み込み時は必ず表示状態に戻す */
+      /* 通常読み込み：クロークは出さない */
+      var el = document.getElementById(OV_ID);
+      if (el) el.style.display = 'none';
+      h.style.overflow = '';
     }
   });
 })();
