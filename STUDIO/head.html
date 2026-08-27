@@ -1,44 +1,21 @@
+<!-- ============================================================
+     CFI CORPORATE / STUDIO CUSTOM CODE  [HEAD]
+     rev: 2026-08-27  (logo -> assets/logo/header_logo.png)
+     ============================================================ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827">
 <style>
-  /* STUDIO は #__nuxt をスクロールコンテナにするため html/body を復帰させる */
-  html.cfi-on{
-    margin:0!important; padding:0!important;
-    background:#0d1b2a!important;
-    height:auto!important; min-height:100%!important; max-height:none!important;
-    overflow-x:hidden!important; overflow-y:auto!important;
-    position:static!important;
-  }
-  html.cfi-on body{
-    margin:0!important; padding:0!important;
-    background:#0d1b2a!important;
-    height:auto!important; min-height:100svh!important; max-height:none!important;
-    overflow-x:hidden!important; overflow-y:visible!important;
-    position:static!important; display:block!important;
-  }
-  html.cfi-on .cfi-hide{display:none!important}
-  html.cfi-on #cfi-root{
-    display:block!important; visibility:visible!important; opacity:1!important;
-    position:relative!important; z-index:1;
-    width:100%!important; height:auto!important; max-width:none!important;
-    overflow:visible!important; transform:none!important; filter:none!important;
-  }
-  /* 出現アニメが発火しなかった場合の保険 */
-  html.cfi-fallback .rv{opacity:1!important; transform:none!important}
+  /* --- STUDIO ラッパー無効化（必須・変更禁止） --- */
+  html.cfi-on{margin:0;padding:0;background:#0d1b2a;height:auto;overflow-x:hidden;overflow-y:auto;position:static}
+  html.cfi-on body{margin:0;padding:0;background:#0d1b2a;height:auto;overflow-x:hidden;overflow-y:visible;position:static;display:block}
+  html.cfi-on #cfi-root{display:block;visibility:visible;opacity:1;position:relative;z-index:1;width:100%;overflow:visible}
+  html.cfi-fallback .rv{opacity:1;transform:none}
 
-  /* 2026-08-27 ロゴ差し替え：logo_right_BackClear.png（694x584 / 透過PNG）
-     ホバー挙動は common.css の transition を活かし、回転→横スライドへ上書き */
-  html.cfi-on .logo .mark{
-    height:32px; width:auto; flex:0 0 auto;
-    object-fit:contain; transform:translateX(0);
-  }
-  html.cfi-on .logo:hover .mark{transform:translateX(4px)}
-  @media (prefers-reduced-motion:reduce){
-    html.cfi-on .logo:hover .mark{transform:none}
-  }
-  @media (max-width:360px){
-    html.cfi-on .logo .mark{height:26px;width:auto}
-  }
+  /* --- 2026-08-27 ロゴ差し替え：header_logo.png (476x428 / PNG+tRNS) --- */
+  html.cfi-on .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
+  html.cfi-on .logo:hover .mark{transform:translateX(4px)}   /* 旧 rotate(120deg) を上書き */
+  @media (prefers-reduced-motion:reduce){html.cfi-on .logo:hover .mark{transform:none}}
+  @media (max-width:360px){html.cfi-on .logo .mark{height:26px;width:auto}}
 </style>
