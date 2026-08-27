@@ -1,43 +1,29 @@
-<!-- ============================================================
-     CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]   rev: 2026-08-27r1
-     ※ トップページ（home_body.html を貼るページ）にのみ設定すること
-     ------------------------------------------------------------
-     旧版からの変更点
-       - 旧 home_head.html は中身が /contact 用（html.cfi-sub 系）で
-         あり、トップの html.cfi-on とクラスが一致せず大半のCSSが
-         無効だった。→ cfi-on 系として全面的に書き直し。
-       - 起動クローク（FOUC・白フラッシュ防止）を追加。
-       - ロゴ実寸・.rv フォールバック・.is-todo を定義（common.css 未定義分）。
-       - キャッシュバスターを r1 に統一。
-     ============================================================ -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 
-<!-- ① 最速でクラス付与（インライン＝パース時に即実行） -->
 <script>
-<script>
-(function(){
-  var h = document.documentElement;
-  h.className += ' cfi-on cfi-boot';
-
-  /* 保険：BODY側が動かなくても3.5秒で必ずクローク解除 */
-  setTimeout(function(){ h.classList.remove('cfi-boot'); }, 3500);
-
-  /* 戻る／進むで bfcache から復元された場合は
-     スクリプトが再実行されないため、明示的に再読込して
-     クローク〜各種演出を最初から動かす */
-  addEventListener('pageshow', function(e){
-    if (e.persisted) location.reload();
-  });
-})();
+/* クロークは廃止。cfi-on の付与のみ行う（描画前に確定させる） */
+document.documentElement.classList.add('cfi-on');
 </script>
 
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827r1">
 
 <style>
+/* ============================================================
+   CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27r4
+   ------------------------------------------------------------
+   r3 からの変更点
+     - 起動クローク（旧2章）を全廃
+       ・body::before / body::after のオーバーレイを削除
+       ・cfi-boot / cfi-boot-out 関連定義を削除
+       ・pagehide / pageshow による bfcache 制御を削除
+       ・実DOMオーバーレイ #cfi-ov の生成処理を削除
+     - 白フラッシュ防止は html への地色直指定（1章）で担保
+     - 章番号を繰り上げ（旧3〜5章 → 2〜4章）
+   ============================================================ */
+
 /* ============================================================
    1. 土台（クラス付与前でも白フラッシュしないよう html に直指定）
    ============================================================ */
@@ -53,52 +39,19 @@ html.cfi-on{
 html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
   overflow-x:hidden;overflow-y:visible;position:static;display:block}
 
-/* トップはSTUDIOキャンバスを使わないため、確実に伏せる
-   （BODY側スクリプトの display:none より先に効かせてちらつきを消す） */
+/* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
 html.cfi-on #__nuxt{display:none !important}
+
+/* 起動中のSTUDIO側 transition:all（.3s〜.4s）を抑止
+   （クローク廃止によりチラつきが出る場合の保険） */
+html.cfi-on .StudioCanvas,
+html.cfi-on .render-canvas *{transition:none !important}
 
 /* リビール演出が発火しなかった場合の保険（common.css 側に定義が無い） */
 html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
-   2. 起動クローク（FOUC／白フラッシュ防止）
-   ============================================================ */
-html.cfi-boot{overflow:hidden}
-html.cfi-boot #__nuxt,
-html.cfi-boot #teleports,
-html.cfi-boot #cfi-root{visibility:hidden !important}
-
-/* 起動中はSTUDIO側の transition:all（.3s〜.4s）を停止 */
-html.cfi-boot .StudioCanvas,
-html.cfi-boot .render-canvas *,
-html.cfi-boot .sd,
-html.cfi-boot .sd *{transition:none !important;animation:none !important}
-
-html.cfi-boot body::before{
-  content:"";
-  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
-  background:
-    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
-    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
-    #071019;
-  opacity:1;transition:opacity .28s ease
-}
-html.cfi-boot body::after{
-  content:"CREATE FROM IDEAS";
-  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
-  text-align:center;
-  font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
-  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
-  color:#a5b7c9;opacity:.9;transition:opacity .28s ease
-}
-html.cfi-boot.cfi-boot-out body::before,
-html.cfi-boot.cfi-boot-out body::after{opacity:0}
-@media (prefers-reduced-motion:reduce){
-  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
-}
-
-/* ============================================================
-   3. ロゴ実寸（common.css には height 指定が無いため必須）
+   2. ロゴ実寸（common.css には height 指定が無いため必須）
       ※ contact 側と数値を必ず一致させること
    ============================================================ */
 html.cfi-on .logo{display:flex;align-items:center;gap:10px}
@@ -112,7 +65,7 @@ html.cfi-on footer .logo .logo-name{height:31px}
 }
 
 /* ============================================================
-   4. 未確定リンク（data-cfi-todo）の可視化
+   3. 未確定リンク（data-cfi-todo）の可視化
       URLが決まったら data-cfi-todo を削除し href を設定する
    ============================================================ */
 html.cfi-on a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
@@ -121,7 +74,7 @@ html.cfi-on a.is-todo::after{
 html.cfi-on .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   5. アンカー位置の微調整（固定ヘッダー分）
+   4. アンカー位置の微調整（固定ヘッダー分）
    ============================================================ */
 html.cfi-on #cta{scroll-margin-top:var(--hd,72px)}
 </style>
