@@ -1,6 +1,8 @@
 <!-- ============================================================
      CFI CORPORATE / STUDIO CUSTOM CODE  [BODY]
-     rev: 2026-08-27c
+     rev: 2026-08-27d
+       - お問い合わせ導線を STUDIO の /contact ページへ遷移させる
+       - トップページ以外では自動的に無効化するパスガードを追加
      ============================================================ -->
 <div id="cfi-root">
 
@@ -23,7 +25,7 @@
   <!-- ===== HEADER ===== -->
   <header id="hd">
     <div class="hd-in">
-      <a class="logo" href="#top" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+      <a class="logo" href="/" aria-label="株式会社CFI｜Create From Ideas　トップへ">
         <img class="mark"
              src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
              width="36" height="32" decoding="async" alt="">
@@ -43,7 +45,8 @@
           <li><a class="gnav" href="#approach">APPROACH<span>進め方</span></a></li>
           <li><a class="gnav" href="#works">WORKS<span>実績</span></a></li>
           <li><a class="gnav" href="#company">COMPANY<span>会社概要</span></a></li>
-          <li><a class="btn btn-p" href="#contact">お問い合わせ</a></li>
+          <!-- ▼ STUDIOのお問い合わせページへ遷移（パスは実際のページ設定に合わせる） -->
+          <li><a class="btn btn-p" href="/contact">お問い合わせ</a></li>
         </ul>
       </nav>
     </div>
@@ -57,7 +60,7 @@
       <h1 class="rv">アイデアを、<br class="brpc"><em>成果につながる仕組み</em>へ。</h1>
       <p class="lead rv">戦略立案からデータ基盤・クラウド・セキュリティの実装、運用定着まで。<br class="brpc">CFIは事業の成果から逆算して、DXを「動く形」にします。</p>
       <div class="hero-cta rv">
-        <a class="btn btn-p" href="#contact">無料相談を申し込む</a>
+        <a class="btn btn-p" href="/contact">無料相談を申し込む</a>
         <a class="btn btn-g" href="#service">サービスを見る</a>
       </div>
       <div class="hero-kpi rv">
@@ -350,7 +353,7 @@
       <h2 class="rv">まずは、いまの課題を<br class="brpc">30分で整理しませんか。</h2>
       <p class="rv">具体的な計画が固まっていない段階でも構いません。現状を伺ったうえで、次に取るべき一手をご提案します。</p>
       <div class="hero-cta rv">
-        <a class="btn btn-p" href="#" data-cfi-todo="お問い合わせフォームURLに差し替え">無料相談を申し込む</a>
+        <a class="btn btn-p" href="/contact">無料相談を申し込む</a>
         <a class="btn btn-g" href="#" data-cfi-todo="会社案内PDFのURLに差し替え">会社案内をダウンロード</a>
       </div>
     </div>
@@ -361,7 +364,7 @@
     <div class="wrap">
       <div class="ft-top">
         <div>
-          <a class="logo" href="#top" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+          <a class="logo" href="/" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
                  src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
                  width="36" height="32" loading="lazy" decoding="async" alt="">
@@ -385,7 +388,7 @@
             <a href="#company">会社概要</a>
             <a href="#works">実績</a>
             <a href="#approach">進め方</a>
-            <a href="#contact">お問い合わせ</a>
+            <a href="/contact">お問い合わせ</a>
           </div>
           <div>
             <h4>LEGAL</h4>
@@ -408,8 +411,21 @@
 <!-- ===== SCRIPTS（この順序を厳守） ===== -->
 <script>
 (function () {
+  /* --- 設定：このカスタムコードを適用するページのパス --- */
+  /*    トップページのみなら ['', '/', '/index.html'] のままでOK      */
+  var ALLOW_PATHS = ['', '/', '/index.html'];
+
   var root = document.getElementById('cfi-root');
   if (!root) return;
+
+  /* --- パスガード：許可パス以外では何もせず自分を削除する --- */
+  /*    （カスタムコードを誤ってサイト全体に設定した場合の保険） */
+  var p = location.pathname.replace(/\/+$/, '');
+  if (ALLOW_PATHS.indexOf(p) === -1 && ALLOW_PATHS.indexOf(location.pathname) === -1) {
+    root.parentNode && root.parentNode.removeChild(root);
+    return;
+  }
+
   if (root.parentNode !== document.body) document.body.appendChild(root);
   Array.prototype.slice.call(document.body.children).forEach(function (el) {
     if (el !== root && el.tagName !== 'SCRIPT') el.style.display = 'none';
@@ -421,4 +437,4 @@
   }, 2500);
 })();
 </script>
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827c"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827d"></script>
