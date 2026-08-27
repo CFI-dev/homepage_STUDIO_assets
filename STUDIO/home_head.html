@@ -5,11 +5,24 @@
 <script>
 (function(){
   var h = document.documentElement;
+
+  /* 通常読み込み用クローク：初回ペイント前に確定させる */
   h.classList.add('cfi-on');
+  h.classList.add('cfi-boot');
+
+  /* 保険：BODY側が動かなくても3.5秒で必ず解除（contact と同値） */
+  setTimeout(function(){
+    h.classList.add('cfi-boot-out');
+    setTimeout(function(){
+      h.classList.remove('cfi-boot','cfi-boot-out');
+    }, 280);
+  }, 3500);
 
   var OV_ID = 'cfi-ov';
 
-  /* 復元フレームに確実に残るよう、実DOM要素＋インラインスタイルで構成する */
+  /* 戻る／進む用クローク：
+     擬似要素はbfcache復元フレームでの再現が不確実なため、
+     実DOM要素＋インラインスタイルで構成する */
   function cloak(){
     var el = document.getElementById(OV_ID);
     if (!el){
@@ -44,7 +57,7 @@
       cloak();          /* 復元直後に念のため再適用 */
       location.reload();
     } else {
-      /* 通常読み込み：クロークは出さない */
+      /* 通常読み込み：DOMオーバーレイは使わない（CSS側が担当） */
       var el = document.getElementById(OV_ID);
       if (el) el.style.display = 'none';
       h.style.overflow = '';
@@ -58,16 +71,17 @@
 
 <style>
 /* ============================================================
-   CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27r4
+   CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27r6
    ------------------------------------------------------------
-   r3 からの変更点
-     - 起動クローク（旧2章）を全廃
-       ・body::before / body::after のオーバーレイを削除
-       ・cfi-boot / cfi-boot-out 関連定義を削除
-       ・pagehide / pageshow による bfcache 制御を削除
-       ・実DOMオーバーレイ #cfi-ov の生成処理を削除
-     - 白フラッシュ防止は html への地色直指定（1章）で担保
-     - 章番号を繰り上げ（旧3〜5章 → 2〜4章）
+   仕様（contact 版と統一）
+     - 通常読み込み：CSSクローク（2章 / cfi-boot）を表示
+     - 戻る／進む（bfcache復元）時：
+         pagehide で実DOMオーバーレイ #cfi-ov を貼った状態を保存し、
+         復元直後の描画からクロークを見せたうえで reload する
+         （reload後は2章のCSSクロークが引き継ぐため途切れない）
+   r4/r5(master) からの変更点
+     - 2章「起動クローク」を復活（通常読み込み時も表示するため）
+     - 章番号を再繰り下げ（旧2〜4章 → 3〜5章）
    ============================================================ */
 
 /* ============================================================
@@ -88,8 +102,7 @@ html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
 /* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
 html.cfi-on #__nuxt{display:none !important}
 
-/* 起動中のSTUDIO側 transition:all（.3s〜.4s）を抑止
-   （クローク廃止によりチラつきが出る場合の保険） */
+/* 起動中のSTUDIO側 transition:all（.3s〜.4s）を抑止 */
 html.cfi-on .StudioCanvas,
 html.cfi-on .render-canvas *{transition:none !important}
 
@@ -97,7 +110,39 @@ html.cfi-on .render-canvas *{transition:none !important}
 html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
-   2. ロゴ実寸（common.css には height 指定が無いため必須）
+   2. 起動クローク（通常読み込み時／FOUC・白フラッシュ防止）
+      ※ contact 側と数値・演出を必ず一致させること
+   ============================================================ */
+html.cfi-boot{overflow:hidden}
+html.cfi-boot #__nuxt,
+html.cfi-boot #teleports,
+html.cfi-boot #cfi-root{visibility:hidden !important}
+
+html.cfi-boot body::before{
+  content:"";
+  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
+  background:
+    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
+    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
+    #071019;
+  opacity:1;transition:opacity .28s ease
+}
+html.cfi-boot body::after{
+  content:"CREATE FROM IDEAS";
+  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
+  text-align:center;
+  font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
+  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
+  color:#a5b7c9;opacity:.9;transition:opacity .28s ease
+}
+html.cfi-boot.cfi-boot-out body::before,
+html.cfi-boot.cfi-boot-out body::after{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
+}
+
+/* ============================================================
+   3. ロゴ実寸（common.css には height 指定が無いため必須）
       ※ contact 側と数値を必ず一致させること
    ============================================================ */
 html.cfi-on .logo{display:flex;align-items:center;gap:10px}
@@ -111,7 +156,7 @@ html.cfi-on footer .logo .logo-name{height:31px}
 }
 
 /* ============================================================
-   3. 未確定リンク（data-cfi-todo）の可視化
+   4. 未確定リンク（data-cfi-todo）の可視化
       URLが決まったら data-cfi-todo を削除し href を設定する
    ============================================================ */
 html.cfi-on a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
@@ -120,7 +165,7 @@ html.cfi-on a.is-todo::after{
 html.cfi-on .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   4. アンカー位置の微調整（固定ヘッダー分）
+   5. アンカー位置の微調整（固定ヘッダー分）
    ============================================================ */
 html.cfi-on #cta{scroll-margin-top:var(--hd,72px)}
 </style>
