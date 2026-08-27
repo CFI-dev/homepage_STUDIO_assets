@@ -1,21 +1,26 @@
 <!-- ============================================================
-     CFI CONTACT / STUDIO CUSTOM CODE [BODY]  rev: 2026-08-27p
+     CFI CONTACT / STUDIO CUSTOM CODE [BODY]   rev: 2026-08-27r1
        - 構成：ヘッダー ＋ CONTACTヒーロー → STUDIOフォーム → フッター
-       - フッターは /test_page と同一構成（.ft-top / .ft-nav / .ft-btm）
        - クローク解除はSTUDIOキャンバス描画＋配色注入の完了後
        - 黒帯対策：#__nuxt 直下ラッパーの縦余白を実測して打ち消す
+     ------------------------------------------------------------
+     旧版（rev:2026-08-27p）からの変更点
+       1. リンク先パス（/test_page）を冒頭スクリプトの CFI_HOME
+          1箇所で管理。トップ側 home_body.html と必ず同じ値にする
+       2. href="#" の未確定リンクを無効化（先頭ジャンプ防止）
+       3. キャッシュバスターを r1 に統一
      ============================================================ -->
 <div id="cfi-top">
 
   <!-- ===== HEADER ===== -->
   <header id="hd">
     <div class="hd-in">
-      <a class="logo" href="/test_page" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+      <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
         <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
              width="36" height="32" decoding="async" alt="">
         <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827c"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
              width="64" height="34" decoding="async" alt="">
       </a>
 
@@ -25,11 +30,11 @@
 
       <nav id="nav">
         <ul>
-          <li><a class="gnav" href="/test_page#service">SERVICE<span>サービス</span></a></li>
-          <li><a class="gnav" href="/test_page#architecture">ARCHITECTURE<span>提供構造</span></a></li>
-          <li><a class="gnav" href="/test_page#approach">APPROACH<span>進め方</span></a></li>
-          <li><a class="gnav" href="/test_page#works">WORKS<span>実績</span></a></li>
-          <li><a class="gnav" href="/test_page#company">COMPANY<span>会社概要</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#service">SERVICE<span>サービス</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#architecture">ARCHITECTURE<span>提供構造</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#approach">APPROACH<span>進め方</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#works">WORKS<span>実績</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#company">COMPANY<span>会社概要</span></a></li>
           <li><a class="btn btn-p" href="#form">お問い合わせ</a></li>
         </ul>
       </nav>
@@ -56,17 +61,17 @@
 
 <div id="cfi-bottom">
 
-  <!-- ===== FOOTER（/test_page と同一構成） ===== -->
+  <!-- ===== FOOTER（トップと同一構成） ===== -->
   <footer>
     <div class="wrap">
       <div class="ft-top">
         <div>
-          <a class="logo" href="/test_page" aria-label="株式会社CFI｜Create From Ideas　トップへ">
+          <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827c"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
                  width="36" height="32" loading="lazy" decoding="async" alt="">
             <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827c"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
                  width="59" height="31" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
@@ -75,17 +80,17 @@
         <div class="ft-nav">
           <div>
             <h4>SERVICE</h4>
-            <a href="/test_page#service">DX戦略・ロードマップ</a>
-            <a href="/test_page#service">データ基盤構築</a>
-            <a href="/test_page#service">クラウドアーキテクチャ</a>
-            <a href="/test_page#service">ゼロトラストセキュリティ</a>
+            <a href="/" data-cfi-nav="home#service">DX戦略・ロードマップ</a>
+            <a href="/" data-cfi-nav="home#service">データ基盤構築</a>
+            <a href="/" data-cfi-nav="home#service">クラウドアーキテクチャ</a>
+            <a href="/" data-cfi-nav="home#service">ゼロトラストセキュリティ</a>
           </div>
           <div>
             <h4>COMPANY</h4>
-            <a href="/test_page#company">会社概要</a>
-            <a href="/test_page#works">実績</a>
-            <a href="/test_page#approach">進め方</a>
-            <a href="/contact">お問い合わせ</a>
+            <a href="/" data-cfi-nav="home#company">会社概要</a>
+            <a href="/" data-cfi-nav="home#works">実績</a>
+            <a href="/" data-cfi-nav="home#approach">進め方</a>
+            <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
           </div>
           <div>
             <h4>LEGAL</h4>
@@ -107,22 +112,58 @@
 
 
 <!-- ============================================================
-     SCRIPT 1：DOM配置 ＋ クローク解除
+     SCRIPT 1：リンク解決 ＋ DOM配置 ＋ クローク解除
      ============================================================ -->
 <script>
 (function(){
+  /* ==========================================================
+     ▼▼▼ サイト設定：home_body.html と同じ値にすること ▼▼▼
+     ========================================================== */
+  var CFI_HOME    = '/';          /* トップページのパス（例: '/test_page'） */
+  var CFI_CONTACT = '/contact';   /* このページ自身のパス */
+  /* ▲▲▲ 設定はここまで ▲▲▲ */
+
   var html = document.documentElement;
   var top  = document.getElementById('cfi-top');
+  var bottom = document.getElementById('cfi-bottom');
   var nuxt = document.getElementById('__nuxt');
 
-  /* ① ヘッダー＋ヒーローを __nuxt の直前へ移動 */
+  /* --- ① リンク先パスの一括適用（home / home#xxx / contact） --- */
+  function applyNav(scope){
+    if (!scope) return;
+    Array.prototype.forEach.call(scope.querySelectorAll('[data-cfi-nav]'), function(a){
+      var v = a.getAttribute('data-cfi-nav');
+      var href;
+      if (v === 'contact')            href = CFI_CONTACT;
+      else if (v.indexOf('home') === 0) href = CFI_HOME + v.slice(4);   /* 'home#works' → '/#works' */
+      if (href) a.setAttribute('href', href.replace('//', '/'));
+    });
+  }
+  applyNav(top); applyNav(bottom);
+
+  /* --- ② 未確定リンク（href="#" ＋ data-cfi-todo）を無効化 --- */
+  function applyTodo(scope){
+    if (!scope) return;
+    Array.prototype.forEach.call(scope.querySelectorAll('a[data-cfi-todo]'), function(a){
+      var h = a.getAttribute('href');
+      if (h && h !== '#') return;
+      a.classList.add('is-todo');
+      a.setAttribute('aria-disabled','true');
+      a.setAttribute('tabindex','-1');
+      a.removeAttribute('href');
+      a.addEventListener('click', function(e){ e.preventDefault(); });
+    });
+  }
+  applyTodo(top); applyTodo(bottom);
+
+  /* --- ③ ヘッダー＋ヒーローを __nuxt の直前へ移動 --- */
   if (top) {
     if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
     else document.body.insertBefore(top, document.body.firstChild);
   }
   html.classList.add('cfi-sub');
 
-  /* ② クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） */
+  /* --- ④ クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） --- */
   function reveal(){
     if (!html.classList.contains('cfi-boot')) return;
     html.classList.add('cfi-boot-out');
@@ -143,7 +184,7 @@
   window.addEventListener('load', function(){ setTimeout(reveal, 480); });
   setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
 
-  /* ③ リビール演出のフォールバック */
+  /* --- ⑤ リビール演出のフォールバック --- */
   setTimeout(function(){
     var rv = document.querySelector('#cfi-top .rv, #cfi-bottom .rv');
     if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
@@ -178,4 +219,4 @@
 })();
 </script>
 
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827p"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827r1"></script>
