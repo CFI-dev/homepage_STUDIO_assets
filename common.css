@@ -119,6 +119,10 @@ nav a.gnav:hover::after{width:100%}
 .hero-mission{margin-top:46px;padding-top:34px;border-top:1px solid var(--line);max-width:38em}
 .hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)}
 .hero .hero-mission p.lead{margin-top:10px}
+
+/* KPI廃止に伴う下部余白の調整（.hero-cta が最終要素になるため） */
+.hero .hero-cta{margin-bottom:0}
+
 @media (max-width:768px){
   .hero-mission{margin-top:34px;padding-top:26px}
 }
