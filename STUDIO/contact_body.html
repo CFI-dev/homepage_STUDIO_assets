@@ -53,7 +53,7 @@
   <footer>
     <div class="wrap">
       <div class="ft-top">
-        <div>
+        <div class="rv">
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
                  src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
@@ -66,21 +66,21 @@
         </div>
 
         <div class="ft-nav">
-          <div>
+          <div class="rv">
             <h4>SERVICE</h4>
             <a href="/" data-cfi-nav="home#service">DX戦略・ロードマップ</a>
             <a href="/" data-cfi-nav="home#service">データ基盤構築</a>
             <a href="/" data-cfi-nav="home#service">クラウドアーキテクチャ</a>
             <a href="/" data-cfi-nav="home#service">ゼロトラストセキュリティ</a>
           </div>
-          <div>
+          <div class="rv">
             <h4>COMPANY</h4>
             <a href="/" data-cfi-nav="home#company">会社概要</a>
             <a href="/" data-cfi-nav="home#works">実績</a>
             <a href="/" data-cfi-nav="home#approach">進め方</a>
             <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
           </div>
-          <div>
+          <div class="rv">
             <h4>LEGAL</h4>
             <a href="#" data-cfi-todo="プライバシーポリシーURL">プライバシーポリシー</a>
             <a href="#" data-cfi-todo="情報セキュリティ方針URL">情報セキュリティ方針</a>
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <div class="ft-btm">
+      <div class="ft-btm rv">
         <p>© 2026 CFI Inc. All rights reserved.</p>
         <p>CREATE FROM IDEAS</p>
       </div>
@@ -172,11 +172,21 @@
   window.addEventListener('load', function(){ setTimeout(reveal, 480); });
   setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
 
-  /* --- ⑤ リビール演出のフォールバック --- */
-  setTimeout(function(){
-    var rv = document.querySelector('#cfi-top .rv, #cfi-bottom .rv');
-    if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
-  }, 2500);
+  /* --- ⑤ リビール演出のフォールバック ---
+     rev:2026-08-28 クローク中は判定しない（幕が長引いた場合に演出を潰さないため） */
+  (function fallbackGuard(){
+    var tries = 0;
+    (function check(){
+      if (html.classList.contains('cfi-boot') && ++tries < 12) {
+        setTimeout(check, 500);
+        return;
+      }
+      setTimeout(function(){
+        var rv = document.querySelector('#cfi-top .rv, #cfi-bottom .rv');
+        if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
+      }, 1200);
+    })();
+  })();
 })();
 </script>
 
@@ -208,3 +218,63 @@
 </script>
 
 <script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
+
+
+<!-- ============================================================
+     SCRIPT 3：STUDIOフォームにリビール演出を付与
+     rev:2026-08-28 / 必ず common.js の「後」に置くこと（CFI.reveal を使用）
+     ============================================================ -->
+<script>
+(function(){
+  /* 動きを減らす設定・IO非対応環境では何もしない（常時表示のまま） */
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (typeof IntersectionObserver !== 'function') return;
+
+  var SKIP = { SCRIPT:1, STYLE:1, LINK:1, NOSCRIPT:1, TEMPLATE:1 };
+  var MAX_UNITS = 8;   /* これを超える分割はまとめて1枚として出す */
+
+  /* STUDIOはラッパーを一枚ずつ入れ子にするため、
+     「子が2つ以上に分岐した最初の階層」をリビール単位とみなす */
+  function pickTargets(root){
+    var node = root, guard = 0;
+    while (node && guard++ < 10) {
+      var kids = Array.prototype.filter.call(node.children, function(el){
+        return !SKIP[el.tagName] && el.getBoundingClientRect().height > 0;
+      });
+      if (!kids.length)            return node === root ? [] : [node];
+      if (kids.length === 1)       { node = kids[0]; continue; }
+      if (kids.length > MAX_UNITS) return [node];
+      return kids;
+    }
+    return [node];
+  }
+
+  function apply(){
+    var nuxt = document.getElementById('__nuxt');
+    if (!nuxt || nuxt.dataset.cfiRv === '1') return false;
+    var targets = pickTargets(nuxt);
+    if (!targets.length) return false;
+
+    nuxt.dataset.cfiRv = '1';
+    targets.forEach(function(el){ el.classList.add('rv'); });
+
+    if (window.CFI && typeof CFI.reveal === 'function') CFI.reveal(targets);
+    else targets.forEach(function(el){ el.classList.add('on'); });  /* 保険 */
+    return true;
+  }
+
+  /* フォームは非同期マウントのため最長2秒ポーリング */
+  var n = 0, t = setInterval(function(){
+    if (apply() || ++n > 40) clearInterval(t);
+  }, 50);
+
+  /* 最終保険：5秒経っても .on が付かない要素は強制表示 */
+  setTimeout(function(){
+    var nuxt = document.getElementById('__nuxt');
+    if (!nuxt) return;
+    Array.prototype.forEach.call(nuxt.querySelectorAll('.rv'), function(el){
+      el.classList.add('on');
+    });
+  }, 5000);
+})();
+</script>
