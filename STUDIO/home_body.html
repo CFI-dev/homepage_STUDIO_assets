@@ -1,517 +1,157 @@
-<!-- ============================================================
-     CFI CORPORATE / STUDIO CUSTOM CODE  [BODY]  rev: 2026-08-27r1
-     ------------------------------------------------------------
-     旧版（rev:2026-08-27e）からの変更点
-       1. リンク先パスを冒頭スクリプトの CFI 設定 1箇所で管理
-          （/ と /test_page の混在をここで解消する）
-       2. KPI／NUMBERS の初期表示値を実値に変更（JS失敗時に 0 と
-          表示される欠陥を解消。演出はスクリプトで維持）
-       3. href="#" の未確定リンクを無効化（先頭ジャンプ防止）
-       4. CTAセクションの id を #contact → #cta に変更
-          （/contact ページとの名称衝突を解消。旧アンカーも互換維持）
-       5. body直下要素の一括非表示処理から SCRIPT/STYLE/LINK/
-          NOSCRIPT/TEMPLATE を除外
-       6. キャッシュバスターを r1 に統一
-       7. 公開前に差し替える箇所を data-cfi-todo で全数マーキング
-     ============================================================ -->
-<div id="cfi-root">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 
-  <!-- ===== SVG SPRITE ===== -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
-    <linearGradient id="gBrand" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0f6be0"/><stop offset="100%" stop-color="#00c2a8"/>
-    </linearGradient>
-    <symbol id="i-strategy" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V11"/><path d="M11 20V6"/><path d="M16 20v-6"/><path d="M21 20V4"/></symbol>
-    <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/><path d="M4 11.5v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></symbol>
-    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 17.7 9.2 3.9 3.9 0 0 1 17.5 19z"/><path d="M12 12v5"/><path d="M9.5 14.5 12 12l2.5 2.5"/></symbol>
-    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-2.9 8.2-7 9.5-4.1-1.3-7-5.1-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></symbol>
-    <symbol id="i-privacy" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2.5"/></symbol>
-    <symbol id="i-martech" viewBox="0 0 24 24"><path d="M4 9v6h3l6 4V5L7 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/><path d="M19.5 7a7.5 7.5 0 0 1 0 10"/></symbol>
-    <symbol id="b-speed" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l5-3.5"/></symbol>
-    <symbol id="b-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16.5 5.5a3.2 3.2 0 0 1 0 5"/><path d="M18 20a6 6 0 0 0-2.4-4.8"/></symbol>
-    <symbol id="b-lock" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-2.9 8.2-7 9.5-4.1-1.3-7-5.1-7-9.5V6z"/><path d="M12 10v4"/></symbol>
-  </defs></svg>
-
-  <!-- ===== HEADER ===== -->
-  <header id="hd">
-    <div class="hd-in">
-      <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
-        <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
-             width="36" height="32" decoding="async" alt="">
-        <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
-             width="64" height="34" decoding="async" alt="">
-      </a>
-
-      <button class="burger" id="burger" type="button" aria-controls="nav" aria-expanded="false" aria-label="メニューを開く">
-        <span></span><span></span><span></span>
-      </button>
-
-      <nav id="nav">
-        <ul>
-          <li><a class="gnav" href="#service">SERVICE<span>サービス</span></a></li>
-          <li><a class="gnav" href="#architecture">ARCHITECTURE<span>提供構造</span></a></li>
-          <li><a class="gnav" href="#approach">APPROACH<span>進め方</span></a></li>
-          <li><a class="gnav" href="#works">WORKS<span>実績</span></a></li>
-          <li><a class="gnav" href="#company">COMPANY<span>会社概要</span></a></li>
-          <li><a class="btn btn-p" href="/contact" data-cfi-nav="contact">お問い合わせ</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <!-- ===== HERO ===== -->
-  <section class="hero" id="top">
-    <canvas id="heroCv" aria-hidden="true"></canvas>
-    <div class="wrap">
-      <p class="eyebrow mono rv">DX PARTNER FOR ENTERPRISE</p>
-      <h1 class="rv">アイデアを、<br class="brpc"><em>成果につながる仕組み</em>へ。</h1>
-      <p class="lead rv">戦略立案からデータ基盤・クラウド・セキュリティの実装、運用定着まで。<br class="brpc">CFIは事業の成果から逆算して、DXを「動く形」にします。</p>
-      <div class="hero-cta rv">
-        <a class="btn btn-p" href="/contact" data-cfi-nav="contact">無料相談を申し込む</a>
-        <a class="btn btn-g" href="#service">サービスを見る</a>
-      </div>
-      <!-- ▼ 数値は公開前に実績値へ差し替え（NUMBERSセクションと必ず一致させる） -->
-      <div class="hero-kpi rv" data-cfi-todo="KPI実績値の確定（120+/94%/15年）">
-        <div><b class="grad-txt" data-count="120" data-suffix="+">120+</b><small>PROJECTS DELIVERED</small></div>
-        <div><b class="grad-txt" data-count="94" data-suffix="%">94%</b><small>CONTINUATION RATE</small></div>
-        <div><b class="grad-txt" data-count="15" data-suffix="年">15年</b><small>AVG. ENGINEER CAREER</small></div>
-      </div>
-    </div>
-    <p class="scroll-hint mono" aria-hidden="true">SCROLL<i></i></p>
-  </section>
-
-  <!-- ===== TICKER ===== -->
-  <div class="ticker" aria-hidden="true">
-    <ul id="tk">
-      <li>DX STRATEGY</li><li>DATA PLATFORM</li><li>CLOUD ARCHITECTURE</li>
-      <li>ZERO TRUST</li><li>PRIVACY GOVERNANCE</li><li>MARTECH</li>
-      <li>GENERATIVE AI</li><li>MLOps</li><li>SRE</li><li>BI / ANALYTICS</li>
-    </ul>
-  </div>
-
-  <!-- ===== SERVICE ===== -->
-  <section class="sec sec-ink" id="service">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">SERVICE</p>
-        <h2>構想で終わらせない、<br class="brpc">実装まで伴走する6つの領域。</h2>
-        <p>上流の意思決定支援から運用移管まで、同じチームが一気通貫で担当します。</p>
-      </div>
-
-      <div class="svc rv">
-        <article>
-          <p class="no mono">01</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-strategy"></use></svg>
-          <h3>DX戦略・ロードマップ<span>DX STRATEGY</span></h3>
-          <p>現状評価と業務可視化を起点に、投資対効果の見える中期ロードマップを策定します。</p>
-          <ul class="tags"><li>As-Is / To-Be</li><li>ROI設計</li><li>PoC計画</li></ul>
-        </article>
-        <article>
-          <p class="no mono">02</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-data"></use></svg>
-          <h3>データ基盤構築<span>DATA PLATFORM</span></h3>
-          <p>散在するデータを統合し、意思決定に使える状態へ。DWH／ETL／BIまで設計・実装します。</p>
-          <ul class="tags"><li>DWH</li><li>ETL / ELT</li><li>BI</li></ul>
-        </article>
-        <article>
-          <p class="no mono">03</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cloud"></use></svg>
-          <h3>クラウドアーキテクチャ<span>CLOUD ARCHITECTURE</span></h3>
-          <p>コストと可用性のバランスを取ったクラウド設計。IaC化と運用自動化まで含めて提供します。</p>
-          <ul class="tags"><li>AWS / Azure</li><li>IaC</li><li>SRE</li></ul>
-        </article>
-        <article>
-          <p class="no mono">04</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"></use></svg>
-          <h3>ゼロトラストセキュリティ<span>ZERO TRUST</span></h3>
-          <p>境界防御からID中心の管理へ。段階的に移行できる現実的な設計と運用ルールを整えます。</p>
-          <ul class="tags"><li>IdP / SSO</li><li>EDR</li><li>ログ監査</li></ul>
-        </article>
-        <article>
-          <p class="no mono">05</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-privacy"></use></svg>
-          <h3>プライバシーガバナンス<span>PRIVACY GOVERNANCE</span></h3>
-          <p>個人情報保護法・各国規制を踏まえたデータ利活用のルール整備と、社内運用の定着を支援します。</p>
-          <ul class="tags"><li>データマッピング</li><li>同意管理</li><li>社内規程</li></ul>
-        </article>
-        <article>
-          <p class="no mono">06</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-martech"></use></svg>
-          <h3>マーテック実装<span>MARTECH</span></h3>
-          <p>CRM／MAを事業KPIに接続し、施策の効果を継続的に検証できる仕組みを構築します。</p>
-          <ul class="tags"><li>CRM</li><li>MA</li><li>CDP</li></ul>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== WHY ===== -->
-  <section class="sec sec-grid">
-    <div class="wrap">
-      <div class="sec-head v-tight rv">
-        <p class="eyebrow mono">WHY CFI</p>
-        <h2>「作って終わり」にしない<br class="brpc">3つの理由。</h2>
-      </div>
-      <div class="v-why rv">
-        <div>
-          <svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-speed"></use></svg>
-          <h3><span>SPEED</span>最短4週間で初期成果</h3>
-          <p>小さく試して素早く検証する進め方で、投資判断のタイミングを前倒しします。</p>
-        </div>
-        <div>
-          <svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-team"></use></svg>
-          <h3><span>TEAM</span>上流と実装が同一チーム</h3>
-          <p>戦略担当と開発担当を分断しないため、要件の劣化や引き継ぎロスが起きません。</p>
-        </div>
-        <div>
-          <svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><use href="#b-lock"></use></svg>
-          <h3><span>TRUST</span>セキュリティを前提に設計</h3>
-          <p>後付けではなく初期設計からセキュリティとプライバシーを織り込みます。</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== ARCHITECTURE ===== -->
-  <section class="sec sec-ink" id="architecture">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">ARCHITECTURE</p>
-        <h2>4つのレイヤーを、<br class="brpc">一貫した設計思想でつなぐ。</h2>
-        <p>セキュリティとプライバシーは独立した工程ではなく、全レイヤーを貫く土台として扱います。</p>
-      </div>
-
-      <div class="arch rv">
-        <div>
-          <div class="lyr">
-            <p class="ttl">BUSINESS<small>事業・業務</small></p>
-            <div class="items"><span>KPI設計</span><span>業務プロセス</span><span>組織・体制</span><span>投資計画</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">APPLICATION<small>アプリケーション</small></p>
-            <div class="items"><span>業務システム</span><span>CRM / MA</span><span>API連携</span><span>生成AI活用</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">DATA<small>データ</small></p>
-            <div class="items"><span>DWH</span><span>ETL / ELT</span><span>データカタログ</span><span>BI</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">INFRASTRUCTURE<small>基盤</small></p>
-            <div class="items"><span>クラウド</span><span>IaC</span><span>監視 / SRE</span><span>ネットワーク</span></div>
-          </div>
-        </div>
-        <div class="arch-rail"><p>SECURITY &amp; PRIVACY</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== APPROACH ===== -->
-  <section class="sec sec-grid" id="approach">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">APPROACH</p>
-        <h2>4ステップで、<br class="brpc">確実に運用まで届ける。</h2>
-      </div>
-
-      <div class="flow v-scroll rv">
-        <div class="st">
-          <p class="dot mono">01</p>
-          <h3><span>ASSESS</span>現状評価</h3>
-          <p>業務・システム・データの現状を可視化し、優先順位を数値で整理します。</p>
-          <p class="dur mono">2–4 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp?v=20260827r1" alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
-        </div>
-        <div class="st">
-          <p class="dot mono">02</p>
-          <h3><span>DESIGN</span>構想設計</h3>
-          <p>To-Be像とアーキテクチャを設計し、段階的な移行計画に落とし込みます。</p>
-          <p class="dur mono">3–6 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp?v=20260827r1" alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
-        </div>
-        <div class="st">
-          <p class="dot mono">03</p>
-          <h3><span>BUILD</span>実装</h3>
-          <p>短いサイクルで実装と検証を繰り返し、動くものを早期に確認します。</p>
-          <p class="dur mono">2–6 MONTHS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp?v=20260827r1" alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
-        </div>
-        <div class="st">
-          <p class="dot mono">04</p>
-          <h3><span>RUN</span>運用・定着</h3>
-          <p>運用設計と内製化支援まで行い、御社チームだけで回る状態を目指します。</p>
-          <p class="dur mono">CONTINUOUS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp?v=20260827r1" alt="運用ミーティングの様子" loading="lazy" decoding="async" width="800" height="600"></figure>
-        </div>
-      </div>
-      <p class="v-hint mono">← SWIPE →</p>
-    </div>
-  </section>
-
-  <!-- ===== BAND ===== -->
-  <div class="band" aria-hidden="true">
-    <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp?v=20260827r1" alt="" loading="lazy" decoding="async" width="1600" height="600">
-  </div>
-
-  <!-- ===== WORKS ===== -->
-  <section class="sec sec-ink" id="works">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">WORKS</p>
-        <h2>数字で確認できる、<br class="brpc">導入後の変化。</h2>
-        <!-- ▼ 公開前に必ずこの注記を削除し、実測値へ差し替えること -->
-        <p class="is-todo-text" data-cfi-todo="実績数値の確定・この注記の削除">※掲載数値はサンプルです。公開前に実測値へ差し替えてください。</p>
-      </div>
-
-      <div class="works v-scroll rv">
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp?v=20260827r1" alt="製造業のデータ基盤刷新プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat mono">MANUFACTURING / DATA</p>
-          <h3>散在した生産データを統合し、日次で意思決定できる体制へ</h3>
-          <p>15システムに分散したデータをDWHへ集約。月次だった実績把握を日次化しました。</p>
-          <dl>
-            <div><dt>集計リードタイム</dt><dd class="grad-txt">-82<span class="unit">%</span></dd></div>
-            <div><dt>レポート工数</dt><dd class="grad-txt">-60<span class="unit">%</span></dd></div>
-          </dl>
-        </article>
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp?v=20260827r1" alt="小売業のクラウド移行プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat mono">RETAIL / CLOUD</p>
-          <h3>オンプレ基幹をクラウド移行し、繁忙期の停止をゼロに</h3>
-          <p>段階移行とIaC化により、ピーク時のスケールと運用工数削減を同時に実現しました。</p>
-          <dl>
-            <div><dt>インフラ費用</dt><dd class="grad-txt">-34<span class="unit">%</span></dd></div>
-            <div><dt>障害停止時間</dt><dd class="grad-txt">0<span class="unit">h</span></dd></div>
-          </dl>
-        </article>
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp?v=20260827r1" alt="サービス業のマーテック導入プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat mono">SERVICE / MARTECH</p>
-          <h3>CRMとMAを事業KPIへ接続し、商談化率を改善</h3>
-          <p>顧客データを統合し、スコアリングと配信設計を再構築。検証サイクルを週次化しました。</p>
-          <dl>
-            <div><dt>商談化率</dt><dd class="grad-txt">+38<span class="unit">%</span></dd></div>
-            <div><dt>施策検証サイクル</dt><dd class="grad-txt">週次</dd></div>
-          </dl>
-        </article>
-      </div>
-      <p class="v-hint mono">← SWIPE →</p>
-    </div>
-  </section>
-
-  <!-- ===== NUMBERS / TECHNOLOGY ===== -->
-  <section class="sec sec-grid">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">NUMBERS</p>
-        <h2>CFIを、数字で。</h2>
-      </div>
-
-      <!-- ▼ HEROのKPIと同じ値を使用。片方だけ直すと矛盾するので注意 -->
-      <div class="v-metrics rv" data-cfi-todo="KPI実績値の確定（HEROと一致させる）">
-        <div><b class="grad-txt" data-count="120" data-suffix="+">120+</b><small>支援プロジェクト数</small><span class="v-bar" style="--w:88%"><i></i></span></div>
-        <div><b class="grad-txt" data-count="94" data-suffix="%">94%</b><small>契約継続率</small><span class="v-bar" style="--w:94%"><i></i></span></div>
-        <div><b class="grad-txt" data-count="38" data-suffix="%">38%</b><small>平均CV改善率</small><span class="v-bar" style="--w:62%"><i></i></span></div>
-        <div><b class="grad-txt" data-count="15" data-suffix="年">15年</b><small>エンジニア平均経験年数</small><span class="v-bar" style="--w:75%"><i></i></span></div>
-      </div>
-
-      <div class="sec-head sec-head-tech rv">
-        <p class="eyebrow mono">TECHNOLOGY</p>
-        <h2>主な採用技術</h2>
-      </div>
-      <ul class="stack rv">
-        <li>AWS</li><li>Microsoft Azure</li><li>Google Cloud</li><li>Snowflake</li>
-        <li>BigQuery</li><li>dbt</li><li>Airflow</li><li>Terraform</li>
-        <li>Kubernetes</li><li>Databricks</li><li>Looker</li><li>Power BI</li>
-        <li>Salesforce</li><li>HubSpot</li><li>Okta</li><li>Python</li>
-        <li>TypeScript</li><li>Go</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ===== COMPANY ===== -->
-  <section class="sec sec-ink" id="company">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="eyebrow mono">COMPANY</p>
-        <h2>会社概要</h2>
-      </div>
-
-      <div class="cmp-wrap rv">
-        <table class="tbl">
-          <tbody>
-            <tr><th>商号</th><td>株式会社CFI</td></tr>
-            <tr><th>英文表記</th><td>CFI Inc.</td></tr>
-            <tr><th>設立</th><td class="is-todo-text" data-cfi-todo="設立年月">※要記入</td></tr>
-            <tr><th>資本金</th><td class="is-todo-text" data-cfi-todo="資本金">※要記入</td></tr>
-            <tr><th>代表者</th><td class="is-todo-text" data-cfi-todo="代表者氏名・役職">※要記入</td></tr>
-            <tr><th>所在地</th><td class="is-todo-text" data-cfi-todo="本社所在地（郵便番号含む）">※要記入</td></tr>
-            <tr><th>従業員数</th><td class="is-todo-text" data-cfi-todo="従業員数・基準日">※要記入</td></tr>
-            <tr><th>事業内容</th><td>DX戦略コンサルティング／データ基盤構築／クラウドアーキテクチャ設計・実装／セキュリティ・プライバシーガバナンス支援／マーテック導入支援</td></tr>
-            <tr><th>取引銀行</th><td class="is-todo-text" data-cfi-todo="取引銀行（不要なら行ごと削除）">※要記入</td></tr>
-          </tbody>
-        </table>
-        <figure class="ph-fig">
-          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp?v=20260827r1" alt="株式会社CFIのオフィス" loading="lazy" decoding="async" width="800" height="600">
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== CTA ===== -->
-  <!-- 旧 id="contact" は /contact ページと紛らわしいため #cta に変更。
-       外部からの旧アンカー用に互換 span を直前に置く -->
-  <span id="contact" aria-hidden="true"></span>
-  <section class="sec cta" id="cta">
-    <div class="wrap">
-      <h2 class="rv">まずは、いまの課題を<br class="brpc">30分で整理しませんか。</h2>
-      <p class="rv">具体的な計画が固まっていない段階でも構いません。現状を伺ったうえで、次に取るべき一手をご提案します。</p>
-      <div class="hero-cta rv">
-        <a class="btn btn-p" href="/contact" data-cfi-nav="contact">無料相談を申し込む</a>
-        <a class="btn btn-g" href="#" data-cfi-todo="会社案内PDFのURLに差し替え">会社案内をダウンロード</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== FOOTER ===== -->
-  <footer>
-    <div class="wrap">
-      <div class="ft-top">
-        <div>
-          <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
-            <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
-                 width="36" height="32" loading="lazy" decoding="async" alt="">
-            <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
-                 width="59" height="31" loading="lazy" decoding="async" alt="">
-          </a>
-          <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
-        </div>
-
-        <div class="ft-nav">
-          <div>
-            <h4>SERVICE</h4>
-            <a href="#service">DX戦略・ロードマップ</a>
-            <a href="#service">データ基盤構築</a>
-            <a href="#service">クラウドアーキテクチャ</a>
-            <a href="#service">ゼロトラストセキュリティ</a>
-          </div>
-          <div>
-            <h4>COMPANY</h4>
-            <a href="#company">会社概要</a>
-            <a href="#works">実績</a>
-            <a href="#approach">進め方</a>
-            <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
-          </div>
-          <div>
-            <h4>LEGAL</h4>
-            <a href="#" data-cfi-todo="プライバシーポリシーURL">プライバシーポリシー</a>
-            <a href="#" data-cfi-todo="情報セキュリティ方針URL">情報セキュリティ方針</a>
-            <a href="#" data-cfi-todo="特定商取引法表記URL">特定商取引法に基づく表記</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="ft-btm">
-        <p>© 2026 CFI Inc. All rights reserved.</p>
-        <p>CREATE FROM IDEAS</p>
-      </div>
-    </div>
-  </footer>
-
-</div>
-
-<!-- ============================================================
-     SCRIPTS（この順序を厳守）
-     ============================================================ -->
 <script>
-(function () {
-  /* ==========================================================
-     ▼▼▼ サイト設定：ここだけ触ればリンクが全て揃います ▼▼▼
-     STUDIOで公開しているパスに合わせて書き換えてください。
-       例）トップが /test_page なら CFI_HOME = '/test_page'
-     ========================================================== */
-  var CFI_HOME    = '/';          /* トップページのパス */
-  var CFI_CONTACT = '/contact';   /* お問い合わせページのパス */
+(function(){
+  var h = document.documentElement;
 
-  /* パスガード：空配列 [] = 無効（どのページでも動作）
-     カスタムコードを「サイト全体」に設定した場合のみ列挙する
-       例) var ALLOW_PATHS = ['/', '/test_page'];
-     ※ここを誤ると画面が真っ白になります */
-  var ALLOW_PATHS = [];
-  /* ▲▲▲ 設定はここまで ▲▲▲ */
+  /* 通常読み込み用クローク：初回ペイント前に確定させる */
+  h.classList.add('cfi-on');
+  h.classList.add('cfi-boot');
 
-  var html = document.documentElement;
-  var root = document.getElementById('cfi-root');
-  if (!root) { html.classList.remove('cfi-boot'); return; }
+  /* 保険：BODY側が動かなくても3.5秒で必ず解除（contact と同値） */
+  setTimeout(function(){
+    h.classList.add('cfi-boot-out');
+    setTimeout(function(){
+      h.classList.remove('cfi-boot','cfi-boot-out');
+    }, 280);
+  }, 3500);
 
-  /* --- ① パスガード --- */
-  if (ALLOW_PATHS.length) {
-    var p = location.pathname.replace(/\/+$/, '') || '/';
-    if (ALLOW_PATHS.indexOf(p) === -1 && ALLOW_PATHS.indexOf(location.pathname) === -1) {
-      root.parentNode && root.parentNode.removeChild(root);
-      html.classList.remove('cfi-boot');   /* クロークを残さない */
-      return;
+  var OV_ID = 'cfi-ov';
+
+  /* 戻る／進む用クローク：
+     擬似要素はbfcache復元フレームでの再現が不確実なため、
+     実DOM要素＋インラインスタイルで構成する */
+  function cloak(){
+    var el = document.getElementById(OV_ID);
+    if (!el){
+      el = document.createElement('div');
+      el.id = OV_ID;
+      el.setAttribute('aria-hidden','true');
+      el.style.cssText =
+        'position:fixed;inset:0;z-index:2147483640;pointer-events:none;' +
+        'background:' +
+          'radial-gradient(1200px 600px at 18% 0%,rgba(15,107,224,.28),transparent 62%),' +
+          'radial-gradient(900px 500px at 92% 18%,rgba(0,194,168,.18),transparent 62%),' +
+          '#071019;';
+      el.innerHTML =
+        '<div style="position:absolute;left:0;right:0;top:44%;text-align:center;' +
+        'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
+        'font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;' +
+        'color:#a5b7c9;opacity:.9">CREATE FROM IDEAS</div>';
+      (document.body || h).appendChild(el);
     }
+    el.style.display = 'block';
+    h.style.overflow = 'hidden';
+    return el;
   }
 
-  /* --- ② リンク先パスの一括適用 --- */
-  var MAP = { home: CFI_HOME, contact: CFI_CONTACT };
-  Array.prototype.forEach.call(root.querySelectorAll('[data-cfi-nav]'), function (a) {
-    var key = a.getAttribute('data-cfi-nav');
-    if (MAP[key]) a.setAttribute('href', MAP[key]);
+  /* 離脱時にクロークを貼る。
+     bfcache は pagehide 完了後のDOM状態を保存するため、
+     戻る／進むで復元された最初の描画からクロークが見える */
+  window.addEventListener('pagehide', cloak);
+
+  window.addEventListener('pageshow', function(e){
+    if (e.persisted){
+      cloak();          /* 復元直後に念のため再適用 */
+      location.reload();
+    } else {
+      /* 通常読み込み：DOMオーバーレイは使わない（CSS側が担当） */
+      var el = document.getElementById(OV_ID);
+      if (el) el.style.display = 'none';
+      h.style.overflow = '';
+    }
   });
-
-  /* --- ③ 未確定リンク（href="#" ＋ data-cfi-todo）を無効化 --- */
-  Array.prototype.forEach.call(root.querySelectorAll('a[data-cfi-todo]'), function (a) {
-    var h = a.getAttribute('href');
-    if (h && h !== '#') return;                /* URL設定済みなら何もしない */
-    a.classList.add('is-todo');
-    a.setAttribute('aria-disabled', 'true');
-    a.setAttribute('tabindex', '-1');
-    a.removeAttribute('href');
-    a.addEventListener('click', function (e) { e.preventDefault(); });
-  });
-
-  /* --- ④ カウントアップ演出のための初期化 ---
-     HTML側は実値を直書き（JS失敗時に「0」と表示されないように）。
-     common.js が読み込まれる直前にここで 0 へ戻し、演出を成立させる。
-     動きを減らす設定の場合は実値のまま据え置く。 */
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    Array.prototype.forEach.call(root.querySelectorAll('[data-count]'), function (el) {
-      el.textContent = '0';
-    });
-  }
-
-  /* --- ⑤ STUDIO既存DOMを伏せ、#cfi-root だけを表示 --- */
-  if (root.parentNode !== document.body) document.body.appendChild(root);
-  var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, NOSCRIPT: 1, TEMPLATE: 1 };
-  Array.prototype.slice.call(document.body.children).forEach(function (el) {
-    if (el !== root && !SKIP[el.tagName]) el.style.display = 'none';
-  });
-  html.classList.add('cfi-on');
-
-  /* --- ⑥ クローク解除 --- */
-  function reveal() {
-    if (!html.classList.contains('cfi-boot')) return;
-    html.classList.add('cfi-boot-out');
-    setTimeout(function () { html.classList.remove('cfi-boot', 'cfi-boot-out'); }, 300);
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(reveal, 120); });
-  } else {
-    setTimeout(reveal, 120);
-  }
-  window.addEventListener('load', reveal);
-  setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
-
-  /* --- ⑦ リビール演出のフォールバック --- */
-  setTimeout(function () {
-    var rv = root.querySelector('.rv');
-    if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
-  }, 2500);
 })();
 </script>
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827r1"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827r1">
+
+<style>
+/* ============================================================
+   CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27r6
+   ------------------------------------------------------------
+   仕様（contact 版と統一）
+     - 通常読み込み：CSSクローク（2章 / cfi-boot）を表示
+     - 戻る／進む（bfcache復元）時：
+         pagehide で実DOMオーバーレイ #cfi-ov を貼った状態を保存し、
+         復元直後の描画からクロークを見せたうえで reload する
+         （reload後は2章のCSSクロークが引き継ぐため途切れない）
+   r4/r5(master) からの変更点
+     - 2章「起動クローク」を復活（通常読み込み時も表示するため）
+     - 章番号を再繰り下げ（旧2〜4章 → 3〜5章）
+   ============================================================ */
+
+/* ============================================================
+   1. 土台（クラス付与前でも白フラッシュしないよう html に直指定）
+   ============================================================ */
+html{background:#071019}
+html.cfi-on{
+  background:#071019;
+  scroll-behavior:smooth;
+  scroll-padding-top:var(--hd,72px);
+  /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す） */
+  --rebranding-loading-bg:#071019;
+  --rebranding-loading-bar:#00c2a8;
+}
+html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
+  overflow-x:hidden;overflow-y:visible;position:static;display:block}
+
+/* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
+html.cfi-on #__nuxt{display:none !important}
+
+/* 起動中のSTUDIO側 transition:all（.3s〜.4s）を抑止 */
+html.cfi-on .StudioCanvas,
+html.cfi-on .render-canvas *{transition:none !important}
+
+/* リビール演出が発火しなかった場合の保険（common.css 側に定義が無い） */
+html.cfi-fallback .rv{opacity:1;transform:none}
+
+/* ============================================================
+   2. 起動クローク（通常読み込み時／FOUC・白フラッシュ防止）
+      ※ contact 側と数値・演出を必ず一致させること
+   ============================================================ */
+html.cfi-boot{overflow:hidden}
+html.cfi-boot #__nuxt,
+html.cfi-boot #teleports,
+html.cfi-boot #cfi-root{visibility:hidden !important}
+
+html.cfi-boot body::before{
+  content:"";
+  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
+  background:
+    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
+    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
+    #071019;
+  opacity:1;transition:opacity .28s ease
+}
+html.cfi-boot body::after{
+  content:"CREATE FROM IDEAS";
+  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
+  text-align:center;
+  font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
+  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
+  color:#a5b7c9;opacity:.9;transition:opacity .28s ease
+}
+html.cfi-boot.cfi-boot-out body::before,
+html.cfi-boot.cfi-boot-out body::after{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
+}
+
+/* ============================================================
+   3. 未確定リンク（data-cfi-todo）の可視化
+      URLが決まったら data-cfi-todo を削除し href を設定する
+   ============================================================ */
+html.cfi-on a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
+html.cfi-on a.is-todo::after{
+  content:" (URL未設定)";font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.06em}
+html.cfi-on .is-todo-text{color:#ffb4a2}
+
+/* ============================================================
+   4. アンカー位置の微調整（固定ヘッダー分）
+   ============================================================ */
+html.cfi-on #cta{scroll-margin-top:var(--hd,72px)}
+</style>
