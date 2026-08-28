@@ -1,14 +1,17 @@
 <!-- ============================================================
-     CFI CONTACT / STUDIO CUSTOM CODE [BODY]   rev: 2026-08-27r1
+     CFI CONTACT / STUDIO CUSTOM CODE [BODY]   rev: 2026-08-28r2
        - 構成：ヘッダー ＋ CONTACTヒーロー → STUDIOフォーム → フッター
        - クローク解除はSTUDIOキャンバス描画＋配色注入の完了後
        - 黒帯対策：#__nuxt 直下ラッパーの縦余白を実測して打ち消す
      ------------------------------------------------------------
-     旧版（rev:2026-08-27p）からの変更点
-       1. リンク先パス（/test_page）を冒頭スクリプトの CFI_HOME
-          1箇所で管理。トップ側 home_body.html と必ず同じ値にする
-       2. href="#" の未確定リンクを無効化（先頭ジャンプ防止）
-       3. キャッシュバスターを r1 に統一
+     r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
+       [F] 冗長なコードを削除
+             ・html.classList.add('cfi-sub')
+               → HEADのインラインスクリプトで初回ペイント前に付与済み
+       [-] キャッシュバスターを v=20260828r2 に統一
+     ------------------------------------------------------------
+     ※ CFI_HOME / CFI_CONTACT は home_body.html と必ず同じ値にすること
+     ※ 反映順序：common.css → HEAD → BODY（4点を同一タイミングで）
      ============================================================ -->
 <div id="cfi-top">
 
@@ -17,10 +20,10 @@
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
         <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
              width="36" height="32" decoding="async" alt="">
         <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
              width="64" height="34" decoding="async" alt="">
       </a>
 
@@ -68,10 +71,10 @@
         <div>
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260827r1"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
                  width="36" height="32" loading="lazy" decoding="async" alt="">
             <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260827r1"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
                  width="59" height="31" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
@@ -123,10 +126,10 @@
   var CFI_CONTACT = '/contact';   /* このページ自身のパス */
   /* ▲▲▲ 設定はここまで ▲▲▲ */
 
-  var html = document.documentElement;
-  var top  = document.getElementById('cfi-top');
+  var html   = document.documentElement;
+  var top    = document.getElementById('cfi-top');
   var bottom = document.getElementById('cfi-bottom');
-  var nuxt = document.getElementById('__nuxt');
+  var nuxt   = document.getElementById('__nuxt');
 
   /* --- ① リンク先パスの一括適用（home / home#xxx / contact） --- */
   function applyNav(scope){
@@ -134,7 +137,7 @@
     Array.prototype.forEach.call(scope.querySelectorAll('[data-cfi-nav]'), function(a){
       var v = a.getAttribute('data-cfi-nav');
       var href;
-      if (v === 'contact')            href = CFI_CONTACT;
+      if (v === 'contact')              href = CFI_CONTACT;
       else if (v.indexOf('home') === 0) href = CFI_HOME + v.slice(4);   /* 'home#works' → '/#works' */
       if (href) a.setAttribute('href', href.replace('//', '/'));
     });
@@ -156,12 +159,12 @@
   }
   applyTodo(top); applyTodo(bottom);
 
-  /* --- ③ ヘッダー＋ヒーローを __nuxt の直前へ移動 --- */
+  /* --- ③ ヘッダー＋ヒーローを __nuxt の直前へ移動 ---
+     ※ html への cfi-sub 付与は HEAD のインラインスクリプトで完了済み */
   if (top) {
     if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
     else document.body.insertBefore(top, document.body.firstChild);
   }
-  html.classList.add('cfi-sub');
 
   /* --- ④ クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） --- */
   function reveal(){
@@ -219,4 +222,4 @@
 })();
 </script>
 
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260827r1"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260828r2"></script>
