@@ -1,21 +1,6 @@
 @charset "UTF-8";
 
 /* ============================================================
-   CFI コーポレートサイト 共通スタイル   rev: 2026-08-27r1
-   ------------------------------------------------------------
-   旧版からの変更点
-     - 2章：ロゴ実寸（height）を追加。各ページのHEADに散在して
-       いた定義をここへ集約（唯一の正とする）
-     - 12章：html.cfi-fallback .rv のフォールバックを追加
-       （16-2 が既に cfi-fallback を参照しており定義場所を統一）
-     - 13章：WORKS 3枚目の全幅化を解除（769〜1024pxで画像が
-       過大表示される崩れの修正）。検証幅のコメントも実装に合わせ修正
-     - 13章 360px：.logo .mark の width/height 同値指定を廃止
-       （36×32のロゴが正方形に潰れていた）
-     - 15章（従来欠番）：:focus-visible とユーティリティを新設
-   ============================================================ */
-
-/* ============================================================
    1. トークン（ブレークポイントで可変にする値は変数化）
    ============================================================ */
 :root{
@@ -126,6 +111,17 @@ nav a.gnav:hover::after{width:100%}
   font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
 .scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
 @keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
+/* --- VISION / MISSION 表示（rev:2026-08-28） --- */
+.hero .eyebrow{margin-bottom:14px}
+.hero .hero-en{font-family:var(--f-en);font-weight:600;
+  font-size:clamp(16px,2.2vw,24px);line-height:1.5;letter-spacing:.01em;
+  color:var(--accent-2);margin-bottom:14px}
+.hero-mission{margin-top:46px;padding-top:34px;border-top:1px solid var(--line);max-width:38em}
+.hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)}
+.hero .hero-mission p.lead{margin-top:10px}
+@media (max-width:768px){
+  .hero-mission{margin-top:34px;padding-top:26px}
+}
 
 /* ============================================================
    4. ティッカー
