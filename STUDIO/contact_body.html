@@ -1,18 +1,3 @@
-<!-- ============================================================
-     CFI CONTACT / STUDIO CUSTOM CODE [BODY]   rev: 2026-08-28r2
-       - 構成：ヘッダー ＋ CONTACTヒーロー → STUDIOフォーム → フッター
-       - クローク解除はSTUDIOキャンバス描画＋配色注入の完了後
-       - 黒帯対策：#__nuxt 直下ラッパーの縦余白を実測して打ち消す
-     ------------------------------------------------------------
-     r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
-       [F] 冗長なコードを削除
-             ・html.classList.add('cfi-sub')
-               → HEADのインラインスクリプトで初回ペイント前に付与済み
-       [-] キャッシュバスターを v=20260828r2 に統一
-     ------------------------------------------------------------
-     ※ CFI_HOME / CFI_CONTACT は home_body.html と必ず同じ値にすること
-     ※ 反映順序：common.css → HEAD → BODY（4点を同一タイミングで）
-     ============================================================ -->
 <div id="cfi-top">
 
   <!-- ===== HEADER ===== -->
@@ -20,10 +5,10 @@
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
         <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
              width="36" height="32" decoding="async" alt="">
         <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
              width="64" height="34" decoding="async" alt="">
       </a>
 
@@ -71,10 +56,10 @@
         <div>
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
                  width="36" height="32" loading="lazy" decoding="async" alt="">
             <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
                  width="59" height="31" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
@@ -222,4 +207,4 @@
 })();
 </script>
 
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260828r2"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
