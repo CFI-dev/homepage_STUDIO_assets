@@ -142,21 +142,7 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 }
 
 /* ============================================================
-   3. ロゴ実寸（common.css には height 指定が無いため必須）
-      ※ contact 側と数値を必ず一致させること
-   ============================================================ */
-html.cfi-on .logo{display:flex;align-items:center;gap:10px}
-html.cfi-on .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain}
-html.cfi-on .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
-html.cfi-on footer .logo .logo-name{height:31px}
-@media (max-width:360px){
-  html.cfi-on .logo{gap:8px}
-  html.cfi-on .logo .mark{height:26px}
-  html.cfi-on .logo .logo-name{height:27px}
-}
-
-/* ============================================================
-   4. 未確定リンク（data-cfi-todo）の可視化
+   3. 未確定リンク（data-cfi-todo）の可視化
       URLが決まったら data-cfi-todo を削除し href を設定する
    ============================================================ */
 html.cfi-on a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
@@ -165,7 +151,7 @@ html.cfi-on a.is-todo::after{
 html.cfi-on .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   5. アンカー位置の微調整（固定ヘッダー分）
+   4. アンカー位置の微調整（固定ヘッダー分）
    ============================================================ */
 html.cfi-on #cta{scroll-margin-top:var(--hd,72px)}
 </style>
