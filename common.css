@@ -592,3 +592,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   padding-top:34;
   margin-top:44px;   /* 線がなくなる分の間隔をここで確保 */
 }
+/* MISSION 説明文を少し大きく (rev:2026-08-28) */
+.hero .hero-mission p.lead{
+  font-size:17px;      /* 現在 15.5px → 約10%拡大 */
+  line-height:1.85;
+}
