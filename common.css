@@ -586,3 +586,9 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   height:1px;
   background:var(--accent-2);
 }
+/* VISION / MISSION 間の区切り線を削除 (rev:2026-08-28) */
+.hero-mission{
+  border-top:0;
+  padding-top:34;
+  margin-top:44px;   /* 線がなくなる分の間隔をここで確保 */
+}
