@@ -1,10 +1,34 @@
 @charset "UTF-8";
 
 /* ============================================================
+   CFI コーポレートサイト 共通スタイル   rev: 2026-08-28r2
+   ------------------------------------------------------------
+   r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
+     [A] 完全未使用セレクタ／変数の削除
+         .mk use / .link-strong / .eyebrow-center / .logo b / .logo small
+         .hero-kpi 一式 / .nums 一式 / .sr-only / .v-lead / .v-ba 一式
+         --navy-3
+         ＋ 上記に連動して死んでいた各ブレークポイント内の指定
+     [C] 後続ルールに上書きされ効いていなかった指定の整理
+         C-1 @768 .hero-mission{margin-top} を削除（末尾ブロックが常時上書き）
+         C-2 .hero-mission の定義を1箇所に統合
+         C-3 @480 .eyebrow{font-size/letter-spacing} を削除（EYEBROW統一が上書き）
+         C-4 .eyebrow::before の幅指定を em 基準1本に統合（38px/26px を削除）
+         C-5 @600 .works / .flow の grid 指定を削除
+             （≤768px は .v-scroll により flex 化されるため grid 系は不活性）
+         C-6 .hero .hero-cta{margin-bottom:0} を削除（打ち消し対象なしのno-op）
+     [D] .hero-mission{padding-top:34} の単位欠落を修正（→ 34px）
+         ※不正宣言は仕様上パース時に破棄されるため、実際には
+           §3 の padding-top:34px が生き残っていた。値は同一のため表示不変
+     ------------------------------------------------------------
+   ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
+   ============================================================ */
+
+/* ============================================================
    1. トークン（ブレークポイントで可変にする値は変数化）
    ============================================================ */
 :root{
-  --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a; --navy-3:#0a3a5c;
+  --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a;
   --accent:#0f6be0; --accent-2:#00c2a8;
   --txt:#e9eff6; --muted:#a5b7c9; --line:rgba(255,255,255,.11);
   --panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
@@ -18,6 +42,9 @@
 
   --logo-mark:32px;   /* ロゴマーク高（ヘッダー） */
   --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
+
+  --eyebrow-size:12px;    /* アイブロウ文字サイズ（全セクション共通） */
+  --eyebrow-track:.24em;  /* アイブロウ字間（全セクション共通） */
 
   --f-en:"Barlow",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
@@ -34,11 +61,8 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 .wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
 .mono{font-family:var(--f-mono);letter-spacing:.04em}
 .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.mk use{fill:url(#gBrand);stroke:url(#gBrand)}
 
 /* インラインstyleから移設したユーティリティ */
-.link-strong{font-weight:700}
-.eyebrow-center{justify-content:center}
 .sec-head-tech{margin:76px 0 0}
 .ft-desc{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:22em}
 .case dd .unit{font-size:13px}
@@ -65,8 +89,6 @@ header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 }
 .logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;object-fit:contain;display:block}
 footer .logo .logo-name{height:31px}
-.logo b{font-family:var(--f-en);font-size:21px;letter-spacing:.02em;display:block;line-height:1}
-.logo small{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.16em;color:var(--muted);display:block;margin-top:4px}
 nav ul{display:flex;align-items:center;gap:26px}
 nav a.gnav{font-family:var(--f-en);font-size:13px;font-weight:500;letter-spacing:.04em;
   position:relative;padding:8px 0;display:block;color:var(--txt);white-space:nowrap}
@@ -97,34 +119,44 @@ nav a.gnav:hover::after{width:100%}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
 .hero .wrap{position:relative;z-index:2}
-.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--accent-2);
-  display:flex;align-items:center;gap:12px;margin-bottom:26px}
-.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:0 0 auto}
+
+/* --- アイブロウ（全セクション共通仕様。ここを唯一の正とする） --- */
+.eyebrow{
+  font-family:var(--f-mono);
+  font-size:var(--eyebrow-size);
+  font-weight:500;
+  letter-spacing:var(--eyebrow-track);
+  line-height:1.4;
+  color:var(--accent-2);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:26px;
+}
+/* 装飾線は文字サイズに追従させる（固定pxは使わない） */
+.eyebrow::before{content:"";flex:0 0 auto;width:3.2em;height:1px;background:var(--accent-2)}
+
 .hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
-.hero-kpi{display:flex;flex-wrap:wrap;gap:44px;margin-top:60px;padding-top:32px;border-top:1px solid var(--line)}
-.hero-kpi div b{font-family:var(--f-en);font-size:34px;line-height:1;letter-spacing:-.02em}
-.hero-kpi div small{display:block;margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.08em}
 .scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;
   font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
 .scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
 @keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
-/* --- VISION / MISSION 表示（rev:2026-08-28） --- */
+
+/* --- VISION / MISSION 表示 --- */
 .hero .eyebrow{margin-bottom:14px}
 .hero .hero-en{font-family:var(--f-en);font-weight:600;
   font-size:clamp(16px,2.2vw,24px);line-height:1.5;letter-spacing:.01em;
   color:var(--accent-2);margin-bottom:14px}
-.hero-mission{margin-top:46px;padding-top:34px;border-top:1px solid var(--line);max-width:38em}
+/* VISION と MISSION の間に区切り線は置かない。間隔は margin-top で確保する */
+.hero-mission{margin-top:44px;padding-top:34px;max-width:38em}
 .hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)}
-.hero .hero-mission p.lead{margin-top:10px}
-
-/* KPI廃止に伴う下部余白の調整（.hero-cta が最終要素になるため） */
-.hero .hero-cta{margin-bottom:0}
+.hero .hero-mission p.lead{margin-top:10px;font-size:17px;line-height:1.85}
 
 @media (max-width:768px){
-  .hero-mission{margin-top:34px;padding-top:26px}
+  .hero-mission{padding-top:26px}
 }
 
 /* ============================================================
@@ -221,13 +253,8 @@ nav a.gnav:hover::after{width:100%}
 .case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
 
 /* ============================================================
-   10. 数字 / 技術
+   10. 技術スタック
    ============================================================ */
-.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.nums div{background:var(--ink);padding:40px 24px;text-align:center}
-.nums b{font-family:var(--f-en);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em}
-.nums small{display:block;margin-top:12px;font-size:11.5px;color:var(--muted);letter-spacing:.08em}
 .stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
 .stack li{font-family:var(--f-mono);font-size:12px;color:#b9cbdb;border:1px solid var(--line);
   border-radius:2px;padding:9px 16px;background:rgba(255,255,255,.03);transition:.25s}
@@ -260,7 +287,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
    ============================================================ */
 .rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
 .rv.on{opacity:1;transform:none}
-/* JSが発火しなかった場合の保険（各ページのHEADから移設） */
+/* JSが発火しなかった場合の保険（ここを唯一の正とする。各ページHEADで再定義しない） */
 html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
@@ -279,7 +306,6 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 @media (max-width:1180px){
   :root{--sec:96px;--gap:18px}
   nav ul{gap:18px}
-  .hero-kpi{gap:36px}
   .svc article{padding:34px 26px}
   .case{padding:28px 24px}
   .case dl{gap:20px}
@@ -320,14 +346,8 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 /* ---- 768px：タブレット縦 ---- */
 @media (max-width:768px){
   :root{--hd:64px;--sec:76px}
-  .logo small{display:none}
   .hero{padding:calc(var(--hd) + 52px) 0 64px}
-  .hero-kpi{gap:32px;margin-top:44px;padding-top:26px}
-  .hero-kpi div b{font-size:29px}
   .scroll-hint{display:none}
-  .nums{grid-template-columns:repeat(2,1fr)}
-  .nums div{padding:34px 18px}
-  .nums b{font-size:38px}
   .lyr{grid-template-columns:1fr;gap:14px;padding:20px}
   .sec-head{margin-bottom:40px}
   .sec-head-tech{margin-top:64px}
@@ -337,13 +357,13 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .ft-btm{margin-top:40px}
 }
 
-/* ---- ~600px：1カラム化 ---- */
+/* ---- ~600px：1カラム化 ----
+   ※ .works / .flow は ≤768px で .v-scroll により flex 化されるため
+     ここで grid-template-columns を指定しても効かない（記述しないこと） */
 @media (max-width:600px){
   :root{--sec:64px;--pad:20px}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .svc{grid-template-columns:1fr}
-  .works{grid-template-columns:1fr}
-  .flow{grid-template-columns:1fr;row-gap:34px}
   .sec-head p{font-size:14px}
   /* 会社概要テーブルを縦積みに */
   .tbl,.tbl tbody,.tbl tr,.tbl th,.tbl td{display:block;width:100%}
@@ -358,19 +378,12 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .hero-cta{flex-direction:column;align-items:stretch;gap:12px}
   .btn{width:100%;padding:14px 18px}
   .hero p.lead{margin-top:20px;font-size:14.5px}
-  .hero-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  .hero-kpi div b{font-size:24px}
-  .hero-kpi div small{margin-top:6px;font-size:10px;letter-spacing:.02em}
-  .eyebrow{margin-bottom:20px;font-size:10px;letter-spacing:.18em}
-  .eyebrow::before{width:26px}
+  .eyebrow{margin-bottom:20px}
   .svc article{padding:30px 22px}
   .svc .ico{width:38px;height:38px;margin:16px 0 18px}
   .case{padding:26px 20px}
   .case dl{gap:18px}
   .case dd{font-size:22px}
-  .nums div{padding:28px 12px}
-  .nums b{font-size:34px}
-  .nums small{font-size:11px;letter-spacing:.02em}
   .lyr .items span{font-size:10.5px;padding:4px 9px}
   .ft-top{gap:32px}
   .ft-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 18px;width:100%}
@@ -382,20 +395,13 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   :root{--pad:16px;--sec:56px;--hd:60px;--logo-mark:26px;--logo-name:27px}
   body{font-size:14px}
   .logo{gap:8px}
-  .logo b{font-size:19px}
   .hero p.lead{font-size:13.5px}
-  .hero-kpi{gap:8px}
-  .hero-kpi div b{font-size:21px}
-  .hero-kpi div small{font-size:9.5px;letter-spacing:0}
   .btn{font-size:13px;padding:13px 14px}
   .svc article{padding:26px 18px}
   .svc h3{font-size:16px}
   .svc p{font-size:13px}
   .case h3{font-size:15.5px}
   .case dd{font-size:20px}
-  .nums div{padding:24px 8px}
-  .nums b{font-size:30px}
-  .nums small{font-size:10px}
   .flow .dot{width:46px;height:46px;font-size:14px}
   .stack li{font-size:11px;padding:7px 12px}
   .ticker li{font-size:11px}
@@ -410,8 +416,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 }
 
 /* ============================================================
-   14. PHOTO EXTENSION  2026-08 追加
-       ※ 1〜13 の既存ルールは一切変更しないこと
+   14. PHOTO EXTENSION
    ============================================================ */
 .ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
 .ph-fig img{width:100%;height:100%;object-fit:cover;
@@ -419,19 +424,19 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 .ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
 
-/* ---- ② Works サムネイル（.case の padding に完全追従） ---- */
+/* ---- Works サムネイル（.case の padding に完全追従） ---- */
 .case{--cpx:28px;--cpy:32px;overflow:hidden}
 .case .ph-fig{aspect-ratio:16/9;
   margin:calc(var(--cpy) * -1) calc(var(--cpx) * -1) 22px;
   border-radius:3px 3px 0 0}
 .case:hover .ph-fig img{transform:scale(1.05)}
 
-/* ---- ③ Company 写真 ---- */
+/* ---- Company 写真 ---- */
 .cmp-wrap{display:grid;grid-template-columns:1.35fr .8fr;gap:calc(var(--gap) + 16px);
   align-items:start}
 .cmp-wrap .ph-fig{aspect-ratio:4/3;border:1px solid var(--line);border-radius:4px}
 
-/* ---- ④ フルブリード帯 ---- */
+/* ---- フルブリード帯 ---- */
 .band{position:relative;overflow:hidden;background:var(--ink);
   height:clamp(190px,28vw,340px);
   border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -440,7 +445,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 .band::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,rgba(15,107,224,.26),rgba(0,194,168,.16))}
 
-/* ---- ⑤ Approach ステップ写真 ---- */
+/* ---- Approach ステップ写真 ---- */
 .flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
   border:1px solid var(--line)}
 .flow .st:hover .ph-fig img{transform:scale(1.04)}
@@ -463,8 +468,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 }
 
 /* ============================================================
-   15. アクセシビリティ / 状態表現  2026-08-27r1 追加
-       （従来 15 は欠番だった）
+   15. アクセシビリティ / 状態表現
    ============================================================ */
 
 /* 15-1 キーボードフォーカス（マウス操作時には出さない） */
@@ -473,11 +477,8 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 .btn:focus-visible{outline-offset:4px}
 nav a.gnav:focus-visible::after{width:100%}
 
-/* 15-2 スクリーンリーダー専用テキスト */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-/* 15-3 未確定リンク／未記入項目（各ページのHEADから移設）
+/* 15-2 未確定リンク／未記入項目
+        ここを唯一の正とする（各ページHEADで再定義しない）
         URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
 a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
 a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
@@ -485,11 +486,10 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   16. VISUAL-FIRST  2026-08 追加
+   16. VISUAL-FIRST
    ============================================================ */
 
-/* 16-1 短文リード */
-.v-lead{max-width:24em;font-size:clamp(16px,2vw,20px);line-height:1.8}
+/* 16-1 セクション見出しの幅調整 */
 .sec-head.v-tight p{max-width:28em}
 
 /* 16-2 バー付きメトリクス（KPI） */
@@ -500,7 +500,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   font-size:clamp(34px,5vw,54px);letter-spacing:-.02em}
 .v-metrics small{display:block;margin-top:10px;color:var(--muted);
   font-size:12.5px;letter-spacing:.04em}
-.v-bar{margin-top:18px;height:3px;border-radius:99px;overflow:hidden;
+.v-bar{display:block;margin-top:18px;height:3px;border-radius:99px;overflow:hidden;
   background:rgba(255,255,255,.08)}
 .v-bar i{display:block;width:0;height:100%;border-radius:99px;background:var(--grad);
   transition:width 1.5s cubic-bezier(.22,1,.36,1) .2s}
@@ -522,25 +522,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   .v-why > div{padding:34px 24px;text-align:left}
   .v-why .bico{margin:0 0 16px}}
 
-/* 16-4 Before → After */
-.v-ba{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
-.v-ba article{padding:30px 26px;border:1px solid var(--line);
-  border-radius:4px;background:var(--panel)}
-.v-ba .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--muted)}
-.v-ba .row{display:flex;align-items:baseline;gap:14px;margin-top:14px;
-  font-family:var(--f-en);font-weight:700}
-.v-ba .from{font-size:22px;color:var(--muted);text-decoration:line-through;
-  text-decoration-color:rgba(255,255,255,.32)}
-.v-ba .arw{position:relative;flex:none;width:24px;height:2px;
-  background:var(--grad);align-self:center}
-.v-ba .arw::after{content:"";position:absolute;right:-1px;top:-4px;
-  border-left:8px solid var(--accent-2);
-  border-top:5px solid transparent;border-bottom:5px solid transparent}
-.v-ba .to{font-size:clamp(30px,4vw,42px);line-height:1}
-.v-ba p{margin-top:16px;color:var(--muted);font-size:13.5px}
-@media (max-width:900px){.v-ba{grid-template-columns:1fr}}
-
-/* 16-5 モバイル横スクロール */
+/* 16-4 モバイル横スクロール */
 @media (max-width:768px){
   .v-scroll{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
     margin:0 calc(var(--pad) * -1);padding:0 var(--pad) 10px;
@@ -554,46 +536,4 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 
 @media (prefers-reduced-motion:reduce){
   .v-bar i{transition:none!important;width:var(--w,70%)!important}
-}
-
-/* ===== EYEBROW 統一 (rev:2026-08-28) ===== */
-:root{
-  --eyebrow-size:12px;
-  --eyebrow-track:.24em;
-}
-
-/* 全アイブロウを同一仕様に強制 */
-.eyebrow,
-.hero .eyebrow,
-.sec-head .eyebrow,
-.eyebrow.mono{
-  font-family:var(--f-mono);
-  font-size:var(--eyebrow-size);
-  font-weight:500;
-  letter-spacing:var(--eyebrow-track);
-  line-height:1.4;
-  color:var(--accent-2);
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-/* 装飾線も文字サイズに追従（固定pxをやめる） */
-.eyebrow::before{
-  content:"";
-  flex:0 0 auto;
-  width:3.2em;
-  height:1px;
-  background:var(--accent-2);
-}
-/* VISION / MISSION 間の区切り線を削除 (rev:2026-08-28) */
-.hero-mission{
-  border-top:0;
-  padding-top:34;
-  margin-top:44px;   /* 線がなくなる分の間隔をここで確保 */
-}
-/* MISSION 説明文を少し大きく (rev:2026-08-28) */
-.hero .hero-mission p.lead{
-  font-size:17px;      /* 現在 15.5px → 約10%拡大 */
-  line-height:1.85;
 }
