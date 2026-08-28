@@ -1,13 +1,27 @@
 <!-- ============================================================
-     CFI CONTACT / STUDIO CUSTOM CODE [HEAD]   rev: 2026-08-27r1
+     CFI CONTACT / STUDIO CUSTOM CODE [HEAD]   rev: 2026-08-28r2
        - 起動クローク（フォームのチラつき／FOUC防止）
        - 白フラッシュ対策（STUDIO内部の #e5e5e5 と全プロパティtransition）
        - 黒帯除去（#__nuxt の上下 padding を変数化・既定0）
      ------------------------------------------------------------
-     旧版（rev:2026-08-27p）からの変更点
-       - キャッシュバスターを r1 に統一（common.css / common.js / 画像）
-       - 未確定リンク用 .is-todo / .is-todo-text を追加
-       - scroll-padding-top を --hd 変数参照に変更（値の二重管理を解消）
+     r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
+       [A] 未使用セレクタの削除
+             ・html.cfi-sub .cfi-ft{margin-top:0}
+               → 「旧クラス残存時の保険」。現行DOMに .cfi-ft は存在しない
+       [E] common.css と重複していた定義を削除（common.css を唯一の正とする）
+             ・a.is-todo / a.is-todo::after / .is-todo-text → common.css §15-2
+             ・html.cfi-fallback .rv                        → common.css §12
+             ・scroll-behavior / scroll-padding-top         → common.css §1（html）
+             ・html.cfi-sub{background:#071019}             → 直前の html{background} と同値
+       [F] 打ち消し対象のない no-op を削除
+             ・html.cfi-sub footer{margin-top:0 !important}
+               → common.css の footer に margin-top の指定がなく、
+                 かつ親の #cfi-bottom 側で margin-top:0 を既に担保している
+       [-] キャッシュバスターを v=20260828r2 に統一
+       [-] 章番号を繰り上げ（旧1〜8章 → 1〜6章）
+     ------------------------------------------------------------
+     ※ #__nuxt を表示するページのため、3章の白フラッシュ対策は
+       home 側と異なり全て有効。削除しないこと
      ============================================================ -->
 
 <!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
@@ -24,18 +38,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827r1">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260828r2">
 
 <style>
 /* ============================================================
    1. 土台
+      ※ scroll-behavior / scroll-padding-top / a.is-todo /
+        html.cfi-fallback .rv は common.css を唯一の正とし、
+        ここでは再定義しない
    ============================================================ */
 html{background:#071019}          /* クラス付与前でも白フラッシュを防ぐ */
 html.cfi-sub{
-  background:#071019;
-  scroll-behavior:smooth;
-  scroll-padding-top:var(--hd,72px);
-
   /* ▼▼ 間隔の調整ダイヤル（ここだけ触れば黒帯の量が変わります） ▼▼ */
   --cfi-gap-top:0px;      /* ヒーロー下端 ⇄ フォーム上端 */
   --cfi-gap-bottom:0px;   /* フォーム下端 ⇄ フッター上端 */
@@ -47,10 +60,10 @@ html.cfi-sub{
 }
 html.cfi-sub body{margin:0;padding:0;background:#071019;height:auto;
   overflow-x:hidden;overflow-y:visible;position:static;display:block}
-html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
    2. 起動クローク（フォームのチラつき防止）
+      ※ home 側と数値・演出を必ず一致させること
    ============================================================ */
 html.cfi-boot{overflow:hidden}
 html.cfi-boot #__nuxt,
@@ -71,7 +84,7 @@ html.cfi-boot body::after{
   text-align:center;
   font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
   font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
-     color:#a5b7c9;opacity:.9;transition:opacity .28s ease
+  color:#a5b7c9;opacity:.9;transition:opacity .28s ease
 }
 html.cfi-boot.cfi-boot-out body::before,
 html.cfi-boot.cfi-boot-out body::after{opacity:0}
@@ -81,6 +94,7 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 
 /* ============================================================
    3. 白フラッシュ対策（STUDIOキャンバス側）
+      ※ このページは #__nuxt を表示するため全て有効。削除しないこと
    ============================================================ */
 /* 起動中はSTUDIOの transition:all（.3s〜.4s）を停止 */
 html.cfi-boot .StudioCanvas,
@@ -97,7 +111,7 @@ html.cfi-sub .StudioCanvas{min-height:0 !important}
 html.cfi-sub .StudioCanvas > .sd{min-height:0 !important}
 
 /* ============================================================
-   4. スタッキング順（ヘッダーを最前面に）
+   4. スタッキング順（ヘッダーを最前面に）＋ 黒帯除去
    ============================================================ */
 html.cfi-sub #__nuxt{position:relative;z-index:1;height:auto;min-height:0;
   width:100%;overflow:visible;
@@ -125,19 +139,4 @@ html.cfi-sub .hero-sub p.lead{margin-top:24px}
    6. フォームのアンカー用オフセット
    ============================================================ */
 html.cfi-sub #form{display:block;position:relative;top:calc(var(--hd) * -1);height:0}
-
-/* ============================================================
-   7. 未確定リンク（data-cfi-todo）の可視化
-      URLが決まったら data-cfi-todo を削除し href を設定する
-   ============================================================ */
-html.cfi-sub a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
-html.cfi-sub a.is-todo::after{
-  content:" (URL未設定)";font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.06em}
-html.cfi-sub .is-todo-text{color:#ffb4a2}
-
-/* ============================================================
-   8. フッター（見た目は common.css の footer 定義に一任）
-   ============================================================ */
-html.cfi-sub footer{margin-top:0 !important}
-html.cfi-sub .cfi-ft{margin-top:0 !important}   /* 旧クラス残存時の保険 */
 </style>
