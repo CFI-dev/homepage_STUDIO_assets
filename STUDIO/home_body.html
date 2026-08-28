@@ -1,22 +1,3 @@
-<!-- ============================================================
-     CFI CORPORATE / STUDIO CUSTOM CODE [BODY]  rev: 2026-08-28r2
-     ------------------------------------------------------------
-     r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
-       [B] 未参照のSVGシンボルを削除（use による参照が0件）
-             #i-data / #i-cloud / #i-privacy / #i-martech
-             → SERVICE を6事業へ刷新（rev:2026-08-28）した際の旧アイコン残置
-             ※現在使用中は下記9点のみ
-               i-strategy / i-shield / i-process / i-service /
-               i-platform / i-dev / b-speed / b-team / b-lock
-       [F] 到達しない・冗長なコードを削除
-             ・ALLOW_PATHS によるパスガード（空配列＝恒久的に無効だった）
-               → 「サイト全体」に適用する運用へ変更する場合は再実装すること
-             ・html.classList.add('cfi-on')
-               → HEADのインラインスクリプトで初回ペイント前に付与済み
-       [-] キャッシュバスターを v=20260828r2 に統一
-     ------------------------------------------------------------
-     反映順序：先に common.css / common.js を差し替えてから貼り付けること
-     ============================================================ -->
 <div id="cfi-root">
 
   <!-- ===== SVG SPRITE ===== -->
@@ -44,10 +25,10 @@
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
         <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
              width="36" height="32" decoding="async" alt="">
         <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
+             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
              width="64" height="34" decoding="async" alt="">
       </a>
 
@@ -239,28 +220,28 @@
           <h3><span>ASSESS</span>現状評価</h3>
           <p>業務・システム・データの現状を可視化し、優先順位を数値で整理します。</p>
           <p class="dur mono">2–4 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp?v=20260828r2" alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp" alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot mono">02</p>
           <h3><span>DESIGN</span>構想設計</h3>
           <p>To-Be像とアーキテクチャを設計し、段階的な移行計画に落とし込みます。</p>
           <p class="dur mono">3–6 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp?v=20260828r2" alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp" alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot mono">03</p>
           <h3><span>BUILD</span>実装</h3>
           <p>短いサイクルで実装と検証を繰り返し、動くものを早期に確認します。</p>
           <p class="dur mono">2–6 MONTHS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp?v=20260828r2" alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp" alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot mono">04</p>
           <h3><span>RUN</span>運用・定着</h3>
           <p>運用設計と内製化支援まで行い、御社チームだけで回る状態を目指します。</p>
           <p class="dur mono">CONTINUOUS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp?v=20260828r2" alt="運用ミーティングの様子" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp" alt="運用ミーティングの様子" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
       </div>
       <p class="v-hint mono">← SWIPE →</p>
@@ -269,7 +250,7 @@
 
   <!-- ===== BAND ===== -->
   <div class="band" aria-hidden="true">
-    <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp?v=20260828r2" alt="" loading="lazy" decoding="async" width="1600" height="600">
+    <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp" alt="" loading="lazy" decoding="async" width="1600" height="600">
   </div>
 
   <!-- ===== WORKS ===== -->
@@ -284,7 +265,7 @@
 
       <div class="works v-scroll rv">
         <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp?v=20260828r2" alt="製造業のデータ基盤刷新プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp" alt="製造業のデータ基盤刷新プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
           <p class="cat mono">MANUFACTURING / DATA</p>
           <h3>散在した生産データを統合し、日次で意思決定できる体制へ</h3>
           <p>15システムに分散したデータをDWHへ集約。月次だった実績把握を日次化しました。</p>
@@ -294,7 +275,7 @@
           </dl>
         </article>
         <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp?v=20260828r2" alt="小売業のクラウド移行プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp" alt="小売業のクラウド移行プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
           <p class="cat mono">RETAIL / CLOUD</p>
           <h3>オンプレ基幹をクラウド移行し、繁忙期の停止をゼロに</h3>
           <p>段階移行とIaC化により、ピーク時のスケールと運用工数削減を同時に実現しました。</p>
@@ -304,7 +285,7 @@
           </dl>
         </article>
         <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp?v=20260828r2" alt="サービス業のマーテック導入プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp" alt="サービス業のマーテック導入プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
           <p class="cat mono">SERVICE / MARTECH</p>
           <h3>CRMとMAを事業KPIへ接続し、商談化率を改善</h3>
           <p>顧客データを統合し、スコアリングと配信設計を再構築。検証サイクルを週次化しました。</p>
@@ -370,7 +351,7 @@
           </tbody>
         </table>
         <figure class="ph-fig">
-          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp?v=20260828r2" alt="株式会社CFIのオフィス" loading="lazy" decoding="async" width="800" height="600">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp" alt="株式会社CFIのオフィス" loading="lazy" decoding="async" width="800" height="600">
         </figure>
       </div>
     </div>
@@ -398,10 +379,10 @@
         <div>
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png?v=20260828r2"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
                  width="36" height="32" loading="lazy" decoding="async" alt="">
             <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png?v=20260828r2"
+                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
                  width="59" height="31" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
@@ -516,4 +497,4 @@
   }, 2500);
 })();
 </script>
-<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js?v=20260828r2"></script>
+<script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
