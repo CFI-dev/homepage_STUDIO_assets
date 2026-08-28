@@ -1,29 +1,3 @@
-<!-- ============================================================
-     CFI CONTACT / STUDIO CUSTOM CODE [HEAD]   rev: 2026-08-28r2
-       - 起動クローク（フォームのチラつき／FOUC防止）
-       - 白フラッシュ対策（STUDIO内部の #e5e5e5 と全プロパティtransition）
-       - 黒帯除去（#__nuxt の上下 padding を変数化・既定0）
-     ------------------------------------------------------------
-     r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
-       [A] 未使用セレクタの削除
-             ・html.cfi-sub .cfi-ft{margin-top:0}
-               → 「旧クラス残存時の保険」。現行DOMに .cfi-ft は存在しない
-       [E] common.css と重複していた定義を削除（common.css を唯一の正とする）
-             ・a.is-todo / a.is-todo::after / .is-todo-text → common.css §15-2
-             ・html.cfi-fallback .rv                        → common.css §12
-             ・scroll-behavior / scroll-padding-top         → common.css §1（html）
-             ・html.cfi-sub{background:#071019}             → 直前の html{background} と同値
-       [F] 打ち消し対象のない no-op を削除
-             ・html.cfi-sub footer{margin-top:0 !important}
-               → common.css の footer に margin-top の指定がなく、
-                 かつ親の #cfi-bottom 側で margin-top:0 を既に担保している
-       [-] キャッシュバスターを v=20260828r2 に統一
-       [-] 章番号を繰り上げ（旧1〜8章 → 1〜6章）
-     ------------------------------------------------------------
-     ※ #__nuxt を表示するページのため、3章の白フラッシュ対策は
-       home 側と異なり全て有効。削除しないこと
-     ============================================================ -->
-
 <!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
 <script>
 (function(){
@@ -38,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260828r2">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
 
 <style>
 /* ============================================================
