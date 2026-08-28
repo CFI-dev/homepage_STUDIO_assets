@@ -111,22 +111,7 @@ html.cfi-sub #__nuxt > *:first-child{margin-top:0 !important}
 html.cfi-sub #__nuxt > *:last-child{margin-bottom:0 !important}
 
 /* ============================================================
-   5. ロゴ（トップページと同一数値。片方だけ変えないこと）
-   ============================================================ */
-html.cfi-sub .logo{display:flex;align-items:center;gap:10px}
-html.cfi-sub .logo .mark{height:32px;width:auto;flex:0 0 auto;object-fit:contain;transform:translateX(0)}
-html.cfi-sub .logo:hover .mark{transform:translateX(4px)}
-@media (prefers-reduced-motion:reduce){html.cfi-sub .logo:hover .mark{transform:none}}
-html.cfi-sub .logo .logo-name{height:34px;width:auto;flex:0 0 auto;object-fit:contain;display:block}
-html.cfi-sub footer .logo .logo-name{height:31px}
-@media (max-width:360px){
-  html.cfi-sub .logo{gap:8px}
-  html.cfi-sub .logo .mark{height:26px}
-  html.cfi-sub .logo .logo-name{height:27px}
-}
-
-/* ============================================================
-   6. 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める）
+   5. 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める）
    ============================================================ */
 html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
 html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
@@ -137,12 +122,12 @@ html.cfi-sub .hero-sub h1 span{display:block;font-family:var(--f-jp);
 html.cfi-sub .hero-sub p.lead{margin-top:24px}
 
 /* ============================================================
-   7. フォームのアンカー用オフセット
+   6. フォームのアンカー用オフセット
    ============================================================ */
 html.cfi-sub #form{display:block;position:relative;top:calc(var(--hd) * -1);height:0}
 
 /* ============================================================
-   8. 未確定リンク（data-cfi-todo）の可視化
+   7. 未確定リンク（data-cfi-todo）の可視化
       URLが決まったら data-cfi-todo を削除し href を設定する
    ============================================================ */
 html.cfi-sub a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
@@ -151,7 +136,7 @@ html.cfi-sub a.is-todo::after{
 html.cfi-sub .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   9. フッター（見た目は common.css の footer 定義に一任）
+   8. フッター（見た目は common.css の footer 定義に一任）
    ============================================================ */
 html.cfi-sub footer{margin-top:0 !important}
 html.cfi-sub .cfi-ft{margin-top:0 !important}   /* 旧クラス残存時の保険 */
