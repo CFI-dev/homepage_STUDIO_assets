@@ -555,3 +555,34 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 @media (prefers-reduced-motion:reduce){
   .v-bar i{transition:none!important;width:var(--w,70%)!important}
 }
+
+/* ===== EYEBROW 統一 (rev:2026-08-28) ===== */
+:root{
+  --eyebrow-size:12px;
+  --eyebrow-track:.24em;
+}
+
+/* 全アイブロウを同一仕様に強制 */
+.eyebrow,
+.hero .eyebrow,
+.sec-head .eyebrow,
+.eyebrow.mono{
+  font-family:var(--f-mono);
+  font-size:var(--eyebrow-size);
+  font-weight:500;
+  letter-spacing:var(--eyebrow-track);
+  line-height:1.4;
+  color:var(--accent-2);
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* 装飾線も文字サイズに追従（固定pxをやめる） */
+.eyebrow::before{
+  content:"";
+  flex:0 0 auto;
+  width:3.2em;
+  height:1px;
+  background:var(--accent-2);
+}
