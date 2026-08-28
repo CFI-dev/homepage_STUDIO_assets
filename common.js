@@ -158,12 +158,22 @@
     tk.dataset.cfiDuped = "1";
   })();
 
-  /* ------------------------------------------------------------
-     4. 出現アニメーション
+   /* ------------------------------------------------------------
+     4. 出現アニメーション   rev:2026-08-28d
+        [復帰] stagger の係数を entries 配列の index に戻した。
+               rev.c の「交差数カウント＋上限6」は仕様として正しい
+               반面、初回カスケードが 420ms に圧縮され一斉表示に
+               見えたため、元の演出へ戻す
+        [STUDIO対策] クローク（html.cfi-boot）が外れるまで監視を
+               開始しない。visibility:hidden の要素もレイアウト
+               ボックスを持つため IntersectionObserver は交差と
+               判定してしまい、クローク中に演出が消化されていた
      ------------------------------------------------------------ */
   (function initReveal() {
     var targets = document.querySelectorAll(".rv");
     if (!targets.length) return;
+
+    var html = document.documentElement;
 
     function showAll() {
       Array.prototype.forEach.call(targets, function (el) { el.classList.add("on"); });
@@ -173,21 +183,40 @@
     if (!HAS_IO || rm.matches) { showAll(); return; }
 
     var io = new IntersectionObserver(function (entries) {
-      /* 旧版は entries の index を係数にしていたため、非交差要素が
-         混ざると 0,140,350ms のように間隔が飛んでいた。
-         交差した要素だけを数え、上限を設けて総遅延を抑える。 */
-      var shown = 0;
-      entries.forEach(function (e) {
+      /* 初回は監視対象がまとめて渡されるため i が伸び、
+         ゆったりしたカスケードになる。これが意図した見た目。 */
+      entries.forEach(function (e, i) {
         if (!e.isIntersecting) return;
-        var delay = Math.min(shown++, 6) * 70;
         var el = e.target;
         io.unobserve(el);
-        if (delay === 0) el.classList.add("on");
-        else setTimeout(function () { el.classList.add("on"); }, delay);
+        setTimeout(function () { el.classList.add("on"); }, i * 70);
       });
     }, { threshold: 0.14, rootMargin: "0px 0px -8%" });
 
-    Array.prototype.forEach.call(targets, function (el) { io.observe(el); });
+    function begin() {
+      Array.prototype.forEach.call(targets, function (el) { io.observe(el); });
+    }
+
+    /* --- クローク解除を待ってから監視を開始する --- */
+    if (!html.classList.contains("cfi-boot") || typeof MutationObserver !== "function") {
+      begin();
+    } else {
+      var started = false;
+      var kick = function () {
+        if (started) return;
+        started = true;
+        mo.disconnect();
+        clearTimeout(guard);
+        begin();
+      };
+      var mo = new MutationObserver(function () {
+        if (!html.classList.contains("cfi-boot")) kick();
+      });
+      mo.observe(html, { attributes: true, attributeFilter: ["class"] });
+
+      /* 保険：HEAD側の最終解除（top 3780ms / contact 3500ms）より後 */
+      var guard = setTimeout(kick, 4000);
+    }
 
     /* 実行中に「動きを減らす」へ切り替わったら全部出して監視を畳む */
     onMQ(rm, function (e) {
