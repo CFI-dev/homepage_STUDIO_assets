@@ -1,25 +1,26 @@
 @charset "UTF-8";
 
 /* ============================================================
-   CFI コーポレートサイト 共通スタイル   rev: 2026-08-28r2
+   CFI コーポレートサイト 共通スタイル   rev: 2026-08-28r3
    ------------------------------------------------------------
-   r1（2026-08-27r1）からの変更点 ※死にコード除去のみ／表示結果は不変
-     [A] 完全未使用セレクタ／変数の削除
-         .mk use / .link-strong / .eyebrow-center / .logo b / .logo small
-         .hero-kpi 一式 / .nums 一式 / .sr-only / .v-lead / .v-ba 一式
-         --navy-3
-         ＋ 上記に連動して死んでいた各ブレークポイント内の指定
-     [C] 後続ルールに上書きされ効いていなかった指定の整理
-         C-1 @768 .hero-mission{margin-top} を削除（末尾ブロックが常時上書き）
-         C-2 .hero-mission の定義を1箇所に統合
-         C-3 @480 .eyebrow{font-size/letter-spacing} を削除（EYEBROW統一が上書き）
-         C-4 .eyebrow::before の幅指定を em 基準1本に統合（38px/26px を削除）
-         C-5 @600 .works / .flow の grid 指定を削除
-             （≤768px は .v-scroll により flex 化されるため grid 系は不活性）
-         C-6 .hero .hero-cta{margin-bottom:0} を削除（打ち消し対象なしのno-op）
-     [D] .hero-mission{padding-top:34} の単位欠落を修正（→ 34px）
-         ※不正宣言は仕様上パース時に破棄されるため、実際には
-           §3 の padding-top:34px が生き残っていた。値は同一のため表示不変
+   r2（2026-08-28r2）からの変更点 ※ヒーローと他セクションの表記統一
+     [G] アイブロウ下余白を全セクション共通化
+         G-1 --eyebrow-mb を新設し .eyebrow{margin-bottom} を変数化
+         G-2 .hero .eyebrow{margin-bottom:14px} を削除
+             （ヒーローだけ14px、他は26pxで不揃いだったため）
+         G-3 @480 の .eyebrow{margin-bottom:20px} を
+             :root{--eyebrow-mb:20px} に変更（トークンで一元管理）
+     [H] ヒーロー英文リードのサイズを VISION / MISSION で統一
+         H-1 --hero-en-size を新設し .hero .hero-en を変数化
+         H-2 .hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)} を削除
+     [I] MISSION のリード文サイズを VISION と統一
+         I-1 .hero .hero-mission p.lead から font-size:17px /
+             line-height:1.85 を削除（margin-top:10px のみ残す）
+             ※@480 の .hero p.lead{font-size:14.5px} に詳細度で勝ってしまい、
+               スマホ幅で MISSION だけ縮まないバグも同時に解消
+     ------------------------------------------------------------
+   ※ .eyebrow::before（アイブロウ装飾線）は §3 に存在する。
+      編集時に巻き込み削除しないこと
      ------------------------------------------------------------
    ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
    ============================================================ */
@@ -46,7 +47,8 @@
   --eyebrow-size:12px;    /* アイブロウ文字サイズ（全セクション共通） */
   --eyebrow-track:.24em;  /* アイブロウ字間（全セクション共通） */
   --eyebrow-mb:26px;      /* アイブロウ下余白（全セクション共通） */
-  --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文リード（VISION/MISSION共通） */
+
+  --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文（VISION/MISSION共通） */
 
   --f-en:"Barlow",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
@@ -123,7 +125,6 @@ nav a.gnav:hover::after{width:100%}
 .hero .wrap{position:relative;z-index:2}
 
 /* --- アイブロウ（全セクション共通仕様。ここを唯一の正とする） --- */
-/* .eyebrow の margin-bottom を変数化 */
 .eyebrow{
   font-family:var(--f-mono);
   font-size:var(--eyebrow-size);
@@ -136,14 +137,8 @@ nav a.gnav:hover::after{width:100%}
   gap:12px;
   margin-bottom:var(--eyebrow-mb);
 }
-
-.hero .hero-en{font-family:var(--f-en);font-weight:600;
-  font-size:var(--hero-en-size);
-  line-height:1.5;letter-spacing:.01em;
-  color:var(--accent-2);margin-bottom:14px}
-
-.hero-mission{margin-top:44px;padding-top:34px;max-width:38em}
-.hero .hero-mission p.lead{margin-top:10px}
+/* ▼ 装飾線。削除しないこと（文字サイズに追従。固定pxは使わない） */
+.eyebrow::before{content:"";flex:0 0 auto;width:3.2em;height:1px;background:var(--accent-2)}
 
 .hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -155,14 +150,14 @@ nav a.gnav:hover::after{width:100%}
 @keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
 
 /* --- VISION / MISSION 表示 --- */
-.hero .eyebrow{margin-bottom:14px}
+/* アイブロウ下余白はセクション共通（--eyebrow-mb）に従う。ここで上書きしない */
 .hero .hero-en{font-family:var(--f-en);font-weight:600;
-  font-size:clamp(16px,2.2vw,24px);line-height:1.5;letter-spacing:.01em;
+  font-size:var(--hero-en-size);line-height:1.5;letter-spacing:.01em;
   color:var(--accent-2);margin-bottom:14px}
 /* VISION と MISSION の間に区切り線は置かない。間隔は margin-top で確保する */
 .hero-mission{margin-top:44px;padding-top:34px;max-width:38em}
-.hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)}
-.hero .hero-mission p.lead{margin-top:10px;font-size:17px;line-height:1.85}
+/* 英文サイズ・リード文サイズは VISION と共通。差をつけない */
+.hero .hero-mission p.lead{margin-top:10px}
 
 @media (max-width:768px){
   .hero-mission{padding-top:26px}
@@ -383,11 +378,11 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ---- 480px：スマートフォン ---- */
 @media (max-width:480px){
+  :root{--eyebrow-mb:20px}     /* アイブロウ下余白を全セクション一括で縮める */
   body{font-size:14.5px;line-height:1.85}
   .hero-cta{flex-direction:column;align-items:stretch;gap:12px}
   .btn{width:100%;padding:14px 18px}
   .hero p.lead{margin-top:20px;font-size:14.5px}
-   :root{--eyebrow-mb:20px}
   .svc article{padding:30px 22px}
   .svc .ico{width:38px;height:38px;margin:16px 0 18px}
   .case{padding:26px 20px}
