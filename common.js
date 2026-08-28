@@ -79,30 +79,103 @@
   })();
 
   /* ------------------------------------------------------------
-     4. 出現アニメーション
+     4. 出現アニメーション（.rv → .on）
+        rev:2026-08-28
+        (a) 起動クローク（html.cfi-boot）が引き始めるまで監視を開始しない。
+            幕の裏で演出が完了し「動かないページ」に見えるのを防ぐ。
+        (b) 後から生成されるDOM（STUDIOフォーム等）を
+            window.CFI.reveal(target) で追加登録できるようにする。
      ------------------------------------------------------------ */
   (function initReveal() {
-    const targets = document.querySelectorAll(".rv");
-    if (!targets.length) return;
+    var html = document.documentElement;
 
     /* 非対応環境／動きを減らす設定では即時表示 */
-    if (!HAS_IO || rm.matches) {
-      targets.forEach((el) => el.classList.add("on"));
-      return;
+    var INSTANT = !HAS_IO || rm.matches;
+
+    var io = null;
+    var queue = [];      /* 監視開始前に積まれた要素 */
+    var started = false;
+
+    /* ▼▼ 発火タイミングの調整ダイヤル ▼▼
+       START_ON_FADE = true  : 幕が引き始めた瞬間（cfi-boot-out）に開始＝幕と重なる
+       START_ON_FADE = false : 幕が完全に消えてから（cfi-boot 除去）開始
+       LEAD                  : 追加ディレイ(ms)。もたつく／急ぐと感じたら 0〜200 で調整 */
+    var START_ON_FADE = true;
+    var LEAD = 0;
+    /* ▲▲ 調整はここまで ▲▲ */
+
+    function toList(t) {
+      if (!t) return [];
+      if (t.nodeType === 1) return [t];
+      return Array.prototype.slice.call(t);
     }
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e, i) => {
-          if (!e.isIntersecting) return;
-          setTimeout(() => e.target.classList.add("on"), i * 70);
-          io.unobserve(e.target);
-        });
-      },
-      { threshold: 0.14, rootMargin: "0px 0px -8%" }
-    );
+    function getIO() {
+      if (io) return io;
+      io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (e, i) {
+            if (!e.isIntersecting) return;
+            setTimeout(function () { e.target.classList.add("on"); }, i * 70);
+            io.unobserve(e.target);
+          });
+        },
+        { threshold: 0.14, rootMargin: "0px 0px -8%" }
+      );
+      return io;
+    }
 
-    targets.forEach((el) => io.observe(el));
+    /* 公開API：window.CFI.reveal(Element | NodeList | Array) */
+    function observe(target) {
+      var list = toList(target).filter(function (el) {
+        return el && el.classList && !el.classList.contains("on");
+      });
+      if (!list.length) return;
+      if (INSTANT) {
+        list.forEach(function (el) { el.classList.add("on"); });
+        return;
+      }
+      if (!started) { queue = queue.concat(list); return; }
+      var o = getIO();
+      list.forEach(function (el) { o.observe(el); });
+    }
+
+    function start() {
+      if (started) return;
+      started = true;
+      var q = queue;
+      queue = [];
+      observe(q);
+    }
+
+    var CFI = (window.CFI = window.CFI || {});
+    CFI.reveal = observe;
+
+    /* 初期分を登録（この時点では監視を始めない） */
+    observe(document.querySelectorAll(".rv"));
+
+    /* クローク解除の両経路（cfi-boot-out 経由 / cfi-boot 直接除去）を拾う */
+    function ready() {
+      if (!html.classList.contains("cfi-boot")) return true;
+      return START_ON_FADE && html.classList.contains("cfi-boot-out");
+    }
+
+    if (INSTANT) {
+      start();
+    } else if (ready()) {
+      setTimeout(start, LEAD);
+    } else if (typeof MutationObserver === "function") {
+      var mo = new MutationObserver(function () {
+        if (!ready()) return;
+        mo.disconnect();
+        setTimeout(start, LEAD);
+      });
+      mo.observe(html, { attributes: true, attributeFilter: ["class"] });
+      /* 保険：HEAD側の3.5秒解除より後に必ず開始 */
+      setTimeout(function () { mo.disconnect(); start(); }, 4200);
+    } else {
+      setTimeout(start, 800);
+    }
   })();
 
   /* ------------------------------------------------------------
