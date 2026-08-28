@@ -90,30 +90,41 @@ nav a.gnav:hover::after{width:100%}
 /* ============================================================
    3. ヒーロー
    ============================================================ */
-/* HERO 背景：オーロラ案（common.css 3章の .hero 既存指定に追記／上書き） */
-.hero{position:relative;overflow:hidden;background:var(--ink)}
-.hero::before{
-  content:"";position:absolute;inset:-20% -10%;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(46% 52% at 22% 18%, rgba(15,107,224,.42), transparent 68%),
-    radial-gradient(40% 46% at 82% 32%, rgba(0,194,168,.26), transparent 66%),
-    radial-gradient(60% 70% at 50% 108%, rgba(10,58,92,.55), transparent 72%);
-  filter:blur(28px);
-  animation:heroAurora 22s ease-in-out infinite alternate
-}
-.hero::after{ /* 下端を本文セクションへ自然に接続 */
-  content:"";position:absolute;left:0;right:0;bottom:0;height:22vh;z-index:1;
-  pointer-events:none;background:linear-gradient(to bottom,transparent,var(--ink))
-}
+.hero{position:relative;min-height:100svh;display:flex;align-items:center;
+  padding:calc(var(--hd) + 60px) 0 72px;
+  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);overflow:hidden}
+#heroCv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
 .hero .wrap{position:relative;z-index:2}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--accent-2);
+  display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.eyebrow::before{content:"";width:38px;height:1px;background:var(--accent-2);flex:0 0 auto}
+.hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
+.hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+.hero-kpi{display:flex;flex-wrap:wrap;gap:44px;margin-top:60px;padding-top:32px;border-top:1px solid var(--line)}
+.hero-kpi div b{font-family:var(--f-en);font-size:34px;line-height:1;letter-spacing:-.02em}
+.hero-kpi div small{display:block;margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.08em}
+.scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
+.scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
+@keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
+/* --- VISION / MISSION 表示（rev:2026-08-28） --- */
+.hero .eyebrow{margin-bottom:14px}
+.hero .hero-en{font-family:var(--f-en);font-weight:600;
+  font-size:clamp(16px,2.2vw,24px);line-height:1.5;letter-spacing:.01em;
+  color:var(--accent-2);margin-bottom:14px}
+.hero-mission{margin-top:46px;padding-top:34px;border-top:1px solid var(--line);max-width:38em}
+.hero-mission .hero-en{font-size:clamp(15px,1.9vw,20px)}
+.hero .hero-mission p.lead{margin-top:10px}
 
-@keyframes heroAurora{
-  0%  {transform:translate3d(0,0,0)      scale(1)}
-  50% {transform:translate3d(2.5%,-2%,0) scale(1.06)}
-  100%{transform:translate3d(-2%,1.5%,0) scale(1.02)}
-}
-@media (prefers-reduced-motion:reduce){
-  .hero::before{animation:none}
+/* KPI廃止に伴う下部余白の調整（.hero-cta が最終要素になるため） */
+.hero .hero-cta{margin-bottom:0}
+
+@media (max-width:768px){
+  .hero-mission{margin-top:34px;padding-top:26px}
 }
 
 /* ============================================================
