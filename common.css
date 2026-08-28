@@ -45,6 +45,8 @@
 
   --eyebrow-size:12px;    /* アイブロウ文字サイズ（全セクション共通） */
   --eyebrow-track:.24em;  /* アイブロウ字間（全セクション共通） */
+  --eyebrow-mb:26px;      /* アイブロウ下余白（全セクション共通） */
+  --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文リード（VISION/MISSION共通） */
 
   --f-en:"Barlow",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
@@ -121,6 +123,7 @@ nav a.gnav:hover::after{width:100%}
 .hero .wrap{position:relative;z-index:2}
 
 /* --- アイブロウ（全セクション共通仕様。ここを唯一の正とする） --- */
+/* .eyebrow の margin-bottom を変数化 */
 .eyebrow{
   font-family:var(--f-mono);
   font-size:var(--eyebrow-size);
@@ -131,10 +134,16 @@ nav a.gnav:hover::after{width:100%}
   display:flex;
   align-items:center;
   gap:12px;
-  margin-bottom:26px;
+  margin-bottom:var(--eyebrow-mb);
 }
-/* 装飾線は文字サイズに追従させる（固定pxは使わない） */
-.eyebrow::before{content:"";flex:0 0 auto;width:3.2em;height:1px;background:var(--accent-2)}
+
+.hero .hero-en{font-family:var(--f-en);font-weight:600;
+  font-size:var(--hero-en-size);
+  line-height:1.5;letter-spacing:.01em;
+  color:var(--accent-2);margin-bottom:14px}
+
+.hero-mission{margin-top:44px;padding-top:34px;max-width:38em}
+.hero .hero-mission p.lead{margin-top:10px}
 
 .hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
 .hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -378,7 +387,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .hero-cta{flex-direction:column;align-items:stretch;gap:12px}
   .btn{width:100%;padding:14px 18px}
   .hero p.lead{margin-top:20px;font-size:14.5px}
-  .eyebrow{margin-bottom:20px}
+   :root{--eyebrow-mb:20px}
   .svc article{padding:30px 22px}
   .svc .ico{width:38px;height:38px;margin:16px 0 18px}
   .case{padding:26px 20px}
