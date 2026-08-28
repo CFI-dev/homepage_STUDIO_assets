@@ -3,8 +3,13 @@
 (function(){
   var h = document.documentElement;
   h.className += ' cfi-sub cfi-boot';
-  /* 保険：BODYコードが動かなくても3.5秒で必ず解除 */
-  setTimeout(function(){ h.classList.remove('cfi-boot'); }, 3500);
+  /* 保険：BODYコードが動かなくても3.5秒で必ず解除（home と同挙動に統一） */
+  setTimeout(function(){
+    h.classList.add('cfi-boot-out');
+    setTimeout(function(){
+      h.classList.remove('cfi-boot','cfi-boot-out');
+    }, 280);
+  }, 3500);
 })();
 </script>
 
