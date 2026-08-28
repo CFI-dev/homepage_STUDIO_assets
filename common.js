@@ -1,45 +1,33 @@
 "use strict";
 
 /* ============================================================
-   CFI コーポレートサイト メインスクリプト   rev: 2026-08-28c
+   CFI コーポレートサイト メインスクリプト   rev: 2026-08-27r1
    ・STUDIO カスタムコード [BODY] の末尾から読み込む前提
    ・CSSのハンバーガー閾値（960px）と MQ_DESK を必ず一致させること
    ------------------------------------------------------------
-   rev:2026-08-27r1 からの変更点
-     [P0-2] カウントアップの 0 初期化を本ファイルへ移設。
-            ページ側BODYの ④ ブロックは削除すること。
-            common.js が読めなかった場合、HTML直書きの実値が
-            そのまま残る（従来は「0」で固定される事故があった）
-     [BUG]  ヒーローcanvas：画面外へ出たノードが毎フレーム
-            速度反転し、境界に貼り付いて振動する不具合を修正
-            （座標クランプ方式へ変更）
-     [BUG]  リビール演出：stagger の係数に entries 配列の index を
-            使っていたため、非交差要素が混じると間隔が飛んでいた
-     [A11Y] 閉じたモバイルナビが transform で画面外に出るだけで
-            Tabキーのフォーカスが到達していた。inert（非対応環境は
-            tabindex/aria-hidden）で遮断
-     [A11Y] Escape での閉鎖時にフォーカスをバーガーへ戻す
-     [PERF] ノード間距離を二乗比較にし Math.hypot を除去
-            （72ノード＝2,556組×60fps の平方根計算を削減）
-     [PERF] ヘッダー影：状態が変わったフレームのみDOMへ書き込む
-     [FIX]  リサイズ時にノードを再生成せず座標をスケール
-     [FIX]  data-count が空文字のとき 0 と誤判定する条件を修正
-     [FIX]  ティッカー複製を cloneNode 化（innerHTML 再パースを回避）
-   ------------------------------------------------------------
-   参照側の注意：CSS・JS・画像のクエリを ?v=20260828c に揃えること
+   旧版からの変更点
+     1. 【バグ修正】prefers-reduced-motion 時にヒーローcanvasが
+        静止せず永久にアニメーションしていた（draw末尾が無条件に
+        requestAnimationFrame を呼んでいたため）
+     2. 全体をIIFEで包み二重読み込みガードを追加
+        （SPAで再実行された際の const 再宣言エラー／ティッカー
+          二重複製を防止）
+     3. IntersectionObserver 非対応環境のフォールバックを追加
+        （例外で全スクリプトが停止し .rv が不可視化するのを防止）
+     4. matchMedia の change 購読を addListener 互換に
+     5. data-count が数値でない場合のガード
+     6. 動きを減らす設定の実行中切り替えに追従
    ============================================================ */
 
 (function () {
   /* ------------------------------------------------------------
-     0. 共通の前提
+     0. 二重読み込みガード
      ------------------------------------------------------------ */
-  if (window.__cfiCommonLoaded) return;   /* SPA再実行での二重初期化を防ぐ */
+  if (window.__cfiCommonLoaded) return;
   window.__cfiCommonLoaded = true;
 
   var MQ_DESK = matchMedia("(min-width:961px)");
   var rm = matchMedia("(prefers-reduced-motion: reduce)");
-  var HAS_IO = typeof IntersectionObserver === "function";
-  var HAS_INERT = "inert" in HTMLElement.prototype;
 
   /* matchMedia の change 購読（Safari 13以下は addListener のみ） */
   function onMQ(mq, fn) {
@@ -47,319 +35,197 @@
     else if (typeof mq.addListener === "function") mq.addListener(fn);
   }
 
+  var HAS_IO = typeof IntersectionObserver === "function";
+
   /* ------------------------------------------------------------
      1. モバイルメニュー
-        開閉・フォーカス遮断・Escape・外側クリックを一括で扱う
      ------------------------------------------------------------ */
   (function initNav() {
-    var burger = document.getElementById("burger");
-    var nav = document.getElementById("nav");
-    var hd = document.getElementById("hd");
+    const burger = document.getElementById("burger");
+    const nav = document.getElementById("nav");
     if (!burger || !nav) return;
 
-    /* 閉じている間はナビをフォーカス不可・支援技術から不可視にする。
-       ・inert 対応（Chrome102+ / Safari15.5+ / Firefox112+）は inert
-       ・非対応環境は tabindex="-1" と aria-hidden で代替
-       デスクトップ幅ではナビは常時表示なので必ず解除する。 */
-    function seal(off) {
-      if (HAS_INERT) {
-        nav.inert = off;
-        return;
-      }
-      if (off) nav.setAttribute("aria-hidden", "true");
-      else nav.removeAttribute("aria-hidden");
-      Array.prototype.forEach.call(nav.querySelectorAll("a,button"), function (el) {
-        if (off) el.setAttribute("tabindex", "-1");
-        else el.removeAttribute("tabindex");
-      });
-    }
+    const closeNav = () => {
+      burger.classList.remove("on");
+      nav.classList.remove("open");
+      burger.setAttribute("aria-expanded", "false");
+      burger.setAttribute("aria-label", "メニューを開く");
+    };
 
-    function syncSeal() {
-      seal(!MQ_DESK.matches && !nav.classList.contains("open"));
-    }
-
-    function setOpen(open) {
-      burger.classList.toggle("on", open);
+    burger.addEventListener("click", () => {
+      const open = burger.classList.toggle("on");
       nav.classList.toggle("open", open);
       burger.setAttribute("aria-expanded", String(open));
       burger.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
-      syncSeal();
-    }
-
-    var closeNav = function () { setOpen(false); };
-
-    burger.addEventListener("click", function () {
-      setOpen(!nav.classList.contains("open"));
     });
 
-    /* ナビ内リンクを踏んだら閉じる（同一ページ内アンカー対策） */
-    Array.prototype.forEach.call(nav.querySelectorAll("a"), function (a) {
-      a.addEventListener("click", closeNav);
-    });
+    nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
 
-    /* PC幅に戻したら開閉状態をリセットし、封鎖も解く */
-    onMQ(MQ_DESK, function (e) {
+    /* PC幅に戻したら閉じる */
+    onMQ(MQ_DESK, (e) => {
       if (e.matches) closeNav();
-      else syncSeal();
     });
 
-    /* Escape：開いているときだけ反応し、フォーカスをバーガーへ返す */
-    addEventListener("keydown", function (e) {
-      if (e.key !== "Escape") return;
-      if (!nav.classList.contains("open")) return;
-      closeNav();
-      burger.focus();
+    addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeNav();
     });
-
-    /* ヘッダーの外側をタップしたら閉じる */
-    document.addEventListener("pointerdown", function (e) {
-      if (!nav.classList.contains("open")) return;
-      if (hd && hd.contains(e.target)) return;
-      closeNav();
-    }, { passive: true });
-
-    syncSeal();   /* 初期状態（モバイル幅で読み込まれた場合に封鎖） */
   })();
 
   /* ------------------------------------------------------------
      2. ヘッダー影
-        scroll は高頻度で発火するため、状態が変わった時だけ
-        classList を触る（不要なスタイル再計算を出さない）
      ------------------------------------------------------------ */
   (function initHeaderShadow() {
-    var hd = document.getElementById("hd");
+    const hd = document.getElementById("hd");
     if (!hd) return;
-
-    var on = null;
-    function apply() {
-      var next = scrollY > 40;
-      if (next === on) return;
-      on = next;
-      hd.classList.toggle("scr", next);
-    }
+    const apply = () => hd.classList.toggle("scr", scrollY > 40);
     addEventListener("scroll", apply, { passive: true });
-    apply();   /* リロード位置が途中の場合に備えて初期反映 */
+    apply(); /* リロード位置が途中の場合に備えて初期反映 */
   })();
 
   /* ------------------------------------------------------------
      3. ティッカー複製（シームレスループ用）
-        CSSの translateX(-50%) は「中身がちょうど2倍」を前提にする
+        ※ 二重複製を防ぐためフラグで一度だけ実行
      ------------------------------------------------------------ */
   (function initTicker() {
-    var tk = document.getElementById("tk");
+    const tk = document.getElementById("tk");
     if (!tk || tk.dataset.cfiDuped === "1") return;
-
-    /* innerHTML += は全ノードを破棄・再パースするため cloneNode を使う */
-    var frag = document.createDocumentFragment();
-    Array.prototype.forEach.call(tk.children, function (li) {
-      frag.appendChild(li.cloneNode(true));
-    });
-    tk.appendChild(frag);
+    tk.innerHTML += tk.innerHTML;
     tk.dataset.cfiDuped = "1";
   })();
 
-   /* ------------------------------------------------------------
-     4. 出現アニメーション   rev:2026-08-28d
-        [復帰] stagger の係数を entries 配列の index に戻した。
-               rev.c の「交差数カウント＋上限6」は仕様として正しい
-               반面、初回カスケードが 420ms に圧縮され一斉表示に
-               見えたため、元の演出へ戻す
-        [STUDIO対策] クローク（html.cfi-boot）が外れるまで監視を
-               開始しない。visibility:hidden の要素もレイアウト
-               ボックスを持つため IntersectionObserver は交差と
-               判定してしまい、クローク中に演出が消化されていた
+  /* ------------------------------------------------------------
+     4. 出現アニメーション
      ------------------------------------------------------------ */
   (function initReveal() {
-    var targets = document.querySelectorAll(".rv");
+    const targets = document.querySelectorAll(".rv");
     if (!targets.length) return;
 
-    var html = document.documentElement;
-
-    function showAll() {
-      Array.prototype.forEach.call(targets, function (el) { el.classList.add("on"); });
-    }
-
     /* 非対応環境／動きを減らす設定では即時表示 */
-    if (!HAS_IO || rm.matches) { showAll(); return; }
-
-    var io = new IntersectionObserver(function (entries) {
-      /* 初回は監視対象がまとめて渡されるため i が伸び、
-         ゆったりしたカスケードになる。これが意図した見た目。 */
-      entries.forEach(function (e, i) {
-        if (!e.isIntersecting) return;
-        var el = e.target;
-        io.unobserve(el);
-        setTimeout(function () { el.classList.add("on"); }, i * 70);
-      });
-    }, { threshold: 0.14, rootMargin: "0px 0px -8%" });
-
-    function begin() {
-      Array.prototype.forEach.call(targets, function (el) { io.observe(el); });
+    if (!HAS_IO || rm.matches) {
+      targets.forEach((el) => el.classList.add("on"));
+      return;
     }
 
-    /* --- クローク解除を待ってから監視を開始する --- */
-    if (!html.classList.contains("cfi-boot") || typeof MutationObserver !== "function") {
-      begin();
-    } else {
-      var started = false;
-      var kick = function () {
-        if (started) return;
-        started = true;
-        mo.disconnect();
-        clearTimeout(guard);
-        begin();
-      };
-      var mo = new MutationObserver(function () {
-        if (!html.classList.contains("cfi-boot")) kick();
-      });
-      mo.observe(html, { attributes: true, attributeFilter: ["class"] });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e, i) => {
+          if (!e.isIntersecting) return;
+          setTimeout(() => e.target.classList.add("on"), i * 70);
+          io.unobserve(e.target);
+        });
+      },
+      { threshold: 0.14, rootMargin: "0px 0px -8%" }
+    );
 
-      /* 保険：HEAD側の最終解除（top 3780ms / contact 3500ms）より後 */
-      var guard = setTimeout(kick, 4000);
-    }
-
-    /* 実行中に「動きを減らす」へ切り替わったら全部出して監視を畳む */
-    onMQ(rm, function (e) {
-      if (!e.matches) return;
-      io.disconnect();
-      showAll();
-    });
+    targets.forEach((el) => io.observe(el));
   })();
 
   /* ------------------------------------------------------------
      5. カウントアップ
-        HTML側は実値を直書きしておく（このスクリプトが読み込め
-        なかった場合に、そのまま実値が表示される＝P0-2の要点）。
-        0 への初期化は、演出が確実に走ると決まったここで行う。
      ------------------------------------------------------------ */
   (function initCounter() {
-    var nodes = document.querySelectorAll("[data-count]");
-    if (!nodes.length) return;
+    const targets = document.querySelectorAll("[data-count]");
+    if (!targets.length) return;
 
-    /* 空文字は +"" === 0 で isFinite を通ってしまうため明示的に弾く */
-    var list = Array.prototype.filter.call(nodes, function (el) {
-      var v = (el.dataset.count || "").trim();
-      return v !== "" && isFinite(+v);
-    });
+    /* 数値として解釈できるものだけを対象にする */
+    const list = Array.prototype.filter.call(targets, (el) => isFinite(+el.dataset.count));
     if (!list.length) return;
 
-    function settle(el) {
+    const settle = (el) => {
       el.textContent = +el.dataset.count + (el.dataset.suffix || "");
+    };
+
+    /* 非対応環境／動きを減らす設定では即時確定値 */
+    if (!HAS_IO || rm.matches) {
+      list.forEach(settle);
+      return;
     }
 
-    /* 非対応環境／動きを減らす設定では実値のまま据え置く */
-    if (!HAS_IO || rm.matches) { list.forEach(settle); return; }
+    const cio = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target;
+          const goal = +el.dataset.count;
+          const sfx = el.dataset.suffix || "";
 
-    /* ここまで来た時点で演出は確実に走るので、はじめて 0 にする */
-    list.forEach(function (el) { el.textContent = "0"; });
+          if (rm.matches) {
+            settle(el);
+            cio.unobserve(el);
+            return;
+          }
 
-    var cio = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        var el = e.target;
-        cio.unobserve(el);
+          const t0 = performance.now();
+          const D = 1400;
+          (function step(t) {
+            const p = Math.min((t - t0) / D, 1);
+            const v = Math.round(goal * (1 - Math.pow(1 - p, 3)));
+            el.textContent = v + sfx;
+            if (p < 1) requestAnimationFrame(step);
+          })(t0);
 
-        if (rm.matches) { settle(el); return; }
+          cio.unobserve(el);
+        });
+      },
+      { threshold: 0.6 }
+    );
 
-        var goal = +el.dataset.count;
-        var sfx = el.dataset.suffix || "";
-        var t0 = performance.now();
-        var D = 1400;
-
-        (function step(t) {
-          var p = Math.min((t - t0) / D, 1);
-          el.textContent = Math.round(goal * (1 - Math.pow(1 - p, 3))) + sfx;
-          if (p < 1) requestAnimationFrame(step);
-        })(t0);
-      });
-    }, { threshold: 0.6 });
-
-    list.forEach(function (el) { cio.observe(el); });
-
-    /* 途中で設定が変わったら即座に実値へ確定させる */
-    onMQ(rm, function (e) {
-      if (!e.matches) return;
-      cio.disconnect();
-      list.forEach(settle);
-    });
+    list.forEach((el) => cio.observe(el));
   })();
 
   /* ------------------------------------------------------------
      6. ヒーロー背景：ノードネットワーク＋アパーチャー
      ------------------------------------------------------------ */
   (function initHeroCanvas() {
-    var cv = document.getElementById("heroCv");
-    var hero = document.querySelector(".hero");
+    const cv = document.getElementById("heroCv");
+    const hero = document.querySelector(".hero");
     if (!cv || !hero || typeof cv.getContext !== "function") return;
 
-    var g = cv.getContext("2d", { alpha: true });
+    const g = cv.getContext("2d", { alpha: true });
     if (!g) return;
 
-    var TAU = Math.PI * 2;
-    var W = 0, H = 0, DPR = 1;
-    var nodes = [];
-    var raf = null, visible = true, rzTimer = null;
+    const TAU = Math.PI * 2;
+    let W = 0, H = 0, DPR = 1, nodes = [], raf = null, visible = true, rzTimer = null;
 
     /* 再現性のある擬似乱数（線形合同法） */
     function seeded(seed) {
-      var v = seed % 2147483647;
+      let v = seed % 2147483647;
       if (v <= 0) v += 2147483646;
-      return function () {
+      return () => {
         v = (v * 16807) % 2147483647;
         return (v - 1) / 2147483646;
       };
     }
 
-    /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える */
-    function countFor(w, h) {
-      return Math.round(Math.min(72, Math.max(18, (w * h) / 22000)));
-    }
-
-    function build(n) {
-      var rnd = seeded(20160202);
-      nodes = new Array(n);
-      for (var i = 0; i < n; i++) {
-        nodes[i] = {
-          x: rnd() * W,
-          y: rnd() * H,
-          vx: (rnd() - 0.5) * 0.22,
-          vy: (rnd() - 0.5) * 0.22,
-          r: 0.9 + rnd() * 1.9,
-          c: rnd() > 0.62 ? "0,194,168" : "15,107,224"
-        };
-      }
+    function build() {
+      const rnd = seeded(20160202);
+      /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える */
+      const n = Math.round(Math.min(72, Math.max(18, (W * H) / 22000)));
+      nodes = Array.from({ length: n }, () => ({
+        x: rnd() * W,
+        y: rnd() * H,
+        vx: (rnd() - 0.5) * 0.22,
+        vy: (rnd() - 0.5) * 0.22,
+        r: 0.9 + rnd() * 1.9,
+        c: rnd() > 0.62 ? "0,194,168" : "15,107,224",
+      }));
     }
 
     function resize() {
-      var r = cv.getBoundingClientRect();
-      if (!r.width || !r.height) return false;   /* 非表示時の 0 サイズを回避 */
-
-      var pw = W, ph = H;
+      DPR = Math.min(devicePixelRatio || 1, 2);
+      const r = cv.getBoundingClientRect();
       W = r.width;
       H = r.height;
-
-      /* モバイルはDPR 1.5で打ち止め（2.0との差はほぼ視認できない一方、
-         描画ピクセル数は1.8倍になる） */
-      DPR = Math.min(devicePixelRatio || 1, W < 768 ? 1.5 : 2);
+      if (!W || !H) return;               /* 非表示時の 0 サイズを回避 */
       cv.width = Math.round(W * DPR);
       cv.height = Math.round(H * DPR);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
-
-      /* ノード数が変わらないなら座標をスケールして配置を維持する
-         （アドレスバー開閉のたびに絵が作り直されるのを防ぐ） */
-      var n = countFor(W, H);
-      if (nodes.length === n && pw > 0 && ph > 0) {
-        var sx = W / pw, sy = H / ph;
-        for (var i = 0; i < n; i++) { nodes[i].x *= sx; nodes[i].y *= sy; }
-      } else {
-        build(n);
-      }
-      return true;
+      build();
     }
 
     /* アパーチャーマーク（3分割リング） */
     function aperture(cx, cy, R, rot, alpha) {
-      var grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      const grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
       grd.addColorStop(0, "rgba(15,107,224," + alpha + ")");
       grd.addColorStop(1, "rgba(0,194,168," + alpha + ")");
       g.save();
@@ -368,8 +234,8 @@
       g.strokeStyle = grd;
       g.lineWidth = R * 0.2;
       g.lineCap = "round";
-      for (var i = 0; i < 3; i++) {
-        var s = (i * TAU) / 3;
+      for (let i = 0; i < 3; i++) {
+        const s = (i * TAU) / 3;
         g.beginPath();
         g.arc(0, 0, R, s, s + 1.38);
         g.stroke();
@@ -383,10 +249,127 @@
 
     /* animate=false のときは1フレームだけ描いて終了（静止画） */
     function draw(t, animate) {
-      if (!W || !H) { raf = null; return; }
       g.clearRect(0, 0, W, H);
 
-      var narrow = W < 768;
-      var cx = narrow ? W * 0.5 : W * 0.74;
-      var cy = narrow ? H * 0.3 : H * 0.46;
-      var R = Math.min(W, H) * (narrow ?
+      /* 狭い画面ではアパーチャーを中央寄り・小さめに配置 */
+      const narrow = W < 768;
+      const cx = narrow ? W * 0.5 : W * 0.74;
+      const cy = narrow ? H * 0.3 : H * 0.46;
+      const R = Math.min(W, H) * (narrow ? 0.16 : 0.22);
+
+      const LINK = Math.min(150, Math.max(80, W * 0.11));
+
+      /* 静止描画では座標を進めない（毎回同じ絵になる） */
+      if (animate !== false) {
+        for (const p of nodes) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
+        }
+      }
+
+      g.lineWidth = 1;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d > LINK) continue;
+          g.strokeStyle = "rgba(0,194,168," + (0.16 * (1 - d / LINK)).toFixed(3) + ")";
+          g.beginPath();
+          g.moveTo(a.x, a.y);
+          g.lineTo(b.x, b.y);
+          g.stroke();
+        }
+      }
+
+      for (const p of nodes) {
+        g.fillStyle = "rgba(" + p.c + ",0.55)";
+        g.beginPath();
+        g.arc(p.x, p.y, p.r, 0, TAU);
+        g.fill();
+      }
+
+      /* 背面グロー */
+      const halo = g.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 1.9);
+      halo.addColorStop(0, "rgba(0,194,168,0.11)");
+      halo.addColorStop(0.55, "rgba(15,107,224,0.07)");
+      halo.addColorStop(1, "rgba(15,107,224,0)");
+      g.fillStyle = halo;
+      g.beginPath();
+      g.arc(cx, cy, R * 1.9, 0, TAU);
+      g.fill();
+
+      /* 二重リング：外周はゆっくり逆回転 */
+      const rot = (t / 26000) * TAU;
+      aperture(cx, cy, R * 1.42, -rot * 0.55, 0.16);
+      aperture(cx, cy, R, rot, 0.5);
+
+      /* ▼ 旧版はここが無条件だったため、動きを減らす設定でも
+           アニメーションが止まらなかった（本改訂の主眼） */
+      if (animate === false || rm.matches) {
+        raf = null;
+        return;
+      }
+      raf = requestAnimationFrame(draw);
+    }
+
+    function still() {
+      stop();
+      draw(0, false);
+    }
+    function start() {
+      if (!raf && visible && !rm.matches) raf = requestAnimationFrame(draw);
+    }
+    function stop() {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+    }
+    function render() {
+      rm.matches ? still() : start();
+    }
+
+    resize();
+
+    /* モバイルのアドレスバー開閉による微小リサイズを間引く */
+    addEventListener(
+      "resize",
+      () => {
+        clearTimeout(rzTimer);
+        rzTimer = setTimeout(() => {
+          stop();
+          resize();
+          render();
+        }, 180);
+      },
+      { passive: true }
+    );
+
+    addEventListener("orientationchange", () => {
+      stop();
+      resize();
+      render();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      document.hidden ? stop() : render();
+    });
+
+    /* 動きを減らす設定が実行中に切り替わった場合も追従 */
+    onMQ(rm, render);
+
+    /* ヒーローが画面外なら停止（省電力） */
+    if (HAS_IO) {
+      new IntersectionObserver((es) => {
+          visible = es[0].isIntersecting;
+          visible ? render() : stop();
+        }, { threshold: 0 })
+        .observe(hero);
+    }
+
+    /* 初期描画（動きを減らす設定では静止画1枚） */
+    render();
+  })();
+})();
