@@ -1,3 +1,31 @@
+<!-- ============================================================
+     CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-28r2
+     ------------------------------------------------------------
+     仕様（contact 版と統一）
+       - 通常読み込み：CSSクローク（2章 / cfi-boot）を表示
+       - 戻る／進む（bfcache復元）時：
+           pagehide で実DOMオーバーレイ #cfi-ov を貼った状態を保存し、
+           復元直後の描画からクロークを見せたうえで reload する
+           （reload後は2章のCSSクロークが引き継ぐため途切れない）
+     ------------------------------------------------------------
+     r6（2026-08-27r6）からの変更点 ※死にコード除去のみ／表示結果は不変
+       [E] common.css と重複していた定義を削除（common.css を唯一の正とする）
+           ・a.is-todo / a.is-todo::after / .is-todo-text  → common.css §15-2
+           ・html.cfi-fallback .rv                          → common.css §12
+             ※旧コメント「common.css 側に定義が無い」は事実誤認だったため撤去
+           ・scroll-behavior / scroll-padding-top           → common.css §1（html）
+           ・html.cfi-on{background}                        → 直前の html{background} と同値
+       [F] 到達しない指定を削除
+           ・html.cfi-on .StudioCanvas / .render-canvas * の transition 抑止
+             → 同ファイルで #__nuxt{display:none !important} としており
+               対象要素が描画対象外のため実効性なし
+           ・html.cfi-on #cta{scroll-margin-top}
+             → #cta を指す内部リンクが存在せず、かつ html の
+               scroll-padding-top と二重に効いてオフセットが倍増する副作用あり
+       [-] キャッシュバスターを v=20260828r2 に更新（common.css を差し替え済み）
+     ============================================================ -->
+
+<!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
@@ -67,31 +95,17 @@
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260827r1">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260828r2">
 
 <style>
 /* ============================================================
-   CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-27r6
-   ------------------------------------------------------------
-   仕様（contact 版と統一）
-     - 通常読み込み：CSSクローク（2章 / cfi-boot）を表示
-     - 戻る／進む（bfcache復元）時：
-         pagehide で実DOMオーバーレイ #cfi-ov を貼った状態を保存し、
-         復元直後の描画からクロークを見せたうえで reload する
-         （reload後は2章のCSSクロークが引き継ぐため途切れない）
-   r4/r5(master) からの変更点
-     - 2章「起動クローク」を復活（通常読み込み時も表示するため）
-     - 章番号を再繰り下げ（旧2〜4章 → 3〜5章）
-   ============================================================ */
-
-/* ============================================================
    1. 土台（クラス付与前でも白フラッシュしないよう html に直指定）
+      ※ scroll-behavior / scroll-padding-top / a.is-todo /
+        html.cfi-fallback .rv は common.css を唯一の正とし、
+        ここでは再定義しない
    ============================================================ */
 html{background:#071019}
 html.cfi-on{
-  background:#071019;
-  scroll-behavior:smooth;
-  scroll-padding-top:var(--hd,72px);
   /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す） */
   --rebranding-loading-bg:#071019;
   --rebranding-loading-bar:#00c2a8;
@@ -101,13 +115,6 @@ html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
 
 /* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
 html.cfi-on #__nuxt{display:none !important}
-
-/* 起動中のSTUDIO側 transition:all（.3s〜.4s）を抑止 */
-html.cfi-on .StudioCanvas,
-html.cfi-on .render-canvas *{transition:none !important}
-
-/* リビール演出が発火しなかった場合の保険（common.css 側に定義が無い） */
-html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
    2. 起動クローク（通常読み込み時／FOUC・白フラッシュ防止）
@@ -140,18 +147,4 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 @media (prefers-reduced-motion:reduce){
   html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
 }
-
-/* ============================================================
-   3. 未確定リンク（data-cfi-todo）の可視化
-      URLが決まったら data-cfi-todo を削除し href を設定する
-   ============================================================ */
-html.cfi-on a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
-html.cfi-on a.is-todo::after{
-  content:" (URL未設定)";font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.06em}
-html.cfi-on .is-todo-text{color:#ffb4a2}
-
-/* ============================================================
-   4. アンカー位置の微調整（固定ヘッダー分）
-   ============================================================ */
-html.cfi-on #cta{scroll-margin-top:var(--hd,72px)}
 </style>
