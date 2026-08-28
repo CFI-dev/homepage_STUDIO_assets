@@ -1,30 +1,3 @@
-<!-- ============================================================
-     CFI CORPORATE / STUDIO CUSTOM CODE [HEAD]  rev: 2026-08-28r2
-     ------------------------------------------------------------
-     仕様（contact 版と統一）
-       - 通常読み込み：CSSクローク（2章 / cfi-boot）を表示
-       - 戻る／進む（bfcache復元）時：
-           pagehide で実DOMオーバーレイ #cfi-ov を貼った状態を保存し、
-           復元直後の描画からクロークを見せたうえで reload する
-           （reload後は2章のCSSクロークが引き継ぐため途切れない）
-     ------------------------------------------------------------
-     r6（2026-08-27r6）からの変更点 ※死にコード除去のみ／表示結果は不変
-       [E] common.css と重複していた定義を削除（common.css を唯一の正とする）
-           ・a.is-todo / a.is-todo::after / .is-todo-text  → common.css §15-2
-           ・html.cfi-fallback .rv                          → common.css §12
-             ※旧コメント「common.css 側に定義が無い」は事実誤認だったため撤去
-           ・scroll-behavior / scroll-padding-top           → common.css §1（html）
-           ・html.cfi-on{background}                        → 直前の html{background} と同値
-       [F] 到達しない指定を削除
-           ・html.cfi-on .StudioCanvas / .render-canvas * の transition 抑止
-             → 同ファイルで #__nuxt{display:none !important} としており
-               対象要素が描画対象外のため実効性なし
-           ・html.cfi-on #cta{scroll-margin-top}
-             → #cta を指す内部リンクが存在せず、かつ html の
-               scroll-padding-top と二重に効いてオフセットが倍増する副作用あり
-       [-] キャッシュバスターを v=20260828r2 に更新（common.css を差し替え済み）
-     ============================================================ -->
-
 <!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -95,7 +68,7 @@
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css?v=20260828r2">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
 
 <style>
 /* ============================================================
