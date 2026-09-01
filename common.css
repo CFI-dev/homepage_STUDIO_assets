@@ -142,8 +142,13 @@ nav a.gnav:hover::after{width:100%}
   color:var(--accent-2);margin-bottom:14px}
 /* VISION と MISSION の間に区切り線は置かない。間隔は margin-top で確保する */
 .hero-mission{margin-top:44px;padding-top:34px;max-width:38em}
-/* 英文サイズ・リード文サイズは VISION と共通。差をつけない */
-.hero .hero-mission p.lead{margin-top:10px}
+/* rev:2026-09-01 MISSIONのリード文のみ拡大・太字化 */
+.hero .hero-mission p.lead{
+  margin-top:10px;
+  font-size:clamp(17px,1.6vw,20px);   /* 15.5px → 最大20px */
+  font-weight:700;
+  line-height:1.75;
+}
 
 @media (max-width:768px){
   .hero-mission{padding-top:26px}
