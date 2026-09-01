@@ -24,9 +24,15 @@
   --logo-mark:32px;   /* ロゴマーク高（ヘッダー） */
   --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
 
-  --eyebrow-size:12px;    /* アイブロウ文字サイズ（全セクション共通） */
-  --eyebrow-track:.24em;  /* アイブロウ字間（全セクション共通） */
-  --eyebrow-mb:26px;      /* アイブロウ下余白（全セクション共通） */
+  /* ▼ アイブロウ（全セクション共通）
+     rev:2026-09-01 .sec-head p（詳細度0-1-1）が .eyebrow（0-1-0）を
+     上書きしていたため、SERVICE以降の実効値に合わせてトークン側を統一。
+     これによりヒーロー（VISION/MISSION）と各セクションが同一表示になる。
+     ※ 装飾線の色は .eyebrow::before が --accent-2 を直接参照（変更不要） */
+  --eyebrow-size:14.5px;          /* アイブロウ文字サイズ（= .sec-head p と同値） */
+  --eyebrow-color:var(--muted);   /* アイブロウ文字色（= .sec-head p と同値） */
+  --eyebrow-track:.24em;          /* アイブロウ字間（全セクション共通） */
+  --eyebrow-mb:26px;              /* アイブロウ下余白（全セクション共通） */
 
   --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文（VISION/MISSION共通） */
 
@@ -111,7 +117,7 @@ nav a.gnav:hover::after{width:100%}
   font-weight:500;
   letter-spacing:var(--eyebrow-track);
   line-height:1.4;
-  color:var(--accent-2);
+  color:var(--eyebrow-color);
   display:flex;
   align-items:center;
   gap:12px;
@@ -345,7 +351,8 @@ html.cfi-fallback .rv{opacity:1;transform:none}
    ※ .works / .flow は ≤768px で .v-scroll により flex 化されるため
      ここで grid-template-columns を指定しても効かない（記述しないこと） */
 @media (max-width:600px){
-  :root{--sec:64px;--pad:20px}
+  /* --eyebrow-size は .sec-head p の 14px 化に追随（rev:2026-09-01） */
+  :root{--sec:64px;--pad:20px;--eyebrow-size:14px}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .svc{grid-template-columns:1fr}
   .sec-head p{font-size:14px}
