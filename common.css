@@ -578,6 +578,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 .v-why p{font-size:13.8px;line-height:1.95;color:var(--txt);
   opacity:.86;letter-spacing:.005em;
   text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.v-why p{ min-height:7.8em; }   /* line-height:1.95 × 4行 = 7.8em */
+@media (max-width:768px){ .v-why p{ min-height:0; } }  /* 1カラム時は解除 */
 
 @media (max-width:960px){
   .v-why{grid-template-columns:1fr 1fr}
