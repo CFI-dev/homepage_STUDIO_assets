@@ -186,7 +186,7 @@ nav a.gnav:hover::after{width:100%}
   transform:scaleX(0);transform-origin:left;transition:.45s}
 .svc article:hover::before{transform:scaleX(1)}
 .svc .no{font-family:var(--f-mono);font-size:11px;color:var(--accent-2);letter-spacing:.12em}
-/* ▼ アイコン実寸：WHY CFI（.v-why .bico §16-3）と同一仕様に統一（rev:2026-09-02）
+/* ▼ アイコン実寸（rev:2026-09-02）
      ・サイズは58px固定。ブレークポイントで縮小しない（余白のみ480pxで詰める）
      ・color/currentColor は使わない。strokeをブランドグラデ #gBrand へ直接指定
      ・#gBrand は同一ドキュメント内のSVG（home_body.html 内 defs）に必須。
@@ -381,8 +381,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .btn{width:100%;padding:14px 18px}
   .hero p.lead{margin-top:20px;font-size:14.5px}
   .svc article{padding:30px 22px}
-  /* rev:2026-09-02 アイコンは58px固定（.v-why .bico と同一）。
-     WHY側と同様、モバイルでは余白のみ縮める（サイズ指定は置かない） */
+  /* rev:2026-09-02 アイコンは58px固定。モバイルでは余白のみ縮める */
   .svc .ico{margin:16px 0 18px}
   .case{padding:26px 20px}
   .case dl{gap:18px}
@@ -511,19 +510,33 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 @media (max-width:900px){.v-metrics{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:420px){.v-metrics > div{padding:24px 18px}}
 
-/* 16-3 WHY：アイコン大の3枚 */
+/* 16-3 WHY：背景写真つき3枚
+   rev:2026-09-02 アイコン（.bico）を廃止し、カード背景に写真を敷く設計へ変更。
+   ・写真は装飾。本文可読性は > div::after のベールで担保する（削除しないこと）
+   ・.vw-bg の opacity と ::after の不透明度はコントラスト計算済み。単独で変更しない */
 .v-why{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
   background:var(--line);border-radius:4px;overflow:hidden}
-.v-why > div{background:var(--ink);padding:44px 30px;text-align:center}
-.v-why .bico{width:58px;height:58px;margin:0 auto 20px;fill:none;
-  stroke:url(#gBrand);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.v-why > div{position:relative;isolation:isolate;overflow:hidden;
+  background:var(--ink);padding:44px 30px;text-align:center;
+  min-height:clamp(300px,26vw,360px);
+  display:flex;flex-direction:column;justify-content:center}
+/* 背景写真（装飾） */
+.v-why .vw-bg{position:absolute;inset:0;z-index:0;
+  width:100%;height:100%;object-fit:cover;
+  opacity:.22;filter:saturate(.55) contrast(1.05);
+  transition:transform .7s cubic-bezier(.22,1,.36,1)}
+.v-why > div:hover .vw-bg{transform:scale(1.05)}
+/* 可読性ベール。--ink(#071019) を重ねて本文を 4.5:1 以上に保つ */
+.v-why > div::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,16,25,.74) 0%,rgba(7,16,25,.88) 100%)}
+/* 本文はベールより前面へ */
+.v-why .vw-body{position:relative;z-index:2}
 .v-why h3{font-size:17px;line-height:1.65}
 .v-why h3 span{display:block;font-family:var(--f-mono);font-size:10.5px;
   letter-spacing:.14em;color:var(--muted);margin-bottom:8px}
 .v-why p{margin-top:12px;color:var(--muted);font-size:13.5px;line-height:1.85}
 @media (max-width:768px){.v-why{grid-template-columns:1fr}
-  .v-why > div{padding:34px 24px;text-align:left}
-  .v-why .bico{margin:0 0 16px}}
+  .v-why > div{padding:34px 24px;text-align:left;min-height:240px}}
 
 /* 16-4 モバイル横スクロール */
 @media (max-width:768px){
@@ -539,4 +552,5 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 
 @media (prefers-reduced-motion:reduce){
   .v-bar i{transition:none!important;width:var(--w,70%)!important}
+  .v-why .vw-bg{transition:none!important;transform:none!important}
 }
