@@ -529,20 +529,17 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 .v-why .vw-bg{position:absolute;inset:0;z-index:0;
   width:100%;height:100%;object-fit:cover;
   opacity:1;
-  filter:contrast(1.04) saturate(.5) brightness(.52);
+  filter:contrast(1.04) saturate(.42) brightness(.34);
   transition:transform .7s cubic-bezier(.22,1,.36,1)}
 
+/* 可読性ベール（下部を締めるための最小限。削除しないこと） */
 .v-why > div::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(7,16,25,.18) 0%,rgba(7,16,25,.38) 100%)}
+  background:linear-gradient(180deg,
+    rgba(7,16,25,.30) 0%,
+    rgba(7,16,25,.41) 50%,
+    rgba(7,16,25,.52) 100%)}
 
-/* 文字の背後だけを締める（写真は明るいまま） */
 .v-why .vw-body{position:relative;z-index:2;
-  padding:24px 22px;border-radius:3px;
-  background:rgba(4,10,16,.62);
-  -webkit-backdrop-filter:blur(6px) saturate(.9);
-  backdrop-filter:blur(6px) saturate(.9);
-  border:1px solid rgba(255,255,255,.08)}
-
 .v-why h3{font-size:17px;line-height:1.65}
 .v-why h3 span{display:block;font-family:var(--f-mono);font-size:10.5px;
   letter-spacing:.14em;color:var(--muted);margin-bottom:8px}
