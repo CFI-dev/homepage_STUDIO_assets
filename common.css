@@ -520,15 +520,25 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   background:var(--ink);padding:44px 30px;text-align:center;
   min-height:clamp(300px,26vw,360px);
   display:flex;flex-direction:column;justify-content:center}
-/* 背景写真（装飾） */
+/* 背景写真（装飾）
+   rev:2026-09-02b 透け防止のため opacity:1 に変更。
+   暗さは filter の brightness で作る（背景のグリッド柄が透けないようにする）。
+   ・順序厳守：contrast → saturate → brightness
+     brightness を最後に置くことで、白飛び画素でも出力上限が .34 に抑えられる
+   ・brightness と ::after の不透明度はコントラスト計算済み。単独で変更しない */
 .v-why .vw-bg{position:absolute;inset:0;z-index:0;
   width:100%;height:100%;object-fit:cover;
-  opacity:.22;filter:saturate(.55) contrast(1.05);
+  opacity:1;
+  filter:contrast(1.04) saturate(.42) brightness(.34);
   transition:transform .7s cubic-bezier(.22,1,.36,1)}
-.v-why > div:hover .vw-bg{transform:scale(1.05)}
-/* 可読性ベール。--ink(#071019) を重ねて本文を 4.5:1 以上に保つ */
+
+/* 可読性ベール（下部を締めるための最小限。削除しないこと） */
 .v-why > div::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(7,16,25,.74) 0%,rgba(7,16,25,.88) 100%)}
+  background:linear-gradient(180deg,
+    rgba(7,16,25,.30) 0%,
+    rgba(7,16,25,.41) 50%,
+    rgba(7,16,25,.52) 100%)}
+
 /* 本文はベールより前面へ */
 .v-why .vw-body{position:relative;z-index:2}
 .v-why h3{font-size:17px;line-height:1.65}
