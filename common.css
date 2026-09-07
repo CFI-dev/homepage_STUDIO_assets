@@ -277,19 +277,37 @@ nav a.gnav:hover::after{width:100%}
 
 /* ============================================================
    8. アプローチ
+   rev:2026-09-07 本文の行数差（01のみ3行）で .dur と写真が1行分下へずれるため、
+     カード内部を縦フレックス化し、.dur 以降を下端へ寄せて位置を揃える。
+     ・.flow は PC=grid／≤768px=.v-scroll による flex。いずれも align-items の
+       既定値 stretch により .st は同一行内で必ず等高になる。その等高を前提に
+       .dur の margin-top:auto で余剰スペースを本文と .dur の間へ逃がす。
+     ・子要素の flex:0 0 auto は必須。省くと flex-shrink:1 が効き、
+       aspect-ratio:4/3 の写真（§14 .flow .st .ph-fig）が縦に潰れる。
+     ・.dur の間隔は margin-top:auto と併存できないため padding-top へ移設した。
+     ※ .flow / .v-scroll に align-items を後から指定しないこと。
+       stretch 以外にすると等高が崩れ、margin-top:auto が無効化する。
    ============================================================ */
-.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;margin-top:12px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;
+  margin-top:12px;align-items:stretch}
 .flow::before{content:"";position:absolute;top:26px;left:6%;right:6%;height:1px;
   background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4}
-.flow .st{position:relative}
+
+/* ▼ カード内部：上=テキスト／下=期間＋写真 に固定する */
+.flow .st{position:relative;display:flex;flex-direction:column;align-self:stretch}
+.flow .st > *{flex:0 0 auto}
+
 .flow .dot{width:52px;height:52px;border-radius:50%;background:var(--ink);
   border:1px solid var(--accent-2);display:grid;place-items:center;position:relative;z-index:1;
-  font-family:var(--f-en);font-size:15px;font-weight:700;color:var(--accent-2)}
+  font-family:var(--f-en);font-size:15px;font-weight:700;color:var(--accent-2);
+  align-self:flex-start}
 .flow h3{margin-top:24px;font-size:16px;font-weight:700}
 .flow h3 span{display:block;font-family:var(--f-mono);font-size:10px;color:var(--accent-2);
   letter-spacing:.14em;margin-bottom:6px}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
-.flow .dur{margin-top:14px;font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
+/* ▼ 高さ揃えの本体。旧 margin-top:14px を padding-top へ移し auto を通す */
+.flow .dur{margin-top:auto;padding-top:14px;
+  font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
 
 /* ============================================================
    9. 実績
