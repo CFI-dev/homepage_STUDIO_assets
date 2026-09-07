@@ -55,7 +55,7 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 /* インラインstyleから移設したユーティリティ */
 .sec-head-tech{margin:76px 0 0}
 .ft-desc{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:22em}
-.case dd .unit{font-size:13px}
+.case dd .unit{font-size:13px}.brsp{display:none}
 
 /* ============================================================
    2. ヘッダー
@@ -435,6 +435,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   /* --eyebrow-size は .sec-head p の 14px 化に追随（rev:2026-09-01） */
   :root{--sec:64px;--pad:20px;--eyebrow-size:14px}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
+  .brsp{display:inline}
   .svc{grid-template-columns:1fr}
   .sec-head p{font-size:14px}
   /* 会社概要テーブルを縦積みに */
@@ -564,6 +565,14 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 
 /* 16-1 セクション見出しの幅調整 */
 .sec-head.v-tight p{max-width:28em}
+
+/* ▼ 見出しを1行で組むブロック（rev:2026-09-07）
+   .sec-head の max-width:44em は 15px 基準で実質 660px。clamp 上限 38px の
+   見出しは約 733px 必要なため、この制約を外さないと .brsp を消しても折り返す。
+   h2 のみ全幅を許し、アイブロウ・リード文は 44em を維持して可読性を保つ。
+   ※ 幅制約の解除と .brsp はセット。片方だけ変えると意図した改行位置にならない */
+.sec-head.v-1line{max-width:none}
+.sec-head.v-1line > *:not(h2){max-width:44em}
 
 /* 16-2 バー付きメトリクス（KPI） */
 .v-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
