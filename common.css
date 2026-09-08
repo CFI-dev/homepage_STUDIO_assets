@@ -3,10 +3,11 @@
 /* ============================================================
    CFI コーポレートサイト 共通スタイル
    ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
+   ・rev:2026-09-08 ARCHITECTURE（.arch2 系および旧 .arch/.lyr/.arch-rail）を全削除
    ============================================================ */
 
 /* ============================================================
-   1. トークン（ブレークポイントで可変にする値は変数化）
+   1. トークン
    ============================================================ */
 :root{
   --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a;
@@ -25,14 +26,13 @@
   --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
 
   /* ▼ アイブロウ（全セクション共通）
-     rev:2026-09-01 .sec-head p（詳細度0-1-1）が .eyebrow（0-1-0）を
-     上書きしていたため、SERVICE以降の実効値に合わせてトークン側を統一。
-     これによりヒーロー（VISION/MISSION）と各セクションが同一表示になる。
+     .sec-head p（詳細度0-1-1）が .eyebrow（0-1-0）を上書きするため、
+     実効値に合わせてトークン側を統一している。
      ※ 装飾線の色は .eyebrow::before が --accent-2 を直接参照（変更不要） */
-  --eyebrow-size:14.5px;          /* アイブロウ文字サイズ（= .sec-head p と同値） */
-  --eyebrow-color:var(--muted);   /* アイブロウ文字色（= .sec-head p と同値） */
-  --eyebrow-track:.24em;          /* アイブロウ字間（全セクション共通） */
-  --eyebrow-mb:26px;              /* アイブロウ下余白（全セクション共通） */
+  --eyebrow-size:14.5px;
+  --eyebrow-color:var(--muted);
+  --eyebrow-track:.24em;
+  --eyebrow-mb:26px;
 
   --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文（VISION/MISSION共通） */
 
@@ -52,7 +52,9 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 .mono{font-family:var(--f-mono);letter-spacing:.04em}
 .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* インラインstyleから移設したユーティリティ */
+/* インラインstyleから移設したユーティリティ
+   ※ .sec-head-tech と .case dd .unit は TECHNOLOGY / 数値KPI の
+     再掲載時にそのまま使うため残置している。削除しないこと */
 .sec-head-tech{margin:76px 0 0}
 .ft-desc{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:22em}
 .case dd .unit{font-size:13px}.brsp{display:none}
@@ -142,10 +144,9 @@ nav a.gnav:hover::after{width:100%}
   color:var(--accent-2);margin-bottom:14px}
 /* VISION と MISSION の間に区切り線は置かない。間隔は margin-top で確保する */
 .hero-mission{margin-top:44px;padding-top:34px;max-width:46em}
-/* rev:2026-09-01 MISSIONのリード文のみ拡大・太字化 */
 .hero .hero-mission p.lead{
   margin-top:10px;
-  font-size:clamp(17px,1.6vw,20px);   /* 15.5px → 最大20px */
+  font-size:clamp(17px,1.6vw,20px);
   font-weight:700;
   line-height:1.75;
 }
@@ -186,7 +187,7 @@ nav a.gnav:hover::after{width:100%}
   transform:scaleX(0);transform-origin:left;transition:.45s}
 .svc article:hover::before{transform:scaleX(1)}
 .svc .no{font-family:var(--f-mono);font-size:11px;color:var(--accent-2);letter-spacing:.12em}
-/* ▼ アイコン実寸（rev:2026-09-02）
+/* ▼ アイコン実寸
      ・サイズは58px固定。ブレークポイントで縮小しない（余白のみ480pxで詰める）
      ・color/currentColor は使わない。strokeをブランドグラデ #gBrand へ直接指定
      ・#gBrand は同一ドキュメント内のSVG（home_body.html 内 defs）に必須。
@@ -202,77 +203,34 @@ nav a.gnav:hover::after{width:100%}
   border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
 /* ============================================================
-   7. アーキテクチャ図
-   rev:2026-09-07 旧 .arch / .lyr / .arch-rail を廃止し .arch2 系へ移行。
-     ・縦軸のノード位置は「spine中心 = node中心」で計算済み。
-       PC: spine left:16px(w2) → 中心17px ／ node left:11px(w12,border-box) → 中心17px
-       SP: spine left:10px      → 中心11px ／ node left:5px               → 中心11px
-       spine / node / 引き込み線（::after）の3値は必ずセットで変更すること
+   7. CHALLENGES（rev:2026-09-08 新設）
+      ・チェックマークは ::before で作図（SVG symbol は追加しない方針）
+      ・カード地色は --panel ではなく --navy（不透明）。
+        .sec-grid 上に置くため、半透明にすると格子柄が透ける
    ============================================================ */
-.arch2{position:relative;max-width:1000px}
+.chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
+.chl li{position:relative;background:var(--navy);border:1px solid var(--line);
+  border-radius:3px;padding:26px 24px 24px 54px;transition:border-color .3s,transform .3s}
+.chl li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
+/* ▼ チェックマーク（装飾）。削除しないこと */
+.chl li::before{content:"";position:absolute;left:22px;top:34px;
+  width:15px;height:8px;border-left:2px solid var(--accent-2);
+  border-bottom:2px solid var(--accent-2);transform:rotate(-45deg)}
+.chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
+.chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
 
-/* 軸のキャプション（上＝下方向へ、下＝上方向へ。「つなぐ」の言語化） */
-.arch2-cap{display:flex;align-items:center;gap:8px;
-  font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:#8ba3ba}
-.arch2-cap i{font-style:normal;font-size:13px;color:var(--accent-2)}
-.arch2-cap.is-down{margin:0 0 14px 4px}
-.arch2-cap.is-up{margin:14px 0 0 4px}
+/* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと */
+.chl-note{margin-top:36px;padding-left:22px;position:relative;
+  font-size:15px;line-height:1.95;max-width:44em}
+.chl-note::before{content:"";position:absolute;left:0;top:.5em;bottom:.5em;
+  width:2px;border-radius:2px;background:var(--grad)}
+.chl-note em{font-style:normal;font-weight:700;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* 積層本体。左の1本線が「一貫した設計思想」の可視化。削除しないこと */
-.arch2-stack{position:relative;display:flex;flex-direction:column;gap:12px}
-.arch2-stack::before{content:"";position:absolute;left:16px;top:0;bottom:0;width:2px;
-  border-radius:2px;
-  background:linear-gradient(180deg,var(--accent) 0%,#2f83e8 34%,#0f9fc4 67%,var(--accent-2) 100%)}
-
-.lyr2{position:relative;padding-left:46px}
-/* 軸上のノード */
-.lyr2::before{content:"";position:absolute;left:11px;top:50%;transform:translateY(-50%);
-  width:12px;height:12px;border-radius:50%;z-index:1;
-  background:var(--ink);border:2px solid var(--accent-2)}
-/* 軸からカードへの引き込み線 */
-.lyr2::after{content:"";position:absolute;left:23px;top:50%;width:23px;height:1px;
-  background:var(--line)}
-
-.lyr2-in{display:grid;grid-template-columns:230px 1fr;align-items:center;gap:26px;
-  background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:20px 24px;
-  transition:border-color .3s,transform .3s}
-.lyr2:hover .lyr2-in{border-color:rgba(0,194,168,.45);transform:translateX(4px)}
-
-.lyr2-no{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;
-  color:var(--accent-2);margin-bottom:6px}
-.lyr2-ttl{font-family:var(--f-en);font-size:15px;font-weight:600;letter-spacing:.04em;line-height:1.3}
-.lyr2-ttl small{display:block;font-family:var(--f-jp);font-size:11px;color:var(--muted);margin-top:3px}
-/* ▼ 各層の役割文。キーワード羅列に見せないための要。削除しないこと */
-.lyr2-role{margin-top:10px;font-size:12.5px;line-height:1.75;color:#c0d0df}
-
-.lyr2-items{display:flex;flex-wrap:wrap;gap:8px}
-.lyr2-items span{font-family:var(--f-mono);font-size:11px;color:#c0d0df;
-  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:2px;padding:5px 11px}
-
-/* 土台：全レイヤーを貫くセキュリティ／プライバシー */
-.arch2-base{margin:16px 0 0 46px;padding:20px 24px;
-  background:linear-gradient(115deg,rgba(15,107,224,.18),rgba(0,194,168,.18));
-  border:1px solid rgba(0,194,168,.36);border-radius:3px;
-  display:grid;grid-template-columns:230px 1fr;align-items:center;gap:26px}
-.arch2-base-ttl{font-family:var(--f-en);font-size:14px;font-weight:600;
-  letter-spacing:.12em;color:var(--accent-2)}
-.arch2-base-txt{font-size:12.5px;line-height:1.8;color:#c8d6e4}
-
-@media (max-width:1180px){
-  .lyr2-in,.arch2-base{grid-template-columns:200px 1fr;gap:20px;padding:18px 20px}
-}
-@media (max-width:768px){
-  .arch2-stack::before{left:10px}
-  .lyr2{padding-left:34px}
-  .lyr2::before{left:5px}
-  .lyr2::after{left:17px;width:17px}
-  .lyr2-in,.arch2-base{grid-template-columns:1fr;gap:14px}
-  .arch2-base{margin-left:34px}
-  .lyr2-role{margin-top:8px}
-}
-@media (max-width:480px){
-  .lyr2-items span{font-size:10.5px;padding:4px 9px}
-  .arch2-cap{font-size:10px;letter-spacing:.06em}
+@media (max-width:1024px){.chl{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){
+  .chl{grid-template-columns:1fr}
+  .chl-note{font-size:14.5px}
 }
 
 /* ============================================================
@@ -283,10 +241,9 @@ nav a.gnav:hover::after{width:100%}
        既定値 stretch により .st は同一行内で必ず等高になる。その等高を前提に
        .dur の margin-top:auto で余剰スペースを本文と .dur の間へ逃がす。
      ・子要素の flex:0 0 auto は必須。省くと flex-shrink:1 が効き、
-       aspect-ratio:4/3 の写真（§14 .flow .st .ph-fig）が縦に潰れる。
+       aspect-ratio:4/3 の写真（§17 .flow .st .ph-fig）が縦に潰れる。
      ・.dur の間隔は margin-top:auto と併存できないため padding-top へ移設した。
      ※ .flow / .v-scroll に align-items を後から指定しないこと。
-       stretch 以外にすると等高が崩れ、margin-top:auto が無効化する。
    ============================================================ */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;
   margin-top:12px;align-items:stretch}
@@ -305,12 +262,12 @@ nav a.gnav:hover::after{width:100%}
 .flow h3 span{display:block;font-family:var(--f-mono);font-size:10px;color:var(--accent-2);
   letter-spacing:.14em;margin-bottom:6px}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
-/* ▼ 高さ揃えの本体。旧 margin-top:14px を padding-top へ移し auto を通す */
+/* ▼ 高さ揃えの本体。margin-top:auto を通すため間隔は padding-top で作る */
 .flow .dur{margin-top:auto;padding-top:14px;
   font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
 
 /* ============================================================
-   9. 実績
+   9. 事例カード（.case ＝ CASES / ENGAGEMENT 共通の器）
    ============================================================ */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .case{background:var(--panel);border:1px solid var(--line);border-radius:4px;
@@ -319,12 +276,81 @@ nav a.gnav:hover::after{width:100%}
 .case .cat{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;color:var(--accent-2)}
 .case h3{margin-top:14px;font-size:16.5px;font-weight:700;line-height:1.65}
 .case p{margin-top:14px;font-size:13px;color:var(--muted)}
+/* ▼ 数値KPI表示用。実測値が確定した際に .cs-steps と差し替えて使う */
 .case dl{display:flex;flex-wrap:wrap;gap:26px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
 .case dt{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
 .case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
 
 /* ============================================================
-   10. 技術スタック
+   10. CASES（定性表示／rev:2026-09-08）
+       ・数値KPIを撤去し「課題→打ち手→変化」の3段で見せる
+       ・上の .case dl（詳細度0-1-1）に負けないよう、必ず
+         .case .cs-steps（0-2-0）以上の形で書くこと
+   ============================================================ */
+.case .cs-steps{display:grid;gap:14px;margin-top:22px;padding-top:20px;
+  border-top:1px solid var(--line)}
+.case .cs-steps > div{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start}
+.case .cs-steps dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
+  color:var(--accent-2);padding-top:3px;margin:0}
+.case .cs-steps dd{font-family:var(--f-jp);font-size:12.8px;font-weight:400;
+  line-height:1.85;color:var(--muted);margin:0}
+/* 最終行（変化）だけ本文色＋太字で着地させる */
+.case .cs-steps > div:last-child dd{color:var(--txt);font-weight:700}
+
+@media (max-width:480px){
+  .case .cs-steps > div{grid-template-columns:1fr;gap:4px}
+}
+
+/* ============================================================
+   11. ENGAGEMENT（rev:2026-09-08 新設）
+       カード枠は .case を流用し、下部メタのみ専用指定
+   ============================================================ */
+.case .eng-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;
+  margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.case .eng-meta > div:first-child{grid-column:1 / -1}
+.case .eng-meta dt{font-size:10.5px;letter-spacing:.06em;color:var(--muted);margin:0}
+.case .eng-meta dd{margin:5px 0 0;font-family:var(--f-jp);font-size:12.8px;
+  font-weight:400;line-height:1.75;color:var(--txt)}
+
+.eng-note{margin-top:30px;font-size:13.5px;color:var(--muted);line-height:1.95}
+
+@media (max-width:480px){
+  .case .eng-meta{grid-template-columns:1fr;gap:14px}
+}
+
+/* ============================================================
+   12. FAQ（rev:2026-09-08 新設）
+       details/summary で構成。JS不要・キーボード操作は §18 が担保
+   ============================================================ */
+.faq{max-width:880px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;position:relative;
+  padding:22px 46px 22px 32px;font-size:14.5px;font-weight:700;line-height:1.75}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"Q";position:absolute;left:0;top:23px;
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:var(--accent-2)}
+/* ▼ ＋／− のトグル記号。open時に縦棒を落として「−」にする */
+.faq summary::after{content:"";position:absolute;right:6px;top:31px;width:13px;height:13px;
+  background:
+    linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat,
+    linear-gradient(var(--accent-2),var(--accent-2)) center/1px 100% no-repeat}
+.faq details[open] summary::after{
+  background:linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat}
+.faq .a{position:relative;padding:0 6px 26px 32px;
+  font-size:13.5px;line-height:1.95;color:var(--muted)}
+.faq .a::before{content:"A";position:absolute;left:0;top:0;
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#7d94ab}
+
+@media (max-width:600px){
+  .faq summary{padding:20px 40px 20px 26px;font-size:14px}
+  .faq summary::before{top:21px;font-size:12.5px}
+  .faq .a{padding-left:26px}
+}
+
+/* ============================================================
+   13. 技術スタック
+       ※ TECHNOLOGY セクションは掲載保留中だが、
+         再挿入時にそのまま使うため残置している。削除しないこと
    ============================================================ */
 .stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
 .stack li{font-family:var(--f-mono);font-size:12px;color:#b9cbdb;border:1px solid var(--line);
@@ -332,7 +358,7 @@ nav a.gnav:hover::after{width:100%}
 .stack li:hover{border-color:var(--accent-2);color:var(--accent-2)}
 
 /* ============================================================
-   11. 会社概要 / CTA / フッター
+   14. 会社概要 / CTA / フッター
    ============================================================ */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -345,7 +371,9 @@ nav a.gnav:hover::after{width:100%}
 .cta .hero-cta{justify-content:center;position:relative}
 footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32px}
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
-.ft-nav{display:flex;flex-wrap:wrap;gap:52px}
+/* rev:2026-09-08 フッターナビは4列。列間 gap を 52px → 40px へ縮め、
+   1024〜1180px 付近での折返しを抑える */
+.ft-nav{display:flex;flex-wrap:wrap;gap:40px}
 .ft-nav h4{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:var(--accent-2);margin-bottom:16px}
 .ft-nav a{display:block;font-size:13px;color:var(--muted);line-height:2.3;transition:.2s}
 .ft-nav a:hover{color:var(--txt)}
@@ -354,7 +382,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
 
 /* ============================================================
-   12. 出現アニメーション
+   15. 出現アニメーション
    ============================================================ */
 .rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
 .rv.on{opacity:1;transform:none}
@@ -362,7 +390,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ============================================================
-   13. レスポンシブ
+   16. レスポンシブ
       1280 / 1180 / 1024 / 960 / 768 / 600 / 480 / 360 を検証基準に設計
       ※ 960px はハンバーガー切替点。JSの MQ_DESK と必ず一致させること
    ============================================================ */
@@ -380,8 +408,6 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .svc article{padding:34px 26px}
   .case{padding:28px 24px}
   .case dl{gap:20px}
-  .lyr{grid-template-columns:134px 1fr;gap:18px;padding:20px 22px}
-  .arch{grid-template-columns:1fr 140px}
   .sec-head{margin-bottom:48px}
 }
 
@@ -393,9 +419,6 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .works{grid-template-columns:repeat(2,1fr)}
   .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
   .flow::before{display:none}
-  .arch{grid-template-columns:1fr}
-  .arch-rail{padding:14px}
-  .arch-rail p{writing-mode:horizontal-tb}
   .hero h1{max-width:14em}
 }
 
@@ -419,7 +442,6 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   :root{--hd:64px;--sec:76px}
   .hero{padding:calc(var(--hd) + 52px) 0 64px}
   .scroll-hint{display:none}
-  .lyr{grid-template-columns:1fr;gap:14px;padding:20px}
   .sec-head{margin-bottom:40px}
   .sec-head-tech{margin-top:64px}
   .ticker ul{gap:38px}
@@ -432,7 +454,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
    ※ .works / .flow は ≤768px で .v-scroll により flex 化されるため
      ここで grid-template-columns を指定しても効かない（記述しないこと） */
 @media (max-width:600px){
-  /* --eyebrow-size は .sec-head p の 14px 化に追随（rev:2026-09-01） */
+  /* --eyebrow-size は .sec-head p の 14px 化に追随 */
   :root{--sec:64px;--pad:20px;--eyebrow-size:14px}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .brsp{display:inline}
@@ -453,12 +475,11 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .btn{width:100%;padding:14px 18px}
   .hero p.lead{margin-top:20px;font-size:14.5px}
   .svc article{padding:30px 22px}
-  /* rev:2026-09-02 アイコンは58px固定。モバイルでは余白のみ縮める */
+  /* アイコンは58px固定。モバイルでは余白のみ縮める */
   .svc .ico{margin:16px 0 18px}
   .case{padding:26px 20px}
   .case dl{gap:18px}
   .case dd{font-size:22px}
-  .lyr .items span{font-size:10.5px;padding:4px 9px}
   .ft-top{gap:32px}
   .ft-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 18px;width:100%}
   .ft-btm{flex-direction:column;gap:8px;margin-top:32px}
@@ -490,7 +511,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 }
 
 /* ============================================================
-   14. PHOTO EXTENSION
+   17. PHOTO EXTENSION
    ============================================================ */
 .ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
 .ph-fig img{width:100%;height:100%;object-fit:cover;
@@ -498,7 +519,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 .ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
 
-/* ---- Works サムネイル（.case の padding に完全追従） ---- */
+/* ---- 事例サムネイル（.case の padding に完全追従） ---- */
 .case{--cpx:28px;--cpy:32px;overflow:hidden}
 .case .ph-fig{aspect-ratio:16/9;
   margin:calc(var(--cpy) * -1) calc(var(--cpx) * -1) 22px;
@@ -542,16 +563,16 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 }
 
 /* ============================================================
-   15. アクセシビリティ / 状態表現
+   18. アクセシビリティ / 状態表現
    ============================================================ */
 
-/* 15-1 キーボードフォーカス（マウス操作時には出さない） */
+/* 18-1 キーボードフォーカス（マウス操作時には出さない） */
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
   outline:2px solid var(--accent-2);outline-offset:3px;border-radius:2px}
 .btn:focus-visible{outline-offset:4px}
 nav a.gnav:focus-visible::after{width:100%}
 
-/* 15-2 未確定リンク／未記入項目
+/* 18-2 未確定リンク／未記入項目
         ここを唯一の正とする（各ページHEADで再定義しない）
         URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
 a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
@@ -560,13 +581,13 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 .is-todo-text{color:#ffb4a2}
 
 /* ============================================================
-   16. VISUAL-FIRST
+   19. VISUAL-FIRST
    ============================================================ */
 
-/* 16-1 セクション見出しの幅調整 */
+/* 19-1 セクション見出しの幅調整 */
 .sec-head.v-tight p{max-width:28em}
 
-/* ▼ 見出しを1行で組むブロック（rev:2026-09-07）
+/* ▼ 見出しを1行で組むブロック
    .sec-head の max-width:44em は 15px 基準で実質 660px。clamp 上限 38px の
    見出しは約 733px 必要なため、この制約を外さないと .brsp を消しても折り返す。
    h2 のみ全幅を許し、アイブロウ・リード文は 44em を維持して可読性を保つ。
@@ -574,7 +595,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 .sec-head.v-1line{max-width:none}
 .sec-head.v-1line > *:not(h2){max-width:44em}
 
-/* 16-2 バー付きメトリクス（KPI） */
+/* 19-2 バー付きメトリクス（KPI）
+        ※ NUMBERS セクションは掲載保留中。再挿入時にそのまま使うため残置 */
 .v-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
   background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .v-metrics > div{background:var(--navy);padding:32px 24px}
@@ -591,14 +613,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 @media (max-width:420px){.v-metrics > div{padding:24px 18px}}
 
 /* ============================================================
-   16-3. WHY CFI（3カード／背景写真）
-   rev:2026-09-02d 背景写真の視認性を確保。
-     ・02c は brightness(.26) と全面ベール(.42-.62) の二重掛けで写真がほぼ
-       背景色と同化していた。brightness を .62 へ引き上げ、blur を廃止。
-     ・::after は「全面ベール」から「下部スクリム」へ変更。
-       上30%は素通しで写真を見せ、テキストが乗る下半分だけを締める。
-     ・テキストは下端揃え（flex-end）のため、この配分と構造的に噛み合う。
-     ・text-shadow は WCAG 計算には算入しないが、テクスチャ上のエッジ分離に有効。
+   19-3. WHY CFI（3カード／背景写真）
    ※ brightness と ::after のカラーストップはコントラスト計算済みの「対」。
      どちらか一方だけを変更すると AA(4.5:1) を割る。必ずセットで調整すること。
      写真が純白(255,255,255)という最悪条件でも、48%地点 5.7:1 /
@@ -672,7 +687,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   .v-why h3{margin-bottom:14px}
 }
 
-/* 16-4 モバイル横スクロール */
+/* 19-4 モバイル横スクロール */
 @media (max-width:768px){
   .v-scroll{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
     margin:0 calc(var(--pad) * -1);padding:0 var(--pad) 10px;
@@ -687,95 +702,4 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 @media (prefers-reduced-motion:reduce){
   .v-bar i{transition:none!important;width:var(--w,70%)!important}
   .v-why .vw-bg{transition:none!important;transform:none!important}
-}
-
-/* ============================================================
-   17. CHALLENGES（課題起点ブロック／rev:2026-09-08 新設）
-        ・チェックマークは ::before で作図（SVG symbol を増やさない方針）
-        ・カード枠は .case と同じ --panel / --line を使用し統一感を保つ
-   ============================================================ */
-.chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
-.chl li{position:relative;background:var(--panel);border:1px solid var(--line);
-  border-radius:3px;padding:26px 24px 24px 54px;transition:border-color .3s,transform .3s}
-.chl li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
-/* ▼ チェックマーク（装飾）。削除しないこと */
-.chl li::before{content:"";position:absolute;left:22px;top:31px;
-  width:15px;height:8px;border-left:2px solid var(--accent-2);
-  border-bottom:2px solid var(--accent-2);transform:rotate(-45deg)}
-.chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
-.chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
-
-/* 課題群 → サービスへの橋渡し文。SERVICEの前提を作る要。削除しないこと */
-.chl-note{margin-top:36px;padding-left:22px;position:relative;
-  font-size:15px;line-height:1.95;max-width:44em}
-.chl-note::before{content:"";position:absolute;left:0;top:.5em;bottom:.5em;
-  width:2px;border-radius:2px;background:var(--grad)}
-.chl-note em{font-style:normal;font-weight:700;
-  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-
-@media (max-width:1024px){.chl{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:600px){
-  .chl{grid-template-columns:1fr}
-  .chl-note{font-size:14.5px}
-}
-
-/* ============================================================
-   18. CASES（定性表示／rev:2026-09-08）
-        ・数値KPIを撤去し「課題→打ち手→変化」の3段で見せる
-        ・.case dl（0-1-1）に負けないよう、必ず .case .cs-steps（0-2-0）で書く
-   ============================================================ */
-.case .cs-steps{display:grid;gap:14px;margin-top:22px;padding-top:20px;
-  border-top:1px solid var(--line)}
-.case .cs-steps > div{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start}
-.case .cs-steps dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
-  color:var(--accent-2);padding-top:3px;margin:0}
-.case .cs-steps dd{font-family:var(--f-jp);font-size:12.8px;font-weight:400;
-  line-height:1.85;color:var(--muted);margin:0}
-/* 最終行（変化）だけ本文色＋太字で着地させる */
-.case .cs-steps > div:last-child dd{color:var(--txt);font-weight:700}
-
-@media (max-width:480px){
-  .case .cs-steps > div{grid-template-columns:1fr;gap:4px}
-}
-
-/* ============================================================
-   19. ENGAGEMENT（関わり方／rev:2026-09-08 新設）
-        カード枠は .case を流用し、下部メタのみ専用指定
-   ============================================================ */
-.case .eng-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;
-  margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
-.case .eng-meta > div:first-child{grid-column:1 / -1}
-.case .eng-meta dt{font-size:10.5px;letter-spacing:.06em;color:var(--muted);margin:0}
-.case .eng-meta dd{margin:5px 0 0;font-family:var(--f-jp);font-size:12.8px;
-  font-weight:400;line-height:1.75;color:var(--txt)}
-
-.eng-note{margin-top:30px;font-size:13.5px;color:var(--muted);line-height:1.95}
-
-/* ============================================================
-   20. FAQ（rev:2026-09-08 新設）
-        details/summary で構成。JS不要・キーボード操作は §15 が担保
-   ============================================================ */
-.faq{max-width:880px;border-top:1px solid var(--line)}
-.faq details{border-bottom:1px solid var(--line)}
-.faq summary{list-style:none;cursor:pointer;position:relative;
-  padding:22px 46px 22px 32px;font-size:14.5px;font-weight:700;line-height:1.75}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary::before{content:"Q";position:absolute;left:0;top:23px;
-  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:var(--accent-2)}
-/* ▼ ＋／− のトグル記号。open時に縦棒を落として「−」にする */
-.faq summary::after{content:"";position:absolute;right:6px;top:31px;width:13px;height:13px;
-  background:
-    linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat,
-    linear-gradient(var(--accent-2),var(--accent-2)) center/1px 100% no-repeat}
-.faq details[open] summary::after{
-  background:linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat}
-.faq .a{position:relative;padding:0 6px 26px 32px;
-  font-size:13.5px;line-height:1.95;color:var(--muted)}
-.faq .a::before{content:"A";position:absolute;left:0;top:0;
-  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#7d94ab}
-
-@media (max-width:600px){
-  .faq summary{padding:20px 40px 20px 26px;font-size:14px}
-  .faq summary::before{top:21px;font-size:12.5px}
-  .faq .a{padding-left:26px}
 }
