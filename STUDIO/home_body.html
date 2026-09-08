@@ -150,16 +150,11 @@
   </section>
 
   <!-- ===== WHY ===== -->
-  <!-- rev:2026-09-01 6事業体制を前提に、クライアント価値の観点で文言を刷新。
-       rev:2026-09-02 アイコン（.bico）を廃止し、カード背景に写真を敷く設計へ変更。
-         ・写真は装飾のため alt="" ／本文の可読性は CSS のベール
-           （common.css §16-3 .v-why > div::after）で担保する。ベールは削除しないこと
-         ・本文は .vw-body で包み、ベールより前面（z-index:2）に置く -->
   <section class="sec sec-grid">
     <div class="wrap">
-      <div class="sec-head v-tight rv">
+      <div class="sec-head v-tight v-1line rv">
         <p class="eyebrow mono">WHY CFI</p>
-        <h2>CFIを利用すると、<br class="brpc">何が起きなくなるのか。</h2>
+        <h2>CFIを利用すると、<br class="brsp">何が起きなくなるのか。</h2>
       </div>
       <div class="v-why rv" data-cfi-todo="根拠となる実績・体制の裏付けを確認／背景写真3点の差し替え">
         <div>
@@ -190,35 +185,69 @@
     </div>
   </section>
 
-  <!-- ===== ARCHITECTURE ===== -->
+  <!-- ===== ARCHITECTURE =====-->
   <section class="sec sec-ink" id="architecture">
     <div class="wrap">
       <div class="sec-head rv">
         <p class="eyebrow mono">ARCHITECTURE</p>
         <h2>4つのレイヤーを、<br class="brpc">一貫した設計思想でつなぐ。</h2>
-        <p>セキュリティとプライバシーは独立した工程ではなく、全レイヤーを貫く土台として扱います。</p>
+        <p>事業の狙いをそのまま下のレイヤーの設計へ落とし、基盤側の制約を事業判断へ返す。セキュリティとプライバシーは独立した工程ではなく、全レイヤーを貫く土台として扱います。</p>
       </div>
 
-      <div class="arch rv">
-        <div>
-          <div class="lyr">
-            <p class="ttl">BUSINESS<small>事業・業務</small></p>
-            <div class="items"><span>KPI設計</span><span>業務プロセス</span><span>組織・体制</span><span>投資計画</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">APPLICATION<small>アプリケーション</small></p>
-            <div class="items"><span>業務システム</span><span>CRM / MA</span><span>API連携</span><span>生成AI活用</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">DATA<small>データ</small></p>
-            <div class="items"><span>DWH</span><span>ETL / ELT</span><span>データカタログ</span><span>BI</span></div>
-          </div>
-          <div class="lyr">
-            <p class="ttl">INFRASTRUCTURE<small>基盤</small></p>
-            <div class="items"><span>クラウド</span><span>IaC</span><span>監視 / SRE</span><span>ネットワーク</span></div>
-          </div>
+      <div class="arch2 rv" data-cfi-todo="各レイヤーの役割文（.lyr2-role）を正式文言へ差し替え">
+
+        <p class="arch2-cap mono is-down">事業の狙いを、下のレイヤーへ落とす<i aria-hidden="true">↓</i></p>
+
+        <ol class="arch2-stack">
+          <li class="lyr2">
+            <div class="lyr2-in">
+              <div class="lyr2-head">
+                <p class="lyr2-no mono">L1</p>
+                <p class="lyr2-ttl">BUSINESS<small>事業・業務</small></p>
+                <p class="lyr2-role">何を成果と呼ぶかを決める層。</p>
+              </div>
+              <div class="lyr2-items"><span>KPI設計</span><span>業務プロセス</span><span>組織・体制</span><span>投資計画</span></div>
+            </div>
+          </li>
+          <li class="lyr2">
+            <div class="lyr2-in">
+              <div class="lyr2-head">
+                <p class="lyr2-no mono">L2</p>
+                <p class="lyr2-ttl">APPLICATION<small>アプリケーション</small></p>
+                <p class="lyr2-role">決めた成果を、現場が使う形にする層。</p>
+              </div>
+              <div class="lyr2-items"><span>業務システム</span><span>CRM / MA</span><span>API連携</span><span>生成AI活用</span></div>
+            </div>
+          </li>
+          <li class="lyr2">
+            <div class="lyr2-in">
+              <div class="lyr2-head">
+                <p class="lyr2-no mono">L3</p>
+                <p class="lyr2-ttl">DATA<small>データ</small></p>
+                <p class="lyr2-role">判断に使える状態でデータを流す層。</p>
+              </div>
+              <div class="lyr2-items"><span>DWH</span><span>ETL / ELT</span><span>データカタログ</span><span>BI</span></div>
+            </div>
+          </li>
+          <li class="lyr2">
+            <div class="lyr2-in">
+              <div class="lyr2-head">
+                <p class="lyr2-no mono">L4</p>
+                <p class="lyr2-ttl">INFRASTRUCTURE<small>基盤</small></p>
+                <p class="lyr2-role">止まらない・広げられる土台を用意する層。</p>
+              </div>
+              <div class="lyr2-items"><span>クラウド</span><span>IaC</span><span>監視 / SRE</span><span>ネットワーク</span></div>
+            </div>
+          </li>
+        </ol>
+
+        <p class="arch2-cap mono is-up"><i aria-hidden="true">↑</i>基盤の制約を、事業判断へ返す</p>
+
+        <div class="arch2-base">
+          <p class="arch2-base-ttl">SECURITY &amp; PRIVACY</p>
+          <p class="arch2-base-txt">4つのレイヤーすべてに同じ基準を適用します。設計の後から点検する工程は設けません。</p>
         </div>
-        <div class="arch-rail"><p>SECURITY &amp; PRIVACY</p></div>
+
       </div>
     </div>
   </section>
@@ -228,28 +257,27 @@
     <div class="wrap">
       <div class="sec-head rv">
         <p class="eyebrow mono">APPROACH</p>
-        <h2>4ステップで、<br class="brpc">確実に運用まで届ける。</h2>
+        <h2>想いを確実に運用まで届ける。</h2>
       </div>
-
       <div class="flow v-scroll rv">
         <div class="st">
           <p class="dot mono">01</p>
           <h3><span>ASSESS</span>現状評価</h3>
-          <p>業務・システム・データの現状を可視化し、優先順位を数値で整理します。</p>
+          <p>事業戦略実現・業務改善など、経営者や現場の想いを受け止め、現状とのギャップを明確化します。</p>
           <p class="dur mono">2–4 WEEKS</p>
           <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp" alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot mono">02</p>
-          <h3><span>DESIGN</span>構想設計</h3>
-          <p>To-Be像とアーキテクチャを設計し、段階的な移行計画に落とし込みます。</p>
+          <h3><span>DESIGN</span>計画策定</h3>
+          <p>To-Be像とアーキテクチャを設計し、段階的な計画に落とし込みます。</p>
           <p class="dur mono">3–6 WEEKS</p>
           <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp" alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot mono">03</p>
-          <h3><span>BUILD</span>実装</h3>
-          <p>短いサイクルで実装と検証を繰り返し、動くものを早期に確認します。</p>
+          <h3><span>BUILD</span>実行・実装</h3>
+          <p>全体マネジメントからスタークホルダーとの調整など、プロジェクトを推進します。</p>
           <p class="dur mono">2–6 MONTHS</p>
           <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp" alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
