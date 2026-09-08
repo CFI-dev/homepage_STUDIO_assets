@@ -688,3 +688,94 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   .v-bar i{transition:none!important;width:var(--w,70%)!important}
   .v-why .vw-bg{transition:none!important;transform:none!important}
 }
+
+/* ============================================================
+   17. CHALLENGES（課題起点ブロック／rev:2026-09-08 新設）
+        ・チェックマークは ::before で作図（SVG symbol を増やさない方針）
+        ・カード枠は .case と同じ --panel / --line を使用し統一感を保つ
+   ============================================================ */
+.chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
+.chl li{position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:3px;padding:26px 24px 24px 54px;transition:border-color .3s,transform .3s}
+.chl li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
+/* ▼ チェックマーク（装飾）。削除しないこと */
+.chl li::before{content:"";position:absolute;left:22px;top:31px;
+  width:15px;height:8px;border-left:2px solid var(--accent-2);
+  border-bottom:2px solid var(--accent-2);transform:rotate(-45deg)}
+.chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
+.chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
+
+/* 課題群 → サービスへの橋渡し文。SERVICEの前提を作る要。削除しないこと */
+.chl-note{margin-top:36px;padding-left:22px;position:relative;
+  font-size:15px;line-height:1.95;max-width:44em}
+.chl-note::before{content:"";position:absolute;left:0;top:.5em;bottom:.5em;
+  width:2px;border-radius:2px;background:var(--grad)}
+.chl-note em{font-style:normal;font-weight:700;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+@media (max-width:1024px){.chl{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){
+  .chl{grid-template-columns:1fr}
+  .chl-note{font-size:14.5px}
+}
+
+/* ============================================================
+   18. CASES（定性表示／rev:2026-09-08）
+        ・数値KPIを撤去し「課題→打ち手→変化」の3段で見せる
+        ・.case dl（0-1-1）に負けないよう、必ず .case .cs-steps（0-2-0）で書く
+   ============================================================ */
+.case .cs-steps{display:grid;gap:14px;margin-top:22px;padding-top:20px;
+  border-top:1px solid var(--line)}
+.case .cs-steps > div{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start}
+.case .cs-steps dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
+  color:var(--accent-2);padding-top:3px;margin:0}
+.case .cs-steps dd{font-family:var(--f-jp);font-size:12.8px;font-weight:400;
+  line-height:1.85;color:var(--muted);margin:0}
+/* 最終行（変化）だけ本文色＋太字で着地させる */
+.case .cs-steps > div:last-child dd{color:var(--txt);font-weight:700}
+
+@media (max-width:480px){
+  .case .cs-steps > div{grid-template-columns:1fr;gap:4px}
+}
+
+/* ============================================================
+   19. ENGAGEMENT（関わり方／rev:2026-09-08 新設）
+        カード枠は .case を流用し、下部メタのみ専用指定
+   ============================================================ */
+.case .eng-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;
+  margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.case .eng-meta > div:first-child{grid-column:1 / -1}
+.case .eng-meta dt{font-size:10.5px;letter-spacing:.06em;color:var(--muted);margin:0}
+.case .eng-meta dd{margin:5px 0 0;font-family:var(--f-jp);font-size:12.8px;
+  font-weight:400;line-height:1.75;color:var(--txt)}
+
+.eng-note{margin-top:30px;font-size:13.5px;color:var(--muted);line-height:1.95}
+
+/* ============================================================
+   20. FAQ（rev:2026-09-08 新設）
+        details/summary で構成。JS不要・キーボード操作は §15 が担保
+   ============================================================ */
+.faq{max-width:880px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;position:relative;
+  padding:22px 46px 22px 32px;font-size:14.5px;font-weight:700;line-height:1.75}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"Q";position:absolute;left:0;top:23px;
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:var(--accent-2)}
+/* ▼ ＋／− のトグル記号。open時に縦棒を落として「−」にする */
+.faq summary::after{content:"";position:absolute;right:6px;top:31px;width:13px;height:13px;
+  background:
+    linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat,
+    linear-gradient(var(--accent-2),var(--accent-2)) center/1px 100% no-repeat}
+.faq details[open] summary::after{
+  background:linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat}
+.faq .a{position:relative;padding:0 6px 26px 32px;
+  font-size:13.5px;line-height:1.95;color:var(--muted)}
+.faq .a::before{content:"A";position:absolute;left:0;top:0;
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#7d94ab}
+
+@media (max-width:600px){
+  .faq summary{padding:20px 40px 20px 26px;font-size:14px}
+  .faq summary::before{top:21px;font-size:12.5px}
+  .faq .a{padding-left:26px}
+}
