@@ -1,6 +1,7 @@
 <div id="cfi-top">
 
-  <!-- ===== HEADER ===== -->
+  <!-- HEADER / ナビはトップと同一項目に揃える。data-cfi-nav の 'home#xxx' は
+       下部スクリプトで CFI_HOME + '#xxx' に解決される -->
   <header id="hd">
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
@@ -18,10 +19,10 @@
 
       <nav id="nav">
         <ul>
+          <li><a class="gnav" href="/" data-cfi-nav="home#challenge">CHALLENGES<span>よくある課題</span></a></li>
           <li><a class="gnav" href="/" data-cfi-nav="home#service">SERVICE<span>サービス</span></a></li>
-          <li><a class="gnav" href="/" data-cfi-nav="home#architecture">ARCHITECTURE<span>提供構造</span></a></li>
           <li><a class="gnav" href="/" data-cfi-nav="home#approach">APPROACH<span>進め方</span></a></li>
-          <li><a class="gnav" href="/" data-cfi-nav="home#works">WORKS<span>実績</span></a></li>
+          <li><a class="gnav" href="/" data-cfi-nav="home#cases">CASES<span>事例</span></a></li>
           <li><a class="gnav" href="/" data-cfi-nav="home#company">COMPANY<span>会社概要</span></a></li>
           <li><a class="btn btn-p" href="#form">お問い合わせ</a></li>
         </ul>
@@ -29,7 +30,7 @@
     </div>
   </header>
 
-  <!-- ===== HERO（トップと同じ背景＋canvas） ===== -->
+  <!-- HERO（トップと同じ背景＋canvas） -->
   <section class="hero hero-sub" id="top">
     <canvas id="heroCv" aria-hidden="true"></canvas>
     <div class="wrap">
@@ -49,7 +50,7 @@
 
 <div id="cfi-bottom">
 
-  <!-- ===== FOOTER（トップと同一構成） ===== -->
+  <!-- FOOTER（トップと同一構成） -->
   <footer>
     <div class="wrap">
       <div class="ft-top">
@@ -68,16 +69,25 @@
         <div class="ft-nav">
           <div class="rv">
             <h4>SERVICE</h4>
-            <a href="/" data-cfi-nav="home#service">DX戦略・ロードマップ</a>
-            <a href="/" data-cfi-nav="home#service">データ基盤構築</a>
-            <a href="/" data-cfi-nav="home#service">クラウドアーキテクチャ</a>
-            <a href="/" data-cfi-nav="home#service">ゼロトラストセキュリティ</a>
+            <a href="/" data-cfi-nav="home#service">事業・DX戦略コンサルティング</a>
+            <a href="/" data-cfi-nav="home#service">IT・セキュリティコンサルティング</a>
+            <a href="/" data-cfi-nav="home#service">業務コンサルティング</a>
+            <a href="/" data-cfi-nav="home#service">自社サービス運営</a>
+            <a href="/" data-cfi-nav="home#service">BPプラットフォーム</a>
+            <a href="/" data-cfi-nav="home#service">Webシステム開発</a>
           </div>
           <div class="rv">
-            <h4>COMPANY</h4>
-            <a href="/" data-cfi-nav="home#company">会社概要</a>
-            <a href="/" data-cfi-nav="home#works">実績</a>
+            <h4>ABOUT</h4>
+            <a href="/" data-cfi-nav="home#challenge">よくある課題</a>
+            <a href="/" data-cfi-nav="home#why">選ばれる理由</a>
             <a href="/" data-cfi-nav="home#approach">進め方</a>
+            <a href="/" data-cfi-nav="home#cases">事例</a>
+            <a href="/" data-cfi-nav="home#company">会社概要</a>
+          </div>
+          <div class="rv">
+            <h4>CONTACT</h4>
+            <a href="/" data-cfi-nav="home#engagement">ご依頼の形と期間</a>
+            <a href="/" data-cfi-nav="home#faq">よくあるご質問</a>
             <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
           </div>
           <div class="rv">
@@ -99,37 +109,31 @@
 </div>
 
 
-<!-- ============================================================
-     SCRIPT 1：リンク解決 ＋ DOM配置 ＋ クローク解除
-     ============================================================ -->
+<!-- SCRIPT 1：リンク解決 ＋ DOM配置 ＋ クローク解除 -->
 <script>
 (function(){
-  /* ==========================================================
-     ▼▼▼ サイト設定：home_body.html と同じ値にすること ▼▼▼
-     ========================================================== */
+  /* ▼ サイト設定：home_body.html と同じ値にすること */
   var CFI_HOME    = '/';          /* トップページのパス（例: '/test_page'） */
   var CFI_CONTACT = '/contact';   /* このページ自身のパス */
-  /* ▲▲▲ 設定はここまで ▲▲▲ */
 
   var html   = document.documentElement;
   var top    = document.getElementById('cfi-top');
   var bottom = document.getElementById('cfi-bottom');
   var nuxt   = document.getElementById('__nuxt');
 
-  /* --- ① リンク先パスの一括適用（home / home#xxx / contact） --- */
+  /* 'home#cases' → CFI_HOME + '#cases' に解決する */
   function applyNav(scope){
     if (!scope) return;
     Array.prototype.forEach.call(scope.querySelectorAll('[data-cfi-nav]'), function(a){
       var v = a.getAttribute('data-cfi-nav');
       var href;
       if (v === 'contact')              href = CFI_CONTACT;
-      else if (v.indexOf('home') === 0) href = CFI_HOME + v.slice(4);   /* 'home#works' → '/#works' */
+      else if (v.indexOf('home') === 0) href = CFI_HOME + v.slice(4);
       if (href) a.setAttribute('href', href.replace('//', '/'));
     });
   }
   applyNav(top); applyNav(bottom);
 
-  /* --- ② 未確定リンク（href="#" ＋ data-cfi-todo）を無効化 --- */
   function applyTodo(scope){
     if (!scope) return;
     Array.prototype.forEach.call(scope.querySelectorAll('a[data-cfi-todo]'), function(a){
@@ -144,14 +148,13 @@
   }
   applyTodo(top); applyTodo(bottom);
 
-  /* --- ③ ヘッダー＋ヒーローを __nuxt の直前へ移動 ---
-     ※ html への cfi-sub 付与は HEAD のインラインスクリプトで完了済み */
+  /* ヘッダー＋ヒーローを __nuxt の直前へ移動 */
   if (top) {
     if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
     else document.body.insertBefore(top, document.body.firstChild);
   }
 
-  /* --- ④ クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） --- */
+  /* クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） */
   function reveal(){
     if (!html.classList.contains('cfi-boot')) return;
     html.classList.add('cfi-boot-out');
@@ -172,8 +175,7 @@
   window.addEventListener('load', function(){ setTimeout(reveal, 480); });
   setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
 
-  /* --- ⑤ リビール演出のフォールバック ---
-     rev:2026-08-28 クローク中は判定しない（幕が長引いた場合に演出を潰さないため） */
+  /* リビール演出のフォールバック。クローク中は判定しない */
   (function fallbackGuard(){
     var tries = 0;
     (function check(){
@@ -191,9 +193,7 @@
 </script>
 
 
-<!-- ============================================================
-     SCRIPT 2：黒帯対策（STUDIO側ラッパーの縦余白を打ち消す）
-     ============================================================ -->
+<!-- SCRIPT 2：黒帯対策（STUDIO側ラッパーの縦余白を打ち消す） -->
 <script>
 (function(){
   function trim(){
@@ -220,13 +220,9 @@
 <script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
 
 
-<!-- ============================================================
-     SCRIPT 3：STUDIOフォームにリビール演出を付与
-     rev:2026-08-28 / 必ず common.js の「後」に置くこと（CFI.reveal を使用）
-     ============================================================ -->
+<!-- SCRIPT 3：STUDIOフォームにリビール演出を付与。必ず common.js の「後」に置くこと -->
 <script>
 (function(){
-  /* 動きを減らす設定・IO非対応環境では何もしない（常時表示のまま） */
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (typeof IntersectionObserver !== 'function') return;
 
@@ -259,7 +255,7 @@
     targets.forEach(function(el){ el.classList.add('rv'); });
 
     if (window.CFI && typeof CFI.reveal === 'function') CFI.reveal(targets);
-    else targets.forEach(function(el){ el.classList.add('on'); });  /* 保険 */
+    else targets.forEach(function(el){ el.classList.add('on'); });
     return true;
   }
 
