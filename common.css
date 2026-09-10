@@ -49,6 +49,7 @@ a{color:inherit;text-decoration:none}
 li{list-style:none}
 img,svg,canvas{display:block;max-width:100%}
 h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
+body :is(h1,h2,h3,h4,h5,h6){color:inherit}
 .wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
 .mono{font-family:var(--f-mono);letter-spacing:.04em}
 .grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
