@@ -13,7 +13,10 @@
     <symbol id="i-dev" viewBox="0 0 24 24"><path d="M8.6 8.4 4.6 12l4 3.6"/><path d="M15.4 8.4 19.4 12l-4 3.6"/><path d="M13.7 5.4l-3.4 13.2"/></symbol>
   </defs></svg>
 
-  <!-- HEADER -->
+  <!-- HEADER
+       ▼ .hd-prog は読了進捗バー（rev:2026-09-10）。
+         common.js の initScroll が --p を供給し、common.css §20-5 が描く。
+         header が position:fixed なので、これが位置の基準になる -->
   <header id="hd">
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
@@ -40,12 +43,15 @@
         </ul>
       </nav>
     </div>
+    <i class="hd-prog" aria-hidden="true"></i>
   </header>
 
-  <!-- HERO -->
+  <!-- HERO
+       ▼ data-mo-stagger：直下の子要素を1つずつ順に出す（common.js initReveal が展開）。
+         親の .wrap 自身は .rv-hold になり、動かない器として .on だけを受け取る -->
   <section class="hero" id="top" aria-label="ビジョンとミッション">
     <canvas id="heroCv" aria-hidden="true"></canvas>
-    <div class="wrap">
+    <div class="wrap" data-mo-stagger>
 
       <p class="eyebrow mono rv">VISION</p>
       <p class="hero-en rv">Create future value from any idea</p>
@@ -78,13 +84,14 @@
   <!-- CHALLENGES -->
   <section class="sec sec-grid" id="challenge">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">CHALLENGES</p>
         <h2>その停滞は、<br class="brpc">本当にシステムの問題でしょうか。</h2>
         <p>ご相談の入口として実際に多い状態を挙げます。一つでも当てはまる場合、打ち手を増やす前に課題の切り分けから着手します。</p>
       </div>
 
-      <ul class="chl rv" data-cfi-todo="6項目の内容を実際の相談傾向に合わせて精査">
+      <!-- ▼ カードを1枚ずつ。li に .on が付くとチェックマークが描かれる（§20-8） -->
+      <ul class="chl rv" data-mo-stagger data-cfi-todo="6項目の内容を実際の相談傾向に合わせて精査">
         <li>
           <h3>戦略はあるのに、実行に落ちない</h3>
           <p>中期計画や方針は決まっている。ただ、それが現場の業務やシステムの要件に翻訳される前で止まっている。</p>
@@ -118,12 +125,16 @@
   <!-- SERVICE -->
   <section class="sec sec-ink" id="service">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">SERVICE</p>
         <h2>構想から実装、そして運営まで。<br class="brpc">CFIを支える6つの事業。</h2>
         <p>コンサルティング・自社サービス展開・システム開発の三位一体で、課題の発見から価値の実装までを一気通貫で担います。</p>
       </div>
 
+      <!-- ▼ .svc には data-mo-stagger を付けないこと。
+             カード間の隙間（gap:1px）の地色が --line のため、カード単位で
+             動かすと隙間から明るい線色が透ける。コンテナ単位で出現させ、
+             動きは内部のアイコン描画（§20-7）とホバーに持たせている -->
       <div class="svc rv" data-cfi-todo="各サービスの説明文・タグを正式文言へ差し替え">
         <article>
           <p class="no mono">01</p>
@@ -179,10 +190,12 @@
   <!-- WHY CFI -->
   <section class="sec sec-grid" id="why">
     <div class="wrap">
-      <div class="sec-head v-tight v-1line rv">
+      <div class="sec-head v-tight v-1line rv" data-mo-stagger>
         <p class="eyebrow mono">WHY CFI</p>
         <h2>CFIを利用すると、<br class="brsp">何が起きなくなるのか。</h2>
       </div>
+      <!-- ▼ .v-why にも data-mo-stagger を付けないこと（隙間 gap:2px が --line のため）。
+             背景写真の寄り引きと本文の押し上げは §20-11 が担当する -->
       <div class="v-why rv" data-cfi-todo="根拠となる実績・体制の裏付けを確認／背景写真3点の差し替え">
         <div>
           <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-01.webp"
@@ -215,11 +228,14 @@
   <!-- APPROACH -->
   <section class="sec sec-ink" id="approach">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">APPROACH</p>
         <h2>想いを確実に運用まで届ける。</h2>
       </div>
-      <div class="flow v-scroll rv">
+      <!-- ▼ .flow に .on が付くと接続線が左から引かれ、.st に .on が付くと
+             番号ドットが2回だけ脈打つ（§20-9）。
+             ※ .flow / .v-scroll に align-items を後から指定しないこと（§8） -->
+      <div class="flow v-scroll rv" data-mo-stagger>
         <div class="st">
           <p class="dot mono">01</p>
           <h3><span>ASSESS</span>現状評価</h3>
@@ -255,7 +271,7 @@
 
   <!-- TECHNOLOGY（掲載保留中）を復帰させる場合はここへ独立セクションとして挿入する。
        <section class="sec sec-grid" id="technology"><div class="wrap">
-         <div class="sec-head rv"><p class="eyebrow mono">TECHNOLOGY</p><h2>主な採用技術</h2></div>
+         <div class="sec-head rv" data-mo-stagger><p class="eyebrow mono">TECHNOLOGY</p><h2>主な採用技術</h2></div>
          <ul class="stack rv"> … </ul>
        </div></section>
        ※ .stack / .sec-head-tech のCSSは common.css §13 に残置済み -->
@@ -271,13 +287,15 @@
   <!-- CASES / 掲載3件は仮置き。実案件へ差し替え＋守秘確認を必ず行うこと -->
   <section class="sec sec-ink" id="cases">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">CASES</p>
         <h2>何を課題と捉え、<br class="brpc">どこまで手を入れたか。</h2>
         <p>成果の大きさよりも、課題の切り分け方と打ち手の選び方を残しています。同じ状況に心当たりがあれば、進め方の参考にしてください。</p>
       </div>
 
-      <div class="works v-scroll rv" data-cfi-todo="掲載事例3件の内容確定・守秘確認・写真差し替え">
+      <!-- ▼ data-mo-stagger="s"：わずかに縮んだ状態から起き上がる。
+             カードに .on が付くと内部3段（課題→打ち手→変化）が順送りで出る（§20-10） -->
+      <div class="works v-scroll rv" data-mo-stagger="s" data-cfi-todo="掲載事例3件の内容確定・守秘確認・写真差し替え">
         <article class="case">
           <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp" alt="製造業のデータ活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
           <p class="cat mono">MANUFACTURING / DATA</p>
@@ -318,13 +336,13 @@
   <!-- ENGAGEMENT -->
   <section class="sec sec-grid" id="engagement">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">ENGAGEMENT</p>
         <h2>関わり方は、3つから選べます。</h2>
         <p>最初から大きく始める必要はありません。現状評価だけ、開発だけ、といった単独のご依頼にも対応します。</p>
       </div>
 
-      <div class="works v-scroll rv" data-cfi-todo="標準期間・体制・費用レンジの確定">
+      <div class="works v-scroll rv" data-mo-stagger="s" data-cfi-todo="標準期間・体制・費用レンジの確定">
         <article class="case">
           <p class="cat mono">01 / ASSESSMENT</p>
           <h3>スポット診断</h3>
@@ -367,14 +385,17 @@
   <!-- COMPANY -->
   <section class="sec sec-ink" id="company">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">COMPANY</p>
         <h2>会社概要</h2>
       </div>
 
-      <div class="cmp-wrap rv">
+      <!-- ▼ 表と写真を別タイミングで出す。
+             tbody 側の data-mo-stagger="f" は行を1つずつフェードさせる指定。
+             行の順次表示が不要なら tbody の属性のみ外せばよい -->
+      <div class="cmp-wrap rv" data-mo-stagger="s">
         <table class="tbl">
-          <tbody>
+          <tbody data-mo-stagger="f">
             <tr><th>商号</th><td>株式会社CFI</td></tr>
             <tr><th>英文表記</th><td>CFI Inc.</td></tr>
             <tr><th>設立</th><td class="is-todo-text" data-cfi-todo="設立年月">※要記入</td></tr>
@@ -396,12 +417,14 @@
   <!-- FAQ -->
   <section class="sec sec-grid" id="faq">
     <div class="wrap">
-      <div class="sec-head rv">
+      <div class="sec-head rv" data-mo-stagger>
         <p class="eyebrow mono">FAQ</p>
         <h2>お問い合わせの前に。</h2>
       </div>
 
-      <div class="faq rv" data-cfi-todo="回答内容の社内確認（費用・NDA・対応地域は特に要確認）">
+      <!-- ▼ 開閉の高さアニメーションは common.js の initFaq が担当。
+             JS無効時・動きを減らす設定では素の details 開閉に戻る -->
+      <div class="faq rv" data-mo-stagger data-cfi-todo="回答内容の社内確認（費用・NDA・対応地域は特に要確認）">
         <details>
           <summary>相談だけでも可能ですか。</summary>
           <div class="a">可能です。初回は30分程度、現状を伺うだけの場としてお使いいただけます。その場で提案や見積りをご依頼いただく必要はありません。</div>
@@ -439,7 +462,7 @@
 
   <!-- CTA -->
   <section class="sec cta" id="cta">
-    <div class="wrap">
+    <div class="wrap" data-mo-stagger>
       <h2 class="rv">まずは、いまの課題を<br class="brpc">30分で整理しませんか。</h2>
       <p class="rv">具体的な計画が固まっていない段階でも構いません。現状を伺ったうえで、次に取るべき一手をご提案します。</p>
       <div class="hero-cta rv">
@@ -465,7 +488,8 @@
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
         </div>
 
-        <div class="ft-nav">
+        <!-- ▼ 4列を左から順に。子の .rv はそのまま活きる -->
+        <div class="ft-nav" data-mo-stagger>
           <div class="rv">
             <h4>SERVICE</h4>
             <a href="#service">事業・DX戦略コンサルティング</a>
