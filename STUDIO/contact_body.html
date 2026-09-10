@@ -1,3 +1,12 @@
+<!-- ============================================================
+     contact_body.html   rev:2026-09-10 MOTION対応
+     変更点（原本比・全4箇所。いずれも ◆MOTION で明示）
+       ① header 内に .hd-prog（読了進捗バー）を追加      … common.css §20-5 / common.js initScroll
+       ② hero の .wrap に data-mo-stagger を追加          … common.css §20-1 / common.js expandStagger
+       ③ footer の .ft-nav に data-mo-stagger を追加      … 同上
+       ④ SCRIPT 3 で STUDIOフォームの各ブロックに --i を付与（段差表示）
+     ※ common.css / common.js を先に反映してから本HTMLを反映すること
+     ============================================================ -->
 <div id="cfi-top">
 
   <!-- HEADER / ナビはトップと同一項目に揃える。data-cfi-nav の 'home#xxx' は
@@ -28,12 +37,18 @@
         </ul>
       </nav>
     </div>
+
+    <!-- ◆MOTION ① 読了進捗バー。JS(initScroll)が --p を供給する。
+         JSが落ちた場合は幅0のままで見た目に影響しない -->
+    <i class="hd-prog" aria-hidden="true"></i>
   </header>
 
   <!-- HERO（トップと同じ背景＋canvas） -->
   <section class="hero hero-sub" id="top">
     <canvas id="heroCv" aria-hidden="true"></canvas>
-    <div class="wrap">
+
+    <!-- ◆MOTION ② 見出し・リードを順番に立ち上げる（値なし＝下から上へ） -->
+    <div class="wrap" data-mo-stagger>
       <p class="eyebrow mono rv">GET IN TOUCH</p>
       <h1 class="rv">CONTACT<span>お問い合わせ</span></h1>
       <p class="lead rv">ご相談・お見積り・資料請求はこちらから。<br class="brpc">
@@ -66,7 +81,9 @@
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
         </div>
 
-        <div class="ft-nav">
+        <!-- ◆MOTION ③ 4カラムを左から順に。既に .rv が付いているので
+             expandStagger は --i の付与のみを行う -->
+        <div class="ft-nav" data-mo-stagger>
           <div class="rv">
             <h4>SERVICE</h4>
             <a href="/" data-cfi-nav="home#service">事業・DX戦略コンサルティング</a>
@@ -252,7 +269,13 @@
     if (!targets.length) return false;
 
     nuxt.dataset.cfiRv = '1';
-    targets.forEach(function(el){ el.classList.add('rv'); });
+
+    /* ◆MOTION ④ 入力欄ブロックを上から順に立ち上げる。
+       遅延はCSS(§20-1)が --i から算出するため、ここでは番号だけ渡す */
+    targets.forEach(function(el, i){
+      el.classList.add('rv');
+      el.style.setProperty('--i', i);
+    });
 
     if (window.CFI && typeof CFI.reveal === 'function') CFI.reveal(targets);
     else targets.forEach(function(el){ el.classList.add('on'); });
