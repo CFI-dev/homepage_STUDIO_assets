@@ -723,6 +723,14 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   --mo-ease:cubic-bezier(.22,1,.36,1);
   --mo-stg:80ms;                        /* 1枚あたりの遅延（段差の強さ） */
   --mo-shift:26px;                      /* リビールの移動量 */
+
+     /* ▼ 流し用グラデーション（--grad とは別物。両端を同色で閉じた折り返し型）
+     accent → accent-2 → accent。タイル境界が同色になるため継ぎ目が出ない。
+     配色を変える場合は 0% と 100% を必ず同じ値に保つこと */
+  --mo-grad-loop:linear-gradient(115deg,
+    var(--accent)   0%,
+    var(--accent-2) 50%,
+    var(--accent)  100%);
 }
 
 /* ------------------------------------------------------------
@@ -763,11 +771,25 @@ html.cfi-fallback .rv-hold{opacity:1}
 
 /* ------------------------------------------------------------
    20-3 グラデーション文字をゆるやかに流す
+        ※ シームレス条件。以下3点は必ずセットで守ること
+          (1) 配色は両端が同色の折り返し型（--mo-grad-loop）。
+              2色2ストップにすると、タイル境界で
+              accent-2 → accent の段差が文字の上を横切る。
+          (2) background-size は 200%。position の 0%→200% が
+              ちょうどタイル1枚分の移動になり、1周が継ぎ目なく閉じる。
+              端数（220% 等）にすると周回ごとに位置がずれて跳ねる。
+          (3) background-repeat:repeat を明示。要素幅の外へ動かすため、
+              no-repeat にすると色が抜ける。
+        ※ 動きを減らす設定では §16 末尾により終端（200%）で静止するが、
+          上記(2)の条件下では初期状態と同一の見た目に着地する。
         常時ループ。負荷が気になる場合はこのブロックを削除する
    ------------------------------------------------------------ */
 @keyframes moGrad{to{background-position:200% 50%}}
 .hero h1 em,.chl-note em,.grad-txt{
-  background-size:220% 100%;background-position:0 50%;
+  background-image:var(--mo-grad-loop);
+  background-size:200% 100%;
+  background-repeat:repeat;
+  background-position:0 50%;
   animation:moGrad 12s linear infinite}
 
 /* ------------------------------------------------------------
