@@ -691,14 +691,34 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 
 /* 19-4 モバイル横スクロール */
 @media (max-width:768px){
-  .v-scroll{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  .v-scroll{display:flex;gap:16px;overflow-x:auto;
+    /* ▼ 縦を明示的に閉じる。CSS Overflow 3 の規定により overflow-x:auto を
+       指定すると overflow-y の visible は auto へ計算されるため、
+       書かないとこの要素が縦にもスクロールできる入れ子スクローラになる。
+       縦スクロール範囲が 1px でも生じるとタッチがここへラッチし、
+       ページ側へスクロールが連鎖しない。
+       hidden でも横スクロールとスナップは従来どおり動作する */
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    /* mandatory は斜めスワイプでも強制的にスナップするため proximity へ。
+       カード中央で止まる見た目はほぼ変わらない */
+    scroll-snap-type:x proximity;
     margin:0 calc(var(--pad) * -1);padding:0 var(--pad) 10px;
     scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .v-scroll::-webkit-scrollbar{display:none}
   .v-scroll > *{flex:0 0 84%;scroll-snap-align:center}
+
+  /* ▼ 上の overflow-y:hidden とセット。§20-1 の初期位置 translateY(26px) は
+     (a) このスクローラに縦スクロール範囲を与える
+     (b) hidden 下では下端が 16px 切れる
+     の両方を起こすため、横スクロール時だけフェードのみに切り替える
+     （§20-1 の .rv-f と同じ扱い）。詳細度 0-2-0 で .rv / .rv-s に勝つ */
+  .v-scroll > .rv,.v-scroll > .rv-s{transform:none}
+
   .v-hint{margin-top:10px;font-family:var(--f-mono);font-size:11px;
     letter-spacing:.1em;color:var(--muted)}
 }
+
 @media (min-width:769px){.v-hint{display:none}}
 
 @media (prefers-reduced-motion:reduce){
