@@ -495,226 +495,328 @@
   })();
 
   /* ------------------------------------------------------------
-     7. ヒーロー背景：SILK（絹の帯）
-        rev:2026-09-11 旧「ノードネットワーク＋アパーチャー」を全面置換。
-        ・対象は #heroCv のまま。home / contact 双方のHTMLは変更不要
-        ・帯は二次ベジェ。加算合成(lighter)で交差した部分だけが発光する
-        ・配色は common.css の --accent / --accent-2 を実行時に読む。
-          取得できない場合のみ既定値へフォールバックする
-        ・canvas は透明のまま。.hero の背景グラデと ::after のスクリムは
-          従来どおり効く（見出しのコントラスト条件を変えない）
-        ・上下端のフェードは common.css §3 の mask-image が担当。
-          JS側ではマスクしない（二重にかけないこと）
-        ・形状の乱数は seeded。リサイズで帯の形が変わらず、
-          動きを減らす設定での静止画も毎回同じ絵になる
+     7. ヒーロー背景：ノードネットワーク＋アパーチャー
+        rev:2026-09-10
+        ・ポインタ追従を追加。座標本体(x,y)は書き換えず、描画用の
+          オフセット(dx,dy)だけを動かす。静止画（animate=false）の
+          再現性を保つため
+        ・近接ノード間を渡る信号パルスを追加（1.5秒間隔で1本）
+        ・アパーチャーに呼吸（±3.5%）とスクロールドリフトを追加
+        rev:2026-09-11 モバイルのスクロール負荷対策
+        ・リンク判定の距離比較を二乗化（Math.hypot / sqrt の削減）。
+          総当たり最大 72*71/2 = 2,556 組ぶんの平方根が毎フレーム
+          走っていたため
+        ・狭い画面では DPR 上限とノード数を引き下げる
      ------------------------------------------------------------ */
-  (function initHeroSilk() {
+  (function initHeroCanvas() {
     const cv = document.getElementById("heroCv");
-    if (!cv || typeof cv.getContext !== "function") return;
-    const hero = (cv.closest && cv.closest(".hero")) || cv.parentNode;
+    const hero = document.querySelector(".hero");
+    if (!cv || !hero || typeof cv.getContext !== "function") return;
+
     const g = cv.getContext("2d", { alpha: true });
-    if (!g || !hero) return;
+    if (!g) return;
 
-    /* ▼▼ 大胆さの調整ダイヤル ▼▼
-       AMP   振幅（画面高に対する比）。0.24 まで上げると相当に暴れる
-       RATE  時間の進み。1.6 あたりから「速い」と感じ始める
-       GLOW  交差部の発光量。上げすぎると白飛びして品が落ちる
-       BANDS 帯の本数（PC）。増やすほど塗り面積が線形に増える        */
-    const AMP = 0.18, RATE = 1.0, GLOW = 0.13, BANDS = 6;
-    const SEG = 18;                     /* 1本あたりの頂点数 */
+    const TAU = Math.PI * 2;
+    let W = 0, H = 0, DPR = 1, nodes = [], raf = null, visible = true, rzTimer = null;
+
+    /* ▼ ポインタ追従（マウス環境のみ。タッチでは追従させない） */
     const HOVER = matchMedia("(hover:hover) and (pointer:fine)");
+    const pt = { x: 0, y: 0, on: false };
+    let pulses = [], lastSpawn = 0;
 
-    let W = 0, H = 0, DPR = 1, rb = [], raf = null, vis = true, rzT = null;
-    let halo = null, hx = -1, hy = -1, glow = GLOW;
-    const pt = { x: .5, y: .5, tx: .5, ty: .5, on: false };
-
-    /* ▼ ブランド色をトークンから取得。#rrggbb / rgb() の両方を受ける。
-         common.css より先に実行された場合だけ既定値に落ちる */
-    function brand() {
-      const cs = getComputedStyle(document.documentElement);
-      function rgb(v, fb) {
-        v = (v || "").trim();
-        let m = /^#([0-9a-f]{6})$/i.exec(v);
-        if (m) {
-          const n = parseInt(m[1], 16);
-          return ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255);
-        }
-        m = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(v);
-        if (m) return Math.round(+m[1]) + "," + Math.round(+m[2]) + "," + Math.round(+m[3]);
-        return fb;
-      }
-      return {
-        a: rgb(cs.getPropertyValue("--accent"),   "15,107,224"),
-        b: rgb(cs.getPropertyValue("--accent-2"), "0,194,168")
-      };
+    if (HOVER.matches) {
+      hero.addEventListener(
+        "pointermove",
+        function (e) {
+          const r = cv.getBoundingClientRect();
+          pt.x = e.clientX - r.left;
+          pt.y = e.clientY - r.top;
+          pt.on = true;
+        },
+        { passive: true }
+      );
+      hero.addEventListener("pointerleave", function () { pt.on = false; });
     }
-    let C = brand();
 
-    /* 再現性のある擬似乱数（線形合同法。旧実装と同じ手法） */
+    /* 再現性のある擬似乱数（線形合同法） */
     function seeded(seed) {
       let v = seed % 2147483647;
       if (v <= 0) v += 2147483646;
-      return () => { v = (v * 16807) % 2147483647; return (v - 1) / 2147483646; };
-    }
-
-    if (HOVER.matches) {
-      hero.addEventListener("pointermove", function (e) {
-        const r = cv.getBoundingClientRect();
-        pt.tx = (e.clientX - r.left) / (r.width  || 1);
-        pt.ty = (e.clientY - r.top ) / (r.height || 1);
-        pt.on = true;
-      }, { passive: true });
-      hero.addEventListener("pointerleave", function () { pt.on = false; });
+      return () => {
+        v = (v * 16807) % 2147483647;
+        return (v - 1) / 2147483646;
+      };
     }
 
     function build() {
       const rnd = seeded(20160202);
+      /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える。
+         リンク描画は O(n^2) なので、ここの上限が効き幅として最も大きい */
       const narrow = W < 768;
-      const n = narrow ? 4 : BANDS;
-      /* 狭い画面は全面 fillRect が効くので発光を控える。0 にすると塗り自体が消える */
-      glow = narrow ? GLOW * 0.55 : GLOW;
-      halo = null; hx = -1; hy = -1;
-      C = brand();
-
-      rb = [];
-      for (let i = 0; i < n; i++) {
-        const u = n > 1 ? i / (n - 1) : .5;
-        const a = 0.10 + 0.05 * (1 - u);
-        const grd = g.createLinearGradient(0, 0, W, H);
-        grd.addColorStop(0,   "rgba(" + C.a + "," + a.toFixed(3) + ")");
-        grd.addColorStop(0.5, "rgba(" + C.b + "," + (a * 1.35).toFixed(3) + ")");
-        grd.addColorStop(1,   "rgba(" + C.a + ",0)");
-        rb.push({
-          base: H * (0.16 + u * 0.62),
-          a1: H * AMP * (0.55 + 0.45 * rnd()),
-          a2: H * AMP * 0.34,
-          k1: 1.1 + u * 0.9,               /* 横方向の波数 */
-          k2: 2.4 + u * 1.6,
-          s1: (0.06 + u * 0.05) * RATE,    /* 位相速度。小さいほど優雅 */
-          s2: (0.09 - u * 0.03) * RATE,
-          ph: u * 4.1,
-          th: H * (0.05 + 0.055 * (1 - u)),/* 帯の厚み */
-          tilt: (u - 0.5) * H * 0.22,      /* 傾き。平行を避けて動きを出す */
-          grad: grd,
-          /* ▼ 頂点バッファは使い回す。毎フレーム配列を作るとGCが走る */
-          top: new Float32Array((SEG + 1) * 2),
-          bot: new Float32Array((SEG + 1) * 2)
-        });
-      }
+      const cap = narrow ? 40 : 72;
+      const div = narrow ? 30000 : 22000;
+      const n = Math.round(Math.min(cap, Math.max(18, (W * H) / div)));
+      nodes = Array.from({ length: n }, () => ({
+        x: rnd() * W,
+        y: rnd() * H,
+        dx: 0,                          /* 描画用オフセット（追従分） */
+        dy: 0,
+        vx: (rnd() - 0.5) * 0.22,
+        vy: (rnd() - 0.5) * 0.22,
+        r: 0.9 + rnd() * 1.9,
+        c: rnd() > 0.62 ? "0,194,168" : "15,107,224",
+      }));
+      pulses = [];
     }
 
     function resize() {
+      /* 狭い画面は DPR を 1.5 で頭打ちにする（塗り面積が約44%減る） */
       DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
       const r = cv.getBoundingClientRect();
-      W = r.width; H = r.height;
-      if (!W || !H) return;              /* 非表示時の 0 サイズを回避 */
-      cv.width  = Math.round(W * DPR);
+      W = r.width;
+      H = r.height;
+      if (!W || !H) return;               /* 非表示時の 0 サイズを回避 */
+      cv.width = Math.round(W * DPR);
       cv.height = Math.round(H * DPR);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
       build();
     }
 
-    /* 点列を二次ベジェで結ぶ（中点をアンカーにする定番手法）。
-       18点でも目視では完全な曲線になる */
-    function curveFwd(p, n) {
-      g.moveTo(p[0], p[1]);
-      for (let i = 1; i < n - 1; i++) {
-        const x = p[i * 2], y = p[i * 2 + 1];
-        g.quadraticCurveTo(x, y, (x + p[(i + 1) * 2]) * .5, (y + p[(i + 1) * 2 + 1]) * .5);
+    /* アパーチャーマーク（3分割リング） */
+    function aperture(cx, cy, R, rot, alpha) {
+      const grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      grd.addColorStop(0, "rgba(15,107,224," + alpha + ")");
+      grd.addColorStop(1, "rgba(0,194,168," + alpha + ")");
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(rot);
+      g.strokeStyle = grd;
+      g.lineWidth = R * 0.2;
+      g.lineCap = "round";
+      for (let i = 0; i < 3; i++) {
+        const s = (i * TAU) / 3;
+        g.beginPath();
+        g.arc(0, 0, R, s, s + 1.38);
+        g.stroke();
       }
-      g.lineTo(p[(n - 1) * 2], p[(n - 1) * 2 + 1]);
-    }
-    function curveBack(p, n) {
-      g.lineTo(p[(n - 1) * 2], p[(n - 1) * 2 + 1]);   /* 右端で折り返す */
-      for (let i = n - 2; i > 0; i--) {
-        const x = p[i * 2], y = p[i * 2 + 1];
-        g.quadraticCurveTo(x, y, (x + p[(i - 1) * 2]) * .5, (y + p[(i - 1) * 2 + 1]) * .5);
-      }
-      g.lineTo(p[0], p[1]);
-    }
-
-    function band(r, T, warp) {
-      const x0 = -W * 0.12, span = W * 1.24, n = SEG + 1;
-      for (let i = 0; i < n; i++) {
-        const u = i / SEG, x = x0 + span * u;
-        const y = r.base
-                + r.tilt * (u - .5) * 2
-                + r.a1 * Math.sin(u * Math.PI * 2 * r.k1 + T * r.s1 + r.ph)
-                + r.a2 * Math.sin(u * Math.PI * 2 * r.k2 - T * r.s2)
-                + warp * Math.sin(u * Math.PI * 2 + r.ph);     /* ポインタ由来の歪み */
-        const th = r.th * (0.55 + 0.45 * Math.sin(u * Math.PI * 2 * 1.7 + T * r.s2 * 1.3 + r.ph));
-        r.top[i * 2] = x; r.top[i * 2 + 1] = y;
-        r.bot[i * 2] = x; r.bot[i * 2 + 1] = y + th;
-      }
+      g.restore();
+      g.fillStyle = grd;
       g.beginPath();
-      curveFwd(r.top, n);
-      curveBack(r.bot, n);
-      g.closePath();
-      g.fillStyle = r.grad;
+      g.arc(cx, cy, R * 0.09, 0, TAU);
       g.fill();
     }
 
-    function draw(t) {
-      const live = !rm.matches;
-      const T = live ? t / 1000 : 0;
-
-      /* 追従は慣性付き。値を直に入れると帯が痙攣する */
-      pt.x += ((pt.on ? pt.tx : .5) - pt.x) * 0.045;
-      pt.y += ((pt.on ? pt.ty : .5) - pt.y) * 0.045;
-      const warp = live ? (pt.y - .5) * H * 0.20 : 0;
-
+    /* animate=false のときは1フレームだけ描いて終了（静止画） */
+    function draw(t, animate) {
       g.clearRect(0, 0, W, H);
 
-      /* 加算合成。帯が重なった部分だけが光る＝交差が主役になる */
-      g.globalCompositeOperation = "lighter";
-      g.globalAlpha = 1;
-      for (let i = 0; i < rb.length; i++) band(rb[i], T, warp);
+      /* 狭い画面ではアパーチャーを中央寄り・小さめに配置 */
+      const narrow = W < 768;
+      const cx = narrow ? W * 0.5 : W * 0.74;
+      const cy = narrow ? H * 0.3 : H * 0.46;
+      const R0 = Math.min(W, H) * (narrow ? 0.16 : 0.22);
 
-      /* 交差の輝きを底上げする薄いベール。
-         グラデーションは中心が動いたときだけ作り直す */
-      if (glow > 0) {
-        const cx = W * (0.30 + pt.x * 0.40), cy = H * (0.30 + pt.y * 0.30);
-        if (!halo || Math.abs(cx - hx) > 2 || Math.abs(cy - hy) > 2) {
-          hx = cx; hy = cy;
-          halo = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.6);
-          halo.addColorStop(0,   "rgba(" + C.b + "," + glow.toFixed(3) + ")");
-          halo.addColorStop(0.6, "rgba(" + C.a + "," + (glow * 0.4).toFixed(3) + ")");
-          halo.addColorStop(1,   "rgba(" + C.a + ",0)");
+      const LINK = Math.min(150, Math.max(80, W * 0.11));
+      const LINK2 = LINK * LINK;          /* 二乗比較用 */
+
+      /* 追加演出（追従・パルス・呼吸）を出してよい状態か */
+      const live = animate !== false && !rm.matches;
+
+      /* 静止描画では座標を進めない（毎回同じ絵になる） */
+      if (animate !== false) {
+        for (const p of nodes) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
         }
-        g.fillStyle = halo;
-        g.fillRect(0, 0, W, H);
       }
-      g.globalCompositeOperation = "source-over";
 
-      if (!live) { raf = null; return; }   /* 動きを減らす設定＝静止1枚 */
+      /* ▼ カーソルへの引き寄せ。表示位置(dx,dy)だけを補間で動かし、
+           離脱時は 0 へ緩やかに戻す */
+      const PR = 190, PR2 = PR * PR;
+      for (const p of nodes) {
+        let tx = 0, ty = 0;
+        if (live && pt.on) {
+          const ax = pt.x - p.x, ay = pt.y - p.y, d2 = ax * ax + ay * ay;
+          if (d2 < PR2) {
+            const f = (1 - d2 / PR2) * 0.18;
+            tx = ax * f;
+            ty = ay * f;
+          }
+        }
+        p.dx += (tx - p.dx) * 0.12;
+        p.dy += (ty - p.dy) * 0.12;
+      }
+
+      /* ノード間の接続線
+         ※ 距離は二乗で判定し、閾値内の組だけ平方根を取る。
+           Math.hypot を総当たりで呼ばないこと */
+      g.lineWidth = 1;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        const ax = a.x + a.dx, ay = a.y + a.dy;
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          const bx = b.x + b.dx, by = b.y + b.dy;
+          const ux = ax - bx, uy = ay - by;
+          const d2 = ux * ux + uy * uy;
+          if (d2 > LINK2) continue;
+          const d = Math.sqrt(d2);
+          g.strokeStyle = "rgba(0,194,168," + (0.16 * (1 - d / LINK)).toFixed(3) + ")";
+          g.beginPath();
+          g.moveTo(ax, ay);
+          g.lineTo(bx, by);
+          g.stroke();
+        }
+      }
+
+      /* カーソルから近傍ノードへの線 */
+      if (live && pt.on) {
+        const CR = 150, CR2 = CR * CR;
+        for (const p of nodes) {
+          const px = p.x + p.dx, py = p.y + p.dy;
+          const ux = pt.x - px, uy = pt.y - py;
+          const d2 = ux * ux + uy * uy;
+          if (d2 > CR2) continue;
+          const d = Math.sqrt(d2);
+          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - d / CR)).toFixed(3) + ")";
+          g.beginPath();
+          g.moveTo(pt.x, pt.y);
+          g.lineTo(px, py);
+          g.stroke();
+        }
+      }
+
+      /* ノード本体 */
+      for (const p of nodes) {
+        g.fillStyle = "rgba(" + p.c + ",0.55)";
+        g.beginPath();
+        g.arc(p.x + p.dx, p.y + p.dy, p.r, 0, TAU);
+        g.fill();
+      }
+
+      /* ▼ 信号パルス：ランダムな1点から最近傍へ光を走らせる
+           （1.5秒に1回のみの探索なので二乗比較のままでよい） */
+      if (live && t - lastSpawn > 1500 && nodes.length > 2) {
+        lastSpawn = t;
+        const i = Math.floor(Math.random() * nodes.length);
+        const a = nodes[i];
+        let best = -1, bd2 = Infinity;
+        for (let j = 0; j < nodes.length; j++) {
+          if (j === i) continue;
+          const ux = a.x - nodes[j].x, uy = a.y - nodes[j].y;
+          const d2 = ux * ux + uy * uy;
+          if (d2 < bd2 && d2 > 576) { bd2 = d2; best = j; }   /* 576 = 24^2 */
+        }
+        const lim = LINK * 1.3;
+        if (best >= 0 && bd2 < lim * lim) pulses.push({ a: a, b: nodes[best], t0: t });
+      }
+      if (!live) pulses = [];
+      for (let k = pulses.length - 1; k >= 0; k--) {
+        const q = pulses[k];
+        const pr = (t - q.t0) / 1200;
+        if (pr >= 1) { pulses.splice(k, 1); continue; }
+        const e = pr * pr * (3 - 2 * pr);                 /* smoothstep */
+        const ax = q.a.x + q.a.dx, ay = q.a.y + q.a.dy;
+        const x = ax + (q.b.x + q.b.dx - ax) * e;
+        const y = ay + (q.b.y + q.b.dy - ay) * e;
+        const al = Math.sin(pr * Math.PI);                /* 出て消える */
+        g.strokeStyle = "rgba(0,194,168," + (0.28 * al).toFixed(3) + ")";
+        g.beginPath();
+        g.moveTo(ax, ay);
+        g.lineTo(x, y);
+        g.stroke();
+        g.fillStyle = "rgba(0,194,168," + (0.9 * al).toFixed(3) + ")";
+        g.beginPath();
+        g.arc(x, y, 2.2, 0, TAU);
+        g.fill();
+      }
+
+      /* 背面グロー */
+      const halo = g.createRadialGradient(cx, cy, R0 * 0.2, cx, cy, R0 * 1.9);
+      halo.addColorStop(0, "rgba(0,194,168,0.11)");
+      halo.addColorStop(0.55, "rgba(15,107,224,0.07)");
+      halo.addColorStop(1, "rgba(15,107,224,0)");
+      g.fillStyle = halo;
+      g.beginPath();
+      g.arc(cx, cy, R0 * 1.9, 0, TAU);
+      g.fill();
+
+      /* 二重リング：外周はゆっくり逆回転。
+         呼吸（±3.5%）とスクロールによる微小ドリフトを加える。
+         ※ window.scrollY の読み取りはレイアウトを起こさない（合成済み値） */
+      const R = R0 * (live ? 1 + Math.sin(t / 3800) * 0.035 : 1);
+      const sy = live ? Math.min(window.scrollY || 0, H) * 0.06 : 0;
+      const rot = (t / 26000) * TAU;
+      aperture(cx, cy + sy, R * 1.42, -rot * 0.55, 0.16);
+      aperture(cx, cy + sy, R, rot, 0.5);
+
+      /* ▼ 旧版はここが無条件だったため、動きを減らす設定でも
+           アニメーションが止まらなかった（2026-08 改訂の主眼） */
+      if (animate === false || rm.matches) {
+        raf = null;
+        return;
+      }
       raf = requestAnimationFrame(draw);
     }
 
-    function stop()  { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-    function start() { if (!raf && vis && !rm.matches) raf = requestAnimationFrame(draw); }
-    function render(){ if (rm.matches) { stop(); draw(0); } else start(); }
+    function still() {
+      stop();
+      draw(0, false);
+    }
+    function start() {
+      if (!raf && visible && !rm.matches) raf = requestAnimationFrame(draw);
+    }
+    function stop() {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+    }
+    function render() {
+      rm.matches ? still() : start();
+    }
 
     resize();
 
     /* モバイルのアドレスバー開閉による微小リサイズを間引く */
-    addEventListener("resize", function () {
-      clearTimeout(rzT);
-      rzT = setTimeout(function () { stop(); resize(); render(); }, 180);
-    }, { passive: true });
+    addEventListener(
+      "resize",
+      () => {
+        clearTimeout(rzTimer);
+        rzTimer = setTimeout(() => {
+          stop();
+          resize();
+          render();
+        }, 180);
+      },
+      { passive: true }
+    );
 
-    addEventListener("orientationchange", function () { stop(); resize(); render(); });
-    document.addEventListener("visibilitychange", function () {
+    addEventListener("orientationchange", () => {
+      stop();
+      resize();
+      render();
+    });
+
+    document.addEventListener("visibilitychange", () => {
       document.hidden ? stop() : render();
     });
 
+    /* 動きを減らす設定が実行中に切り替わった場合も追従 */
+    onMQ(rm, render);
+
     /* ヒーローが画面外なら停止（省電力） */
     if (HAS_IO) {
-      new IntersectionObserver(function (es) {
-        vis = es[0].isIntersecting;
-        vis ? render() : stop();
-      }, { threshold: 0 }).observe(hero);
+      new IntersectionObserver((es) => {
+          visible = es[0].isIntersecting;
+          visible ? render() : stop();
+        }, { threshold: 0 })
+        .observe(hero);
     }
 
-    onMQ(rm, render);
+    /* 初期描画（動きを減らす設定では静止画1枚） */
     render();
   })();
+})();
