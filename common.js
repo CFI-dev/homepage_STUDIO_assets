@@ -9,6 +9,11 @@
        (3) initReveal   … data-mo-stagger の展開。段差遅延をCSS(--i)へ移管
        (4) initFaq      … 新設。details の高さアニメーション
        (5) initHeroCanvas … ポインタ追従・信号パルス・アパーチャーの呼吸
+   ・rev:2026-09-11 スクロール性能対策（common.css §20-9 / §20-15 と対）
+       (a) initScroll     … 読み書きの分離／計測のキャッシュ化／
+                            --hp 廃止（.hero .wrap へ直接書込）／
+                            .hd-up にヒステリシス（±10px）
+       (b) initHeroCanvas … 距離比較を二乗化、モバイルのDPR・ノード数を抑制
    ・CSS側は common.css §20 が対（片方だけ更新しないこと）
    ============================================================ */
 
@@ -29,6 +34,9 @@
   }
 
   var HAS_IO = typeof IntersectionObserver === "function";
+
+  /* 公開API置き場。initScroll / initReveal の両方から書き込む */
+  var CFI = (window.CFI = window.CFI || {});
 
   /* ------------------------------------------------------------
      1. モバイルメニュー
@@ -76,48 +84,84 @@
   /* ------------------------------------------------------------
      2. スクロール連動（影 / 格納 / 進捗バー / ヒーローのパララックス）
         rev:2026-09-10 旧 initHeaderShadow を統合。
+        rev:2026-09-11 カクつき対策。以下3点が設計の要。
+          ・frame() 内でレイアウトを伴う読み取り（scrollHeight /
+            offsetHeight）を行わない。クラス書き込みの直後に読むと
+            強制同期レイアウトが毎フレーム発生する。計測は measure()
+            に隔離し、resize / load / DOM変化時のみ実行する
+          ・パララックスは --hp ではなく .hero .wrap へ直接書く。
+            カスタムプロパティは継承するため、.hero に載せると
+            配下すべてのスタイル再計算が毎フレーム走る
+          ・.hd-up は ±10px のヒステリシスを持たせる。2px しきい値だと
+            慣性スクロールの微振動で往復し、backdrop-filter 付きの
+            fixed ヘッダーの再合成を繰り返す
         ・scroll の購読は全体でこの1本のみ。rAF で1フレーム1回に間引く
-        ・供給する値：header.scr / header.hd-up / .hd-prog の --p /
-          .hero の --hp（common.css §20-5, §20-15 が参照）
      ------------------------------------------------------------ */
   (function initScroll() {
     const hd = document.getElementById("hd");
     const prog = document.querySelector(".hd-prog");
     const nav = document.getElementById("nav");
     const hero = document.querySelector(".hero");
+    const heroWrap = hero && hero.querySelector(".wrap");
+    const hint = document.querySelector(".scroll-hint");
     if (!hd && !prog && !hero) return;
 
     let last = 0;
     let ticking = false;
-    let soft = rm.matches; /* 動きを減らす設定では格納とパララックスを止める */
+    let soft = rm.matches;      /* 動きを減らす設定では格納とパララックスを止める */
+    let maxScroll = 0;
+    let heroH = 1;
+    let up = false;             /* .hd-up の現在状態。無駄な class 書換を避ける */
+
+    /* ▼ レイアウトを伴う読み取りはこの関数に隔離する。
+         スクロール中は絶対に呼ばないこと */
+    function measure() {
+      maxScroll = document.documentElement.scrollHeight - innerHeight;
+      heroH = (hero && hero.offsetHeight) || 1;
+    }
 
     function frame() {
       ticking = false;
-      const y = window.scrollY || window.pageYOffset || 0;
+      const y = window.scrollY || window.pageYOffset || 0;  /* 読み取りはここだけ */
 
-      /* 2-1 ヘッダー影（旧 initHeaderShadow と同挙動） */
+      /* --- 以降は書き込みのみ。読み取りを混ぜないこと --- */
+
+      /* 2-1 ヘッダー影 */
       if (hd) hd.classList.toggle("scr", y > 40);
 
-      /* 2-2 読了進捗バー */
+      /* 2-2 読了進捗バー（maxScroll は measure() のキャッシュ値） */
       if (prog) {
-        const max = document.documentElement.scrollHeight - innerHeight;
-        prog.style.setProperty("--p", max > 0 ? Math.min(y / max, 1).toFixed(4) : "0");
+        prog.style.setProperty(
+          "--p",
+          maxScroll > 0 ? Math.min(y / maxScroll, 1).toFixed(4) : "0"
+        );
       }
 
       /* 2-3 下方向スクロールでヘッダーを格納。
              メニュー展開中は隠さない（操作不能になるため） */
       if (hd && !soft) {
         const open = nav && nav.classList.contains("open");
-        hd.classList.toggle("hd-up", y > last + 2 && y > 240 && !open);
+        const d = y - last;
+        /* しきい値未満の揺れでは last を更新せず、移動量を累積させる */
+        if (Math.abs(d) >= 10 || y <= 240) {
+          const next = d > 0 && y > 240 && !open;
+          if (next !== up) {
+            up = next;
+            hd.classList.toggle("hd-up", up);
+          }
+          last = y;
+        }
+      } else {
+        last = y;
       }
 
-      /* 2-4 ヒーローのパララックス（0 → 1 に正規化して渡す） */
-      if (hero && !soft) {
-        const h = hero.offsetHeight || 1;
-        hero.style.setProperty("--hp", Math.min(y / h, 1).toFixed(4));
+      /* 2-4 ヒーローのパララックス（合成可能プロパティへ直接書込） */
+      if (heroWrap && !soft) {
+        const p = Math.min(y / heroH, 1);
+        heroWrap.style.translate = "0 " + (p * 46).toFixed(2) + "px";
+        heroWrap.style.opacity = (1 - p * 0.9).toFixed(3);
+        if (hint) hint.style.opacity = Math.max(0, 1 - p * 2.4).toFixed(3);
       }
-
-      last = y;
     }
 
     function onScroll() {
@@ -128,16 +172,54 @@
     }
 
     addEventListener("scroll", onScroll, { passive: true });
-    addEventListener("resize", onScroll, { passive: true });
+    addEventListener(
+      "resize",
+      function () {
+        measure();
+        onScroll();
+      },
+      { passive: true }
+    );
+
+    /* ▼ 文書高の変化に追随させる。
+         画像の遅延読込確定や FAQ の開閉で高さが変わるため、
+         これが無いと進捗バーの値が一時的にずれる */
+    addEventListener("load", function () {
+      measure();
+      onScroll();
+    });
+    if (typeof ResizeObserver === "function" && document.body) {
+      new ResizeObserver(function () {
+        measure();
+        onScroll();
+      }).observe(document.body);
+    }
+
+    /* 後から生成されるDOM（STUDIOフォーム等）用の手動再計測フック */
+    CFI.remeasure = function () {
+      measure();
+      onScroll();
+    };
 
     /* 設定が実行中に切り替わった場合も追従（残った状態を戻す） */
     onMQ(rm, (e) => {
       soft = e.matches;
-      if (!soft) return;
-      if (hd) hd.classList.remove("hd-up");
-      if (hero) hero.style.setProperty("--hp", "0");
+      if (!soft) {
+        onScroll();
+        return;
+      }
+      if (hd) {
+        hd.classList.remove("hd-up");
+        up = false;
+      }
+      if (heroWrap) {
+        heroWrap.style.translate = "";
+        heroWrap.style.opacity = "";
+      }
+      if (hint) hint.style.opacity = "";
     });
 
+    measure();
     frame(); /* リロード位置が途中の場合に備えて初期反映 */
   })();
 
@@ -232,7 +314,9 @@
          属性値は方向指定（"" | "l" | "r" | "s" | "f"）。
          親は .rv-hold を足して「.on を受け取るだけの器」に変える。
          §20-7（アイコン描画）や §20-9（接続線）が親の .on を
-         参照しているため、親からクラスを外してはいけない */
+         参照しているため、親からクラスを外してはいけない。
+         ※ .v-scroll 配下の子は §19-4 が transform を打ち消すため、
+           横スクロール時はフェードのみになる（縦ラッチ防止） */
     function expandStagger() {
       var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, TEMPLATE: 1, NOSCRIPT: 1 };
       Array.prototype.forEach.call(
@@ -259,7 +343,6 @@
       );
     }
 
-    var CFI = (window.CFI = window.CFI || {});
     CFI.reveal = observe;
     CFI.stagger = expandStagger;   /* 後から生成されるDOM用 */
 
@@ -351,6 +434,7 @@
           のため、実測値をJSから与える方式を採る
         ・JS無効時・動きを減らす設定では素の開閉に戻る
         ・キーボードの Enter / Space も click として届くため同経路
+        ・開閉による文書高の変化は initScroll の ResizeObserver が拾う
      ------------------------------------------------------------ */
   (function initFaq() {
     const items = document.querySelectorAll(".faq details");
@@ -399,6 +483,7 @@
           body.style.paddingBottom = "";
           if (closing) d.open = false;
           busy = false;
+          if (CFI && typeof CFI.remeasure === "function") CFI.remeasure();
         }
         function onEnd(ev) {
           if (ev.target === body && ev.propertyName === "height") finish();
@@ -417,6 +502,11 @@
           再現性を保つため
         ・近接ノード間を渡る信号パルスを追加（1.5秒間隔で1本）
         ・アパーチャーに呼吸（±3.5%）とスクロールドリフトを追加
+        rev:2026-09-11 モバイルのスクロール負荷対策
+        ・リンク判定の距離比較を二乗化（Math.hypot / sqrt の削減）。
+          総当たり最大 72*71/2 = 2,556 組ぶんの平方根が毎フレーム
+          走っていたため
+        ・狭い画面では DPR 上限とノード数を引き下げる
      ------------------------------------------------------------ */
   (function initHeroCanvas() {
     const cv = document.getElementById("heroCv");
@@ -460,8 +550,12 @@
 
     function build() {
       const rnd = seeded(20160202);
-      /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える */
-      const n = Math.round(Math.min(72, Math.max(18, (W * H) / 22000)));
+      /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える。
+         リンク描画は O(n^2) なので、ここの上限が効き幅として最も大きい */
+      const narrow = W < 768;
+      const cap = narrow ? 40 : 72;
+      const div = narrow ? 30000 : 22000;
+      const n = Math.round(Math.min(cap, Math.max(18, (W * H) / div)));
       nodes = Array.from({ length: n }, () => ({
         x: rnd() * W,
         y: rnd() * H,
@@ -476,7 +570,8 @@
     }
 
     function resize() {
-      DPR = Math.min(devicePixelRatio || 1, 2);
+      /* 狭い画面は DPR を 1.5 で頭打ちにする（塗り面積が約44%減る） */
+      DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
       const r = cv.getBoundingClientRect();
       W = r.width;
       H = r.height;
@@ -522,6 +617,7 @@
       const R0 = Math.min(W, H) * (narrow ? 0.16 : 0.22);
 
       const LINK = Math.min(150, Math.max(80, W * 0.11));
+      const LINK2 = LINK * LINK;          /* 二乗比較用 */
 
       /* 追加演出（追従・パルス・呼吸）を出してよい状態か */
       const live = animate !== false && !rm.matches;
@@ -553,15 +649,20 @@
         p.dy += (ty - p.dy) * 0.12;
       }
 
-      /* ノード間の接続線 */
+      /* ノード間の接続線
+         ※ 距離は二乗で判定し、閾値内の組だけ平方根を取る。
+           Math.hypot を総当たりで呼ばないこと */
       g.lineWidth = 1;
       for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        const ax = a.x + a.dx, ay = a.y + a.dy;
         for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i], b = nodes[j];
-          const ax = a.x + a.dx, ay = a.y + a.dy;
+          const b = nodes[j];
           const bx = b.x + b.dx, by = b.y + b.dy;
-          const d = Math.hypot(ax - bx, ay - by);
-          if (d > LINK) continue;
+          const ux = ax - bx, uy = ay - by;
+          const d2 = ux * ux + uy * uy;
+          if (d2 > LINK2) continue;
+          const d = Math.sqrt(d2);
           g.strokeStyle = "rgba(0,194,168," + (0.16 * (1 - d / LINK)).toFixed(3) + ")";
           g.beginPath();
           g.moveTo(ax, ay);
@@ -572,11 +673,14 @@
 
       /* カーソルから近傍ノードへの線 */
       if (live && pt.on) {
+        const CR = 150, CR2 = CR * CR;
         for (const p of nodes) {
           const px = p.x + p.dx, py = p.y + p.dy;
-          const d = Math.hypot(pt.x - px, pt.y - py);
-          if (d > 150) continue;
-          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - d / 150)).toFixed(3) + ")";
+          const ux = pt.x - px, uy = pt.y - py;
+          const d2 = ux * ux + uy * uy;
+          if (d2 > CR2) continue;
+          const d = Math.sqrt(d2);
+          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - d / CR)).toFixed(3) + ")";
           g.beginPath();
           g.moveTo(pt.x, pt.y);
           g.lineTo(px, py);
@@ -592,18 +696,21 @@
         g.fill();
       }
 
-      /* ▼ 信号パルス：ランダムな1点から最近傍へ光を走らせる */
+      /* ▼ 信号パルス：ランダムな1点から最近傍へ光を走らせる
+           （1.5秒に1回のみの探索なので二乗比較のままでよい） */
       if (live && t - lastSpawn > 1500 && nodes.length > 2) {
         lastSpawn = t;
         const i = Math.floor(Math.random() * nodes.length);
         const a = nodes[i];
-        let best = -1, bd = Infinity;
+        let best = -1, bd2 = Infinity;
         for (let j = 0; j < nodes.length; j++) {
           if (j === i) continue;
-          const d = Math.hypot(a.x - nodes[j].x, a.y - nodes[j].y);
-          if (d < bd && d > 24) { bd = d; best = j; }
+          const ux = a.x - nodes[j].x, uy = a.y - nodes[j].y;
+          const d2 = ux * ux + uy * uy;
+          if (d2 < bd2 && d2 > 576) { bd2 = d2; best = j; }   /* 576 = 24^2 */
         }
-        if (best >= 0 && bd < LINK * 1.3) pulses.push({ a: a, b: nodes[best], t0: t });
+        const lim = LINK * 1.3;
+        if (best >= 0 && bd2 < lim * lim) pulses.push({ a: a, b: nodes[best], t0: t });
       }
       if (!live) pulses = [];
       for (let k = pulses.length - 1; k >= 0; k--) {
@@ -637,7 +744,8 @@
       g.fill();
 
       /* 二重リング：外周はゆっくり逆回転。
-         呼吸（±3.5%）とスクロールによる微小ドリフトを加える */
+         呼吸（±3.5%）とスクロールによる微小ドリフトを加える。
+         ※ window.scrollY の読み取りはレイアウトを起こさない（合成済み値） */
       const R = R0 * (live ? 1 + Math.sin(t / 3800) * 0.035 : 1);
       const sy = live ? Math.min(window.scrollY || 0, H) * 0.06 : 0;
       const rot = (t / 26000) * TAU;
