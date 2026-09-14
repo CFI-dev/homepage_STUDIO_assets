@@ -1161,3 +1161,123 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .btn::after{display:none}
   .faq summary::after{transform:none!important}
 }
+
+/* ============================================================
+   21. CASES CAROUSEL（rev:2026-09-14 新設／common.js §8 と対）
+   ────────────────────────────────────────────────────────────
+   ■ CASES だけを全幅で横スクロール化する。ENGAGEMENT は従来どおり
+     .works + .v-scroll（§19-4）のまま。両者を混ぜないこと。
+   ■ 無限ループは common.js が「前後に1セットずつ複製」して作る。
+     CSS側は等間隔（= 全カード同幅）であることだけを保証すればよい。
+     カード幅を可変にすると setW の算出が崩れてループが跳ねる。
+   ■ .cs-loop は overflow-x:auto のため、CSS Overflow 3 の規定により
+     overflow-y も scroll container になる。§19-4 と同じ理由で
+     overflow-y:hidden を明示すること（縦ラッチ防止）。
+   ■ ▼最重要▼ 上記により .cs-loop は「ブロック軸のスクロールコンテナ」
+     になるため、§20-16 の view() が document ではなく .cs-loop を拾う。
+     CASES の写真パララックスは成立しないので 21-4 で明示的に外す。
+     外さないと scale:1.08 だけが残り、写真が微妙に切れたまま止まる。
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   21-1 スクロールコンテナ
+        ・--cs-per … 1画面あたりの枚数。ここを唯一の正とする
+        ・縦の padding は .case:hover の translateY(-5px) と
+          box-shadow(§20-10) の逃げ場。margin の負値と必ず対で変えること
+   ------------------------------------------------------------ */
+.cs-wrap{position:relative}
+
+.cs-loop{
+  --cs-per:3;
+  display:flex;
+  gap:var(--gap);
+  overflow-x:auto;
+  overflow-y:hidden;                 /* §19-4 と同趣旨。書かないと縦ラッチする */
+  overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;      /* mandatory は斜めスワイプで暴れる */
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  scroll-padding-left:var(--pad);
+  /* 左右：--pad ぶん外へ逃がして画面端まで流す（§19-4 と同じ手法）
+     上下：ホバーの浮き上がりと影のクリップ回避（下は影の逃げ場を厚めに） */
+  margin:-10px calc(var(--pad) * -1) -18px;
+  padding:10px var(--pad) 30px;
+}
+.cs-loop::-webkit-scrollbar{display:none}
+
+.cs-loop > .case{
+  flex:0 0 calc((100% - var(--gap) * (var(--cs-per) - 1)) / var(--cs-per));
+  scroll-snap-align:start}
+
+@media (max-width:1024px){.cs-loop{--cs-per:2}}
+@media (max-width:768px){
+  .cs-loop{margin-bottom:-14px;padding-bottom:24px}
+  .cs-loop > .case{flex-basis:84%}          /* .v-scroll と同じピーク量 */
+}
+
+/* ------------------------------------------------------------
+   21-2 操作UI（JSが .cs-ready を付けるまで出さない）
+        JS無効時は素の横スクロールとして成立する。ボタンだけ残って
+        押しても何も起きない状態を作らないため
+   ------------------------------------------------------------ */
+.cs-ui{display:none;align-items:center;gap:12px;margin-top:18px}
+.cs-wrap.cs-ready .cs-ui{display:flex}
+
+.cs-btn{width:36px;height:36px;flex:0 0 auto;
+  display:grid;place-items:center;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);
+  color:var(--muted);cursor:pointer;
+  transition:border-color .25s,color .25s,transform .25s var(--mo-ease)}
+.cs-btn:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.cs-btn:active{transform:scale(.94)}
+.cs-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* 再生／停止アイコンの出し分け。状態は common.js が .is-paused で持つ */
+.cs-btn .i-play{display:none}
+.cs-btn.is-paused .i-play{display:block}
+.cs-btn.is-paused .i-pause{display:none}
+
+.cs-dots{display:flex;align-items:center;gap:8px;margin-left:auto}
+.cs-dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;
+  background:rgba(255,255,255,.22);cursor:pointer;
+  transition:background .3s ease,transform .3s var(--mo-ease)}
+.cs-dots button:hover{background:rgba(255,255,255,.4)}
+.cs-dots button[aria-current="true"]{background:var(--accent-2);transform:scale(1.3)}
+
+@media (max-width:480px){
+  .cs-dots{gap:6px}
+  .cs-dots button{width:7px;height:7px}
+}
+
+/* ------------------------------------------------------------
+   21-3 リビール
+        カード単位（data-mo-stagger）にはしない。横スクロール外の
+        4〜6枚目が IntersectionObserver で発火せず opacity:0 のまま
+        自動送りで流れてくるため。帯ごと1回で出す
+   ------------------------------------------------------------ */
+.cs-loop.rv{transform:translateY(var(--mo-shift))}
+.cs-loop.rv.on{transform:none}
+
+/* ------------------------------------------------------------
+   21-4 §20-16 パララックスの打ち消し（削除しないこと）
+        .cs-loop が block 軸のスクロールコンテナになるため、
+        view() が document ではなくここを参照し timeline が inactive
+        になる。scale だけ残るとトリミングされたまま静止するので戻す
+   ------------------------------------------------------------ */
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference) and (min-width:769px){
+    .cs-loop .case .ph-fig img{
+      scale:1;will-change:auto;
+      animation:none;animation-timeline:auto}
+  }
+}
+
+/* ------------------------------------------------------------
+   21-5 動きを減らす設定
+        複製も自動送りも common.js 側で行わない。スナップだけ残す
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion:reduce){
+  .cs-loop.rv{transform:none!important}
+  .cs-btn:active{transform:none!important}
+  .cs-dots button[aria-current="true"]{transform:none!important}
+}
