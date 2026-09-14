@@ -384,12 +384,26 @@ nav a.gnav:hover::after{width:100%}
       ・カード地色は --panel ではなく --navy（不透明）。
         .sec-grid 上に置くため、半透明にすると格子柄が透ける
       ・枠とチェックマークは「.chl > li」（子結合子）で限定している。
-        カード内に入れ子リストを足した場合、子孫セレクタに戻すと
-        その各行にも枠とチェックマークが描かれる。§24 も同じ形に揃えること
+        本文の箇条書き（.chl-pts > li）は入れ子リストだが、子結合子の
+        おかげで枠・チェックは描かれない。子孫セレクタへ戻さないこと。
+        §24 も同じ形に揃えること
    ============================================================ */
-.chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
+.chl{
+  /* ▼ 位置決めダイヤル（触るのはここだけ）
+       --chl-pl    … カード左パディング。チェックと本文の共通基準
+       --chl-dot   … 本文ドット（●）の直径
+       --chl-dot-x … 本文左端からドット左端までの距離（負値＝左へ）
+         既定 -11px は「チェックマーク右端（回転後の実効位置 約38px）」と
+         「本文左端（=--chl-pl 54px）」の中間。--chl-pl または
+         li::before の left/width を変えたら必ずここも再計算すること
+       --chl-lh    … 本文行間。ドットの縦位置 calc がこの値を参照する */
+  --chl-pl:54px;
+  --chl-dot:5px;
+  --chl-dot-x:-11px;
+  --chl-lh:1.9;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
-  border-radius:3px;padding:26px 24px 24px 54px;
+  border-radius:3px;padding:26px 24px 24px var(--chl-pl);
   transition:border-color .3s,transform .3s}
 .chl > li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
 /* ▼ チェックマーク（装飾）。削除しないこと。
@@ -403,10 +417,22 @@ nav a.gnav:hover::after{width:100%}
   opacity:1;transform:rotate(-45deg) scale(1)}
 .chl > li.on:hover::before{transform:rotate(-45deg) scale(1.14)}
 .chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
-.chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
+.chl :is(p,.chl-pts){margin-top:10px;font-size:13px;color:var(--muted);
+  line-height:var(--chl-lh)}
 
-/* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと
-   （em のグラデーション文字は §2 が唯一の正） */
+/* ▼ 本文の箇条書き（文章単位で先頭に ● を付ける）
+     ・● は装飾のため content:"" で作る（読み上げに載せない）
+     ・絶対配置にすることで、折り返し2行目以降は本文左端（h3 と同じ位置）へ
+       自動で揃う。text-indent やパディングで作らないこと
+     ・縦位置は1行目の行ボックス中央。--chl-lh と font-size に連動する */
+.chl-pts{display:grid;gap:7px}
+.chl-pts > li{position:relative}
+.chl-pts > li::before{content:"";position:absolute;
+  left:var(--chl-dot-x);
+  top:calc((var(--chl-lh) * 1em - var(--chl-dot)) / 2);
+  width:var(--chl-dot);height:var(--chl-dot);border-radius:50%;
+  background:var(--accent-2);opacity:.85}
+
 .chl-note{margin-top:36px;padding-left:22px;position:relative;
   font-size:15px;line-height:1.95;max-width:44em}
 .chl-note::before{content:"";position:absolute;left:0;top:.5em;bottom:.5em;
