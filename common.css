@@ -1,25 +1,45 @@
 @charset "UTF-8";
 
 /* ============================================================
-   CFI コーポレートサイト 共通スタイル
+   CFI 共通スタイル（home / contact 共用）
+   ────────────────────────────────────────────────────────────
+   ■ 触る前に必ず読むこと
    ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
-   ・§20 MOTION は必ずファイル末尾に置くこと（後勝ちを前提に書いている）
-   ・CHALLENGES のカード枠とチェックマークは「.chl > li」（子結合子）で
-     限定している。子孫セレクタに戻すと .chl-pt の各行にも枠と
-     チェックマークが描かれる。§7 / §20-8 / §20-20 の3箇所セットで扱うこと
-   ・CASES は §10-2 の RAIL（横1行＋ボタン送り）を使う。
-     CSS・JS・HTMLの3点セット（common.js initRail / data-rail 属性）
+   ・§12 → §13 → §14 → §15 の順序は必須。
+     §15（.case の高さ揃え）が §13/§14 の margin-top を同詳細度で
+     後勝ちで打ち消している。並べ替えると区切り線の位置がずれる
+   ・§24（動きを減らす設定）は必ずファイル末尾。§19 の初期状態
+     （opacity:0 / dashoffset 等）を最終状態へ固定している
+   ・ページ側HEADで再定義しないこと：
+     クローク・土台（§3）／ロゴ実寸（§4）／.rv（§19）／a.is-todo（§20）
+     ／cfi-sub 一式（§22）
+   ・原則 transform / translate / scale / opacity / clip-path のみを動かす。
+     width・background-position・box-shadow の連続変化は使わない
+   ・装飾アニメーションには必ず html.cfi-fallback の打ち消しを併記する
+     （JSが落ちても要素が消えないようにするため）
+   ・未使用化したブロック（KPI表示 / NUMBERS / TECHNOLOGY / RAIL）は
+     parking.css へ退避してある。本番では読み込まないこと
    ============================================================ */
 
 /* ============================================================
-   1. トークン
+   1. トークン（調整ダイヤルはすべてここ。各ページで再定義しない）
    ============================================================ */
 :root{
   --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a;
   --accent:#0f6be0; --accent-2:#00c2a8;
   --txt:#e9eff6; --muted:#a5b7c9; --line:rgba(255,255,255,.11);
   --panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+
+  /* 静止用（ボタン・進捗バー・アイブロウ装飾線・上端アクセント） */
   --grad:linear-gradient(115deg,var(--accent) 0%,var(--accent-2) 100%);
+
+  /* ▼ グラデーション文字用（§2）。両端を同色で閉じた折り返し型。
+       0% と 100% は必ず同色に保つこと。異なるとタイル境界の段差が
+       文字の上を横切る。--grad とは別物。混同しないこと */
+  --mo-grad-loop:linear-gradient(115deg,
+    var(--accent)   0%,
+    var(--accent-2) 50%,
+    var(--accent)  100%);
 
   --max:1180px;   /* コンテンツ最大幅 */
   --pad:24px;     /* 左右余白 */
@@ -30,10 +50,16 @@
   --logo-mark:32px;   /* ロゴマーク高（ヘッダー） */
   --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
 
+  /* ▼ .sec-grid の格子柄。§7（静止）と §21（ドリフト）が同じ値を
+       参照する。サイズ変更はこのトークンだけを触ること */
+  --grid-img:linear-gradient(var(--line) 1px,transparent 1px),
+             linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  --grid-size:64px;
+
   /* ▼ アイブロウ（全セクション共通）
-     .sec-head p（詳細度0-1-1）が .eyebrow（0-1-0）を上書きするため、
-     実効値に合わせてトークン側を統一している。
-     ※ 装飾線の色は .eyebrow::before が --accent-2 を直接参照（変更不要） */
+     §7 の本文側セレクタは .eyebrow を除外しているため、
+     サイズ・色はこのトークンが唯一の正。
+     ※ 装飾線の色は .eyebrow::before が --accent-2 を直接参照 */
   --eyebrow-size:14.5px;
   --eyebrow-color:var(--muted);
   --eyebrow-track:.24em;
@@ -41,12 +67,22 @@
 
   --hero-en-size:clamp(16px,2.2vw,24px); /* ヒーロー英文（VISION/MISSION共通） */
 
+  /* ▼ モーション */
+  --mo-dur:.72s;                        /* リビール速度 */
+  --mo-ease:cubic-bezier(.22,1,.36,1);
+  --mo-stg:80ms;                        /* 1枚あたりの遅延（段差の強さ） */
+  --mo-shift:26px;                      /* リビールの移動量 */
+
   --f-en:"Barlow",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
   --f-jp:"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
 }
+
+/* ============================================================
+   2. ベース / リセット / ユーティリティ
+   ============================================================ */
 *{box-sizing:border-box;margin:0;padding:0;min-width:0}
-html{scroll-behavior:smooth;scroll-padding-top:var(--hd)}
+html{background:var(--ink);scroll-behavior:smooth;scroll-padding-top:var(--hd)}
 body{font-family:var(--f-jp);background:var(--navy);color:var(--txt);
   line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
@@ -58,74 +94,156 @@ img,svg,canvas{display:block;max-width:100%}
      要素選択子(0-0-1)は継承より強いため、colorを明示していない見出しが
      すべて #333 になる。body スコープ(0-0-2)で勝たせることで、
      STUDIO側CSSとの読込順が変わっても壊れない。
-     個別のcolor指定（例 .v-why h3 = 0-1-1）は従来どおり優先される。
      ここを唯一の正とし、各ページのHEADで再定義しないこと */
 body :is(h1,h2,h3,h4,h5,h6){color:inherit}
 
 h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 .wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
-.mono{font-family:var(--f-mono);letter-spacing:.04em}
-.grad-txt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* インラインstyleから移設したユーティリティ
-   ※ .sec-head-tech と .case dd .unit は TECHNOLOGY / 数値KPI の
-     再掲載時にそのまま使うため残置している。削除しないこと */
-.sec-head-tech{margin:76px 0 0}
+/* ▼ グラデーション文字（唯一の正。§1 の --mo-grad-loop を参照）
+     ・background-size:200% と background-repeat:repeat は
+       下の moGrad（0%→200%＝タイル1枚分）とセット。
+       端数にすると周回ごとに位置がずれて跳ねる
+     ・animation 行だけを削除すれば静止表示（accent→accent-2）に戻る。
+       負荷が気になる場合はその1行のみ落とすこと */
+.hero h1 em,.chl-note em{font-style:normal;
+  background-image:var(--mo-grad-loop);
+  background-size:200% 100%;
+  background-repeat:repeat;
+  background-position:0 50%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:moGrad 12s linear infinite}
+@keyframes moGrad{to{background-position:200% 50%}}
+
 .ft-desc{margin-top:20px;font-size:12.5px;color:var(--muted);max-width:22em}
-.case dd .unit{font-size:13px}.brsp{display:none}
+.brsp{display:none}   /* ≤600px で inline に切り替わる（§23） */
 
 /* ============================================================
-   2. ヘッダー
+   3. 起動クローク / 土台（home = .cfi-on ／ contact = .cfi-sub）
+      ・ページHEADの役割は「html へクラス付与」「--cfi-boot-label の指定」
+        「3.5秒の保険解除」だけ。見た目はここを唯一の正とする
+      ・文言は --cfi-boot-label で切り替える（既定 = CREATE FROM IDEAS）
+      ・演出値（.28s / top:44%）は両ページで必ず同一に保つこと
+   ============================================================ */
+html:is(.cfi-on,.cfi-sub){
+  /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す）。
+     STUDIO側が実値を前提にしているため var() にしないこと */
+  --rebranding-loading-bg:#071019;
+  --rebranding-loading-bar:#00c2a8;
+}
+html:is(.cfi-on,.cfi-sub) body{margin:0;padding:0;background:var(--ink);
+  height:auto;overflow-x:hidden;overflow-y:visible;position:static;display:block}
+
+/* home はSTUDIOキャンバスを使わないため確実に伏せる（JSが落ちても効く） */
+html.cfi-on #__nuxt{display:none !important}
+
+html.cfi-boot{overflow:hidden}
+html.cfi-boot :is(#cfi-root,#cfi-top,#cfi-bottom,#__nuxt,#teleports){
+  visibility:hidden !important}
+
+html.cfi-boot body::before{
+  content:"";
+  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
+  background:
+    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
+    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
+    #071019;
+  opacity:1;transition:opacity .28s ease}
+html.cfi-boot body::after{
+  content:var(--cfi-boot-label,"CREATE FROM IDEAS");
+  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
+  text-align:center;
+  font-family:var(--f-en),system-ui,-apple-system,sans-serif;font-weight:700;
+  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
+  color:var(--muted);opacity:.9;transition:opacity .28s ease}
+html.cfi-boot.cfi-boot-out body::before,
+html.cfi-boot.cfi-boot-out body::after{opacity:0}
+
+/* ============================================================
+   4. ヘッダー / ナビ / ボタン
+      ・進捗バーの --p、格納用 .hd-up は common.js の initScroll が供給
+      ・ロゴ実寸はここを唯一の正とする（各ページHEADで再定義しない）
    ============================================================ */
 header{position:fixed;inset:0 0 auto 0;z-index:100;height:var(--hd);
   background:rgba(7,16,25,.72);backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--line);transition:background .3s,box-shadow .3s}
+  border-bottom:1px solid var(--line);
+  /* ▼ transition はここが唯一の正。transform は下方向スクロール格納用 */
+  transition:background .3s,box-shadow .3s,transform .42s var(--mo-ease)}
 header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+header.hd-up{transform:translateY(-100%)}
+.hd-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;z-index:2;
+  background:var(--grad);transform:scaleX(var(--p,0));transform-origin:0 50%;
+  will-change:transform;pointer-events:none}
+
 .hd-in{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:100%;
   display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-/* ロゴ実寸：ここを唯一の正とする（各ページのHEADで再定義しない） */
 .logo .mark{height:var(--logo-mark);width:auto;flex:0 0 auto;object-fit:contain;
   transform:translateX(0);
   transition:transform .35s cubic-bezier(.22,1,.36,1)}
 .logo:hover .mark{transform:translateX(4px)}
-
-@media (prefers-reduced-motion:reduce){
-  .logo .mark{transition:none}
-  .logo:hover .mark{transform:none}
-}
-.logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;object-fit:contain;display:block}
+.logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;
+  object-fit:contain;display:block}
 footer .logo .logo-name{height:31px}
+
 nav ul{display:flex;align-items:center;gap:26px}
 nav a.gnav{font-family:var(--f-en);font-size:13px;font-weight:500;letter-spacing:.04em;
   position:relative;padding:8px 0;display:block;color:var(--txt);white-space:nowrap}
-nav a.gnav span{display:block;font-family:var(--f-jp);font-size:9.5px;color:var(--muted);letter-spacing:.06em}
-nav a.gnav::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--grad);transition:.3s}
+nav a.gnav span{display:block;font-family:var(--f-jp);font-size:9.5px;
+  color:var(--muted);letter-spacing:.06em}
+nav a.gnav::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;
+  background:var(--grad);transition:.3s}
 nav a.gnav:hover::after{width:100%}
+
+/* ▼ ボタン。transition / :hover / 光沢スイープはここに集約している */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   font-size:13.5px;font-weight:700;line-height:1.5;
-  padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+  padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;
+  cursor:pointer;white-space:nowrap;
+  position:relative;overflow:hidden;isolation:isolate}
+.btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+  transform:skewX(-18deg);translate:-170% 0;pointer-events:none}
+.btn:hover::after{animation:moSheen .8s var(--mo-ease)}
+@keyframes moSheen{from{translate:-170% 0}to{translate:240% 0}}
+.btn:active{transform:translateY(0) scale(.98)}
 .btn-p{background:var(--grad);color:#04121c;box-shadow:0 6px 24px rgba(15,107,224,.32)}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,194,168,.4)}
+.btn-p:hover{transform:translateY(-2px) scale(1.015);
+  box-shadow:0 10px 32px rgba(0,194,168,.4)}
 .btn-g{border-color:rgba(255,255,255,.28);color:var(--txt)}
-.btn-g:hover{border-color:var(--accent-2);color:var(--accent-2)}
-.burger{display:none;width:28px;height:20px;position:relative;background:none;border:0;cursor:pointer;flex:0 0 auto}
-.burger span{position:absolute;left:0;width:100%;height:2px;background:var(--txt);transition:.3s}
-.burger span:nth-child(1){top:0}.burger span:nth-child(2){top:9px}.burger span:nth-child(3){top:18px}
+.btn-g:hover{transform:translateY(-2px);border-color:var(--accent-2);color:var(--accent-2)}
+
+.burger{display:none;width:28px;height:20px;position:relative;background:none;
+  border:0;cursor:pointer;flex:0 0 auto}
+.burger span{position:absolute;left:0;width:100%;height:2px;background:var(--txt);
+  transition:.3s}
+.burger span:nth-child(1){top:0}.burger span:nth-child(2){top:9px}
+.burger span:nth-child(3){top:18px}
 .burger.on span:nth-child(1){top:9px;transform:rotate(45deg)}
 .burger.on span:nth-child(2){opacity:0}
 .burger.on span:nth-child(3){top:9px;transform:rotate(-45deg)}
 
 /* ============================================================
-   3. ヒーロー
+   5. ヒーロー
    ============================================================ */
 .hero{position:relative;min-height:100svh;display:flex;align-items:center;
   padding:calc(var(--hd) + 60px) 0 72px;
-  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);overflow:hidden}
-#heroCv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);
+  overflow:hidden}
+/* ・#heroCv（§10 ノードネットワーク）と .hfx-cv（§11 SILK）は排他。
+     同一ページに両方の canvas を置かないこと（rAF が二重に走る）
+   ・上下端のマスクは矩形の切り口を隠すための仕上げ。
+     上端 10% はヘッダー（--hd:72px）の背後に隠れる領域に相当する */
+#heroCv,.hfx-cv{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block}
+.hfx-cv{
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%)}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(120% 90% at 20% 50%,rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
-.hero .wrap{position:relative;z-index:2}
+  background:radial-gradient(120% 90% at 20% 50%,
+    rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
+/* ▼ パララックスの実値は common.js が translate / opacity へ直接書き込む。
+     ここに初期値を書かないこと（JS無効時は静止表示に落ちる） */
+.hero .wrap{position:relative;z-index:2;will-change:translate,opacity}
 
 /* --- アイブロウ（全セクション共通仕様。ここを唯一の正とする） --- */
 .eyebrow{
@@ -140,17 +258,26 @@ nav a.gnav:hover::after{width:100%}
   gap:12px;
   margin-bottom:var(--eyebrow-mb);
 }
-/* ▼ 装飾線。削除しないこと（文字サイズに追従。固定pxは使わない） */
-.eyebrow::before{content:"";flex:0 0 auto;width:3.2em;height:1px;background:var(--accent-2)}
+/* ▼ 装飾線。削除しないこと（文字サイズに追従。固定pxは使わない）。
+     未発火（:not(.on)）のときだけ縮めるフェイルセーフ方式 */
+.eyebrow::before{content:"";flex:0 0 auto;width:3.2em;height:1px;
+  background:var(--accent-2);
+  transform-origin:left;transition:transform .8s var(--mo-ease) .1s}
+.rv:not(.on) .eyebrow::before,
+.eyebrow.rv:not(.on)::before{transform:scaleX(0)}
 
-.hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;letter-spacing:-.01em;max-width:16em}
-.hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;
+  letter-spacing:-.01em;max-width:16em}
 .hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
 .scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;
-  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-align:center}
-.scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--accent-2),transparent);animation:sc 2s ease-in-out infinite}
-@keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);
+  text-align:center;will-change:opacity}
+.scroll-hint i{display:block;width:1px;height:38px;margin:10px auto 0;
+  background:linear-gradient(var(--accent-2),transparent);
+  animation:sc 2s ease-in-out infinite}
+@keyframes sc{0%,100%{opacity:.25;transform:scaleY(.4);transform-origin:top}
+  50%{opacity:1;transform:scaleY(1)}}
 
 /* --- VISION / MISSION 表示 --- */
 /* アイブロウ下余白はセクション共通（--eyebrow-mb）に従う。ここで上書きしない */
@@ -159,57 +286,91 @@ nav a.gnav:hover::after{width:100%}
   color:var(--accent-2);margin-bottom:14px}
 /* VISION と MISSION の間に区切り線は置かない。間隔は margin-top で確保する */
 .hero-mission{margin-top:44px;padding-top:34px;max-width:46em}
-.hero .hero-mission p.lead{
-  margin-top:10px;
-  font-size:clamp(17px,1.6vw,20px);
-  font-weight:700;
-  line-height:1.75;
-}
+.hero .hero-mission p.lead{margin-top:10px;font-size:clamp(17px,1.6vw,20px);
+  font-weight:700;line-height:1.75}
 
 @media (max-width:768px){
   .hero-mission{padding-top:26px}
 }
 
 /* ============================================================
-   4. ティッカー
+   6. ティッカー
    ============================================================ */
-.ticker{background:var(--ink);border-block:1px solid var(--line);padding:16px 0;overflow:hidden}
+.ticker{background:var(--ink);border-block:1px solid var(--line);
+  padding:16px 0;overflow:hidden}
 .ticker ul{display:flex;gap:52px;width:max-content;animation:tk 38s linear infinite}
-.ticker li{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:#7d94ab;white-space:nowrap}
-.ticker li::before{content:"◆";color:var(--accent-2);margin-right:14px;font-size:8px;vertical-align:middle}
+.ticker:hover ul{animation-play-state:paused}
+.ticker li{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;
+  color:#7d94ab;white-space:nowrap;transition:color .3s ease}
+.ticker li:hover{color:var(--accent-2)}
+.ticker li::before{content:"◆";color:var(--accent-2);margin-right:14px;
+  font-size:8px;vertical-align:middle}
 @keyframes tk{to{transform:translateX(-50%)}}
 
 /* ============================================================
-   5. セクション共通
+   7. セクション共通
+      ・格子柄は §1 の --grid-img / --grid-size を参照。§21 のドリフトと共有
+      ・見出し直下の本文は .eyebrow を除外している。除外を外すと
+        アイブロウの font-size がトークンではなくこちらに固定される
    ============================================================ */
 .sec{padding:var(--sec) 0;position:relative}
 .sec-ink{background:var(--ink)}
 .sec-grid{background:var(--ink);
-  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-  background-size:64px 64px;background-position:center}
+  background-image:var(--grid-img);
+  background-size:var(--grid-size) var(--grid-size);
+  background-position:center}
 .sec-head{max-width:44em;margin-bottom:56px}
-.sec-head h2{font-size:clamp(22px,3.4vw,38px);line-height:1.45;font-weight:700;margin-top:16px;letter-spacing:-.01em}
-.sec-head p{margin-top:18px;color:var(--muted);font-size:14.5px}
+.sec-head h2{font-size:clamp(22px,3.4vw,38px);line-height:1.45;font-weight:700;
+  margin-top:16px;letter-spacing:-.01em}
+.sec-head > p{margin-top:18px}
+.sec-head > p:not(.eyebrow){color:var(--muted);font-size:14.5px}
+
+/* ▼ 見出しを1行で組むブロック
+   .sec-head の max-width:44em は 15px 基準で実質 660px。clamp 上限 38px の
+   見出しは約 733px 必要なため、この制約を外さないと .brsp を消しても折り返す。
+   h2 のみ全幅を許し、アイブロウ・リード文は 44em を維持して可読性を保つ。
+   ※ 幅制約の解除と .brsp はセット。片方だけ変えると意図した改行位置にならない */
+.sec-head.v-1line{max-width:none}
+.sec-head.v-1line > *:not(h2){max-width:44em}
 
 /* ============================================================
-   6. サービス
+   8. SERVICE
    ============================================================ */
 .svc{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .svc article{background:var(--navy);padding:40px 32px;position:relative;transition:.35s}
 .svc article:hover{background:var(--navy-2)}
-.svc article::before{content:"";position:absolute;inset:auto 0 0 0;height:2px;background:var(--grad);
-  transform:scaleX(0);transform-origin:left;transition:.45s}
+.svc article::before{content:"";position:absolute;inset:auto 0 0 0;height:2px;
+  background:var(--grad);transform:scaleX(0);transform-origin:left;transition:.45s}
 .svc article:hover::before{transform:scaleX(1)}
 .svc .no{font-family:var(--f-mono);font-size:11px;color:var(--accent-2);letter-spacing:.12em}
-/* ▼ アイコン実寸
+
+/* ▼ アイコン実寸と線描き起こし
      ・サイズは58px固定。ブレークポイントで縮小しない（余白のみ480pxで詰める）
      ・color/currentColor は使わない。strokeをブランドグラデ #gBrand へ直接指定
      ・#gBrand は同一ドキュメント内のSVG（home_body.html 内 defs）に必須。
-       gradientUnits="userSpaceOnUse" / viewBox 0 0 24 24 を前提とする */
+       gradientUnits="userSpaceOnUse" / viewBox 0 0 24 24 を前提とする
+     ・stroke-dasharray / stroke-dashoffset は継承プロパティのため
+       <use> のシャドウツリー内の path にも効く。
+       --ico-len はアイコン形状に対する概算値。実機で詰める調整点
+     ・.svc には data-mo-stagger を付けないこと。カード間の隙間（1px）の
+       地色が --line のため、カード単位で動かすと隙間から線色が透ける */
 .svc .ico{width:58px;height:58px;margin:20px 0 22px;
-  fill:none;stroke:url(#gBrand);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.svc h3{font-size:17px;font-weight:700;line-height:1.6}
+  fill:none;stroke:url(#gBrand);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:var(--ico-len,300);stroke-dashoffset:var(--ico-len,300);
+  transition:stroke-dashoffset 1.2s var(--mo-ease) var(--ico-d,0s),
+             transform .45s var(--mo-ease)}
+.svc.rv.on .ico,html.cfi-fallback .svc .ico{stroke-dashoffset:0}
+.svc article:nth-child(2) .ico{--ico-d:.10s}
+.svc article:nth-child(3) .ico{--ico-d:.20s}
+.svc article:nth-child(4) .ico{--ico-d:.30s}
+.svc article:nth-child(5) .ico{--ico-d:.40s}
+.svc article:nth-child(6) .ico{--ico-d:.50s}
+.svc article:hover .ico{transform:translateY(-5px) scale(1.05)}
+
+.svc h3{font-size:17px;font-weight:700;line-height:1.6;
+  transition:transform .45s var(--mo-ease)}
+.svc article:hover h3{transform:translateX(3px)}
 .svc h3 span{display:block;font-family:var(--f-en);font-size:11px;font-weight:500;
   color:var(--muted);letter-spacing:.1em;margin-top:6px}
 .svc p{margin-top:16px;font-size:13.5px;color:var(--muted);line-height:1.95}
@@ -218,72 +379,39 @@ nav a.gnav:hover::after{width:100%}
   border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
 /* ============================================================
-   7. CHALLENGES
+   9. CHALLENGES
       ・チェックマークは ::before で作図（SVG symbol は追加しない方針）
       ・カード地色は --panel ではなく --navy（不透明）。
         .sec-grid 上に置くため、半透明にすると格子柄が透ける
-      ・カード枠とチェックマークの指定は「直下の li」だけに限定している。
-        .chl li（子孫セレクタ）にすると .chl-pt の各行にも
-        枠・背景・padding-left:54px・チェックマークが適用される。
-        §20-8 / §20-20 も同じ形に揃えること
+      ・枠とチェックマークは「.chl > li」（子結合子）で限定している。
+        カード内に入れ子リストを足した場合、子孫セレクタに戻すと
+        その各行にも枠とチェックマークが描かれる。§24 も同じ形に揃えること
    ============================================================ */
 .chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
-  border-radius:3px;padding:26px 24px 24px 54px;transition:border-color .3s,transform .3s}
+  border-radius:3px;padding:26px 24px 24px 54px;
+  transition:border-color .3s,transform .3s}
 .chl > li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
-/* ▼ チェックマーク（装飾）。削除しないこと */
+/* ▼ チェックマーク（装飾）。削除しないこと。
+     §24 の打ち消しは rotate(-45deg) を保持したまま scale だけを戻す */
 .chl > li::before{content:"";position:absolute;left:22px;top:34px;
   width:15px;height:8px;border-left:2px solid var(--accent-2);
-  border-bottom:2px solid var(--accent-2);transform:rotate(-45deg)}
+  border-bottom:2px solid var(--accent-2);
+  opacity:0;transform:rotate(-45deg) scale(.3);
+  transition:transform .5s var(--mo-ease) .18s,opacity .3s ease .18s}
+.chl > li.on::before,html.cfi-fallback .chl > li::before{
+  opacity:1;transform:rotate(-45deg) scale(1)}
+.chl > li.on:hover::before{transform:rotate(-45deg) scale(1.14)}
 .chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
-/* 通常段落。現状 CHALLENGES では未使用だが、カード内に地の文を混ぜる
-   場合に使うため残置している */
 .chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
 
-/* ▼ カード本文の箇条書き
-     ・行頭記号は文字ではなく CSS で作図する。U+26AB（⚫）は Unicode 既定が
-       絵文字表示のため、環境によってカラー絵文字で描かれ色もサイズも
-       制御できない。§7 のチェックマークと同じく「記号は作図」で統一する
-     ・grid で記号と本文を別カラムに分け、折り返しを本文カラム内へ閉じ込める。
-       text-indent の負値方式は1行目にしか効かないため採らない
-     ・▼ 本文の開始位置を h3 に揃える仕組み（ここが要）
-       .chl > li の padding-left:54px が h3 の左端。記号カラムぶんだけ
-       ul を負マージンで引き出すことで、本文カラムの左端が 54px に一致する。
-       margin-left と grid-template-columns は必ず同じ --chl-pt-out を参照
-       させること。片方だけ変えると本文が h3 からずれる
-     ・▼ --chl-pt-out:24px の根拠（.chl > li::before の実測から算出）
-       チェックマークは left:22px / width:15px → 中心 29.5px。
-       h3 の左端は 54px。その中間は約 42px。
-       記号カラムは 54px から左へ 24px、ドットは margin:auto でその中央＝
-       カード左端から 42px に置かれる。
-       ※ 54px / 22px は全ブレークポイントで固定のため、ここも px で持つ。
-         em にすると font-size 変更時にチェックマークとの整合が崩れる
-     ・調整ダイヤルは以下4つ。ここを唯一の正とする
-         --chl-pt-out … 記号カラム幅＝引き出し量（大きいほどドットが左へ）
-         --chl-pt-dot … ドット径
-         --chl-pt-gap … 項目間の余白（0〜4px で従来の <br> と同密度）
-         --chl-pt-lh  … 本文の行間 */
-.chl-pt{--chl-pt-gap:8px;--chl-pt-out:24px;
-  display:grid;gap:var(--chl-pt-gap);margin-top:10px;
-  margin-left:calc(var(--chl-pt-out) * -1)}
-.chl-pt > li{--chl-pt-dot:.48em;--chl-pt-lh:1.9;
-  display:grid;grid-template-columns:var(--chl-pt-out) 1fr;
-  font-size:13px;line-height:var(--chl-pt-lh);color:var(--muted)}
-/* ドットは横＝カラム中央（margin:auto）、縦＝1行目の行ボックス中央。
-   縦位置は --chl-pt-lh と --chl-pt-dot から算出しているため、
-   行間や径を変えても自動で追従する（line-height を直書きしないこと） */
-.chl-pt > li::before{content:"";
-  width:var(--chl-pt-dot);height:var(--chl-pt-dot);border-radius:50%;
-  background:currentColor;
-  margin:calc((var(--chl-pt-lh) * 1em - var(--chl-pt-dot)) / 2) auto 0}
-
-/* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと */
+/* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと
+   （em のグラデーション文字は §2 が唯一の正） */
 .chl-note{margin-top:36px;padding-left:22px;position:relative;
   font-size:15px;line-height:1.95;max-width:44em}
 .chl-note::before{content:"";position:absolute;left:0;top:.5em;bottom:.5em;
   width:2px;border-radius:2px;background:var(--grad)}
-.chl-note em{font-style:normal;font-weight:700;
-  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.chl-note em{font-weight:700}
 
 @media (max-width:1024px){.chl{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:600px){
@@ -292,64 +420,178 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   8. アプローチ
+   10. WHY CFI（3カード／背景写真）
+   ※ brightness と ::after のカラーストップはコントラスト計算済みの「対」。
+     どちらか一方だけを変更すると AA(4.5:1) を割る。必ずセットで調整すること。
+     写真が純白(255,255,255)という最悪条件でも、48%地点 5.7:1 /
+     66%地点 8.9:1 / 100%地点 11.5:1 を確保している。
+   ※ .v-why にも data-mo-stagger を付けないこと（隙間 gap:2px の地色が --line）。
+   ※ hover は transform:scale、リビールは独立プロパティ scale を使い分けている。
+     同じプロパティに寄せると互いを打ち消す
+   ============================================================ */
+.v-why{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  background:var(--line);border-radius:4px;overflow:hidden}
+
+.v-why > div{position:relative;isolation:isolate;overflow:hidden;
+  background:var(--ink);
+  min-height:clamp(360px,30vw,430px);
+  padding:38px 30px 34px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  text-align:left}
+
+/* 背景写真（装飾）
+   opacity は 1 のまま。半透明にすると .sec-grid の格子柄が透ける。
+   暗さは brightness で作り、締めは ::after のスクリムに任せる */
+.v-why .vw-bg{position:absolute;inset:0;z-index:0;
+  width:100%;height:100%;object-fit:cover;
+  opacity:1;
+  filter:contrast(1.06) saturate(.60) brightness(.62);
+  transform:scale(1.02);
+  transition:transform .7s var(--mo-ease),filter .5s ease,scale .9s var(--mo-ease)}
+.v-why > div:hover .vw-bg{transform:scale(1.06);
+  filter:contrast(1.06) saturate(.72) brightness(.78)}
+.v-why.rv .vw-bg{scale:1.14}
+.v-why.rv.on .vw-bg,html.cfi-fallback .v-why .vw-bg{scale:1}
+
+/* 下部スクリム（上は素通し、文字の背後だけ締める。削除しないこと） */
+.v-why > div::after{content:"";position:absolute;inset:0;z-index:1;
+  pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(7,16,25,.06)  0%,
+    rgba(7,16,25,.16) 30%,
+    rgba(7,16,25,.52) 48%,
+    rgba(7,16,25,.80) 66%,
+    rgba(7,16,25,.92) 100%)}
+
+/* 上端のアクセント（カードの独立性を出す） */
+.v-why > div::before{content:"";position:absolute;top:0;left:0;
+  width:100%;height:2px;z-index:2;
+  background:var(--grad);opacity:.55}
+
+.v-why .vw-body{position:relative;z-index:3}
+.v-why.rv .vw-body{opacity:0;translate:0 18px;
+  transition:opacity .7s ease,translate .7s var(--mo-ease)}
+.v-why.rv.on .vw-body{opacity:1;translate:0}
+.v-why > div:nth-child(2) .vw-body{transition-delay:.12s}
+.v-why > div:nth-child(3) .vw-body{transition-delay:.24s}
+html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
+
+/* ラベル（NEUTRAL / REALITY / SPEED） */
+.v-why h3 span{display:block;margin-bottom:14px;
+  font-family:var(--f-mono);font-size:11.5px;font-weight:600;
+  letter-spacing:.22em;color:var(--accent-2);
+  text-transform:uppercase;
+  text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+.v-why h3{font-size:clamp(16px,1.5vw,18.5px);font-weight:700;
+  line-height:1.62;letter-spacing:-.005em;color:var(--txt);
+  margin-bottom:16px;
+  text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+/* min-height は line-height:1.95 × 4行 = 7.8em（PC時の高さ揃え） */
+.v-why p{font-size:13.8px;line-height:1.95;color:var(--txt);
+  opacity:.86;letter-spacing:.005em;
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
+  min-height:7.8em}
+
+@media (max-width:960px){
+  .v-why{grid-template-columns:1fr 1fr}
+  .v-why > div:last-child{grid-column:1 / -1;min-height:280px}
+}
+@media (max-width:768px){
+  .v-why{grid-template-columns:1fr;gap:2px}
+  .v-why > div{min-height:300px;padding:32px 24px}
+  .v-why > div:last-child{grid-column:auto;min-height:300px}
+  .v-why h3{margin-bottom:14px}
+  .v-why p{min-height:0}   /* 1カラム時は高さ揃えを解除 */
+}
+
+/* ============================================================
+   11. APPROACH
    本文の行数差（01のみ3行）で .dur と写真が1行分下へずれるため、
    カード内部を縦フレックス化し、.dur 以降を下端へ寄せて位置を揃える。
      ・.flow は PC=grid／≤768px=.v-scroll による flex。いずれも align-items の
        既定値 stretch により .st は同一行内で必ず等高になる。その等高を前提に
        .dur の margin-top:auto で余剰スペースを本文と .dur の間へ逃がす。
      ・子要素の flex:0 0 auto は必須。省くと flex-shrink:1 が効き、
-       aspect-ratio:4/3 の写真（§17 .flow .st .ph-fig）が縦に潰れる。
+       aspect-ratio:4/3 の写真（§18）が縦に潰れる。
      ・.dur の間隔は margin-top:auto と併存できないため padding-top へ移設した。
      ※ .flow / .v-scroll に align-items を後から指定しないこと。
+     ※ ドットの脈動は box-shadow ではなく疑似要素の scale+opacity で作る。
+       box-shadow は合成できずペイントが毎フレーム走るため戻さないこと
    ============================================================ */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;
   margin-top:12px;align-items:stretch}
+/* 接続線を左から引く */
 .flow::before{content:"";position:absolute;top:26px;left:6%;right:6%;height:1px;
-  background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4}
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.4;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform 1.1s var(--mo-ease) .1s}
+.flow.on::before,html.cfi-fallback .flow::before{transform:scaleX(1)}
 
 /* ▼ カード内部：上=テキスト／下=期間＋写真 に固定する */
 .flow .st{position:relative;display:flex;flex-direction:column;align-self:stretch}
 .flow .st > *{flex:0 0 auto}
 
 .flow .dot{width:52px;height:52px;border-radius:50%;background:var(--ink);
-  border:1px solid var(--accent-2);display:grid;place-items:center;position:relative;z-index:1;
+  border:1px solid var(--accent-2);display:grid;place-items:center;
+  position:relative;z-index:1;
   font-family:var(--f-en);font-size:15px;font-weight:700;color:var(--accent-2);
-  align-self:flex-start}
+  align-self:flex-start;transition:transform .45s var(--mo-ease)}
+.flow .st:hover .dot{transform:scale(1.08)}
+.flow .dot::after{content:"";position:absolute;inset:-1px;border-radius:50%;
+  border:1px solid var(--accent-2);opacity:0;pointer-events:none}
+.flow .st.on .dot::after{animation:moDot 3.4s ease-out .3s 2}
+@keyframes moDot{
+  0%{scale:1;opacity:.45}
+  40%,100%{scale:1.55;opacity:0}}
+
 .flow h3{margin-top:24px;font-size:16px;font-weight:700}
 .flow h3 span{display:block;font-family:var(--f-mono);font-size:10px;color:var(--accent-2);
   letter-spacing:.14em;margin-bottom:6px}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
 /* ▼ 高さ揃えの本体。margin-top:auto を通すため間隔は padding-top で作る */
 .flow .dur{margin-top:auto;padding-top:14px;
-  font-family:var(--f-mono);font-size:10.5px;color:#7d94ab}
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;color:#7d94ab}
 
 /* ============================================================
-   9. 事例カード（.case ＝ CASES / ENGAGEMENT 共通の器）
-      ※ .works は ENGAGEMENT が使用する grid。CASES は §10-2 の
-        .rail-track（flex）へ移行済みのため、両者を併用しないこと
+   12. 事例カード（.case ＝ CASES / ENGAGEMENT 共通の器）
+       ・padding は --cpy / --cpx が唯一の正。§18 のサムネイルが
+         同じ変数で負マージンを作るため、padding を直接書かないこと
+       ・.works は grid（PC）。≤768px は .v-scroll で flex 化される
    ============================================================ */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
-.case{background:var(--panel);border:1px solid var(--line);border-radius:4px;
-  padding:32px 28px;transition:.35s}
-.case:hover{border-color:rgba(0,194,168,.45);transform:translateY(-5px)}
-.case .cat{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;color:var(--accent-2)}
+.case{--cpx:28px;--cpy:32px;
+  background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:var(--cpy) var(--cpx);overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:transform .4s var(--mo-ease),border-color .3s,box-shadow .4s ease}
+.case:hover{border-color:rgba(0,194,168,.45);transform:translateY(-5px);
+  box-shadow:0 18px 44px rgba(0,0,0,.34)}
+.case .cat{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;
+  color:var(--accent-2)}
 .case h3{margin-top:14px;font-size:16.5px;font-weight:700;line-height:1.65}
 .case p{margin-top:14px;font-size:13px;color:var(--muted)}
-/* ▼ 数値KPI表示用。実測値が確定した際に .cs-steps と差し替えて使う */
-.case dl{display:flex;flex-wrap:wrap;gap:26px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
-.case dt{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
-.case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
+
+/* 内部行の順送り（CASES の3段／ENGAGEMENT のメタ） */
+.case.rv .cs-steps > div,.case.rv .eng-meta > div{
+  opacity:0;translate:0 8px;
+  transition:opacity .5s ease,translate .5s var(--mo-ease)}
+.case.rv.on .cs-steps > div,.case.rv.on .eng-meta > div{opacity:1;translate:0}
+.case.rv.on .cs-steps > div:nth-child(2),
+.case.rv.on .eng-meta > div:nth-child(2){transition-delay:.14s}
+.case.rv.on .cs-steps > div:nth-child(3),
+.case.rv.on .eng-meta > div:nth-child(3){transition-delay:.28s}
+html.cfi-fallback .case .cs-steps > div,
+html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 
 /* ============================================================
-   10. CASES（定性表示）
-       ・数値KPIを撤去し「課題→打ち手→変化」の3段で見せる
-       ・上の .case dl（詳細度0-1-1）に負けないよう、必ず
-         .case .cs-steps（0-2-0）以上の形で書くこと
+   13. CASES（定性表示：課題→打ち手→変化）
    ============================================================ */
 .case .cs-steps{display:grid;gap:14px;margin-top:22px;padding-top:20px;
   border-top:1px solid var(--line)}
-.case .cs-steps > div{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start}
+.case .cs-steps > div{display:grid;grid-template-columns:56px 1fr;gap:12px;
+  align-items:start}
 .case .cs-steps dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
   color:var(--accent-2);padding-top:3px;margin:0}
 .case .cs-steps dd{font-family:var(--f-jp);font-size:12.8px;font-weight:400;
@@ -362,78 +604,7 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   10-2. RAIL（横1行の横スクロール＋ボタン送り）
-      ・カード種別に依存しない汎用コンポーネント。CASES が使用する
-      ・[data-rail] / [data-rail-track] / [data-rail-prev|next] /
-        [data-rail-count] は common.js の initRail が参照する。
-        属性名を変える場合は CSS・JS・HTML の3点を揃えること
-      ・ボタンは .rail-ready（JSが付与）が無ければ表示されない。
-        JSが落ちた場合は素の横スクロールに戻る
-      ・トラックに .works を併用しないこと（.works は grid のため衝突する）
-      ・.v-scroll とも併用しないこと（≤768px で item 幅指定が競合する）
-   ============================================================ */
-.rail{position:relative;
-  /* ▼ 調整ダイヤル。ここを唯一の正とする
-       --rail-vis  … 1画面に見せる枚数（小数可。1.12 なら次の1枚が覗く）
-       --rail-gap  … カード間隔
-       --rail-x    … 左右の逃がし＝ブリード量。--pad と同値にすることで
-                     カード左端がセクション本文の左端と一致する
-       --rail-lift … 上の逃がし（§9 のホバー -5px ぶん）
-       --rail-drop … 下の逃がし（§20-10 のホバー影 0 18px 44px ぶん）
-                     ＝ボタン行との間隔も兼ねる */
-  --rail-vis:3;
-  --rail-gap:var(--gap);
-  --rail-x:var(--pad);
-  --rail-lift:20px;
-  --rail-drop:40px}
-
-.rail-track{display:flex;gap:var(--rail-gap);
-  overflow-x:auto;
-  /* ▼ 縦を明示的に閉じる。CSS Overflow 3 の規定により overflow-x:auto を
-     指定すると overflow-y の visible は auto へ計算されるため、書かないと
-     この要素が縦にもスクロールできる入れ子スクローラになる（§19-4 と同じ）。
-     ただし hidden はカードのホバー浮きと影を切るため、padding で逃がし
-     同量の負マージンで見た目の位置を戻す。padding と margin は必ずセット */
-  overflow-y:hidden;
-  padding:var(--rail-lift) var(--rail-x) var(--rail-drop);
-  margin:calc(var(--rail-lift) * -1) calc(var(--rail-x) * -1) 0;
-  overscroll-behavior-x:contain;
-  /* mandatory は斜めスワイプでも強制的にスナップするため proximity にする */
-  scroll-snap-type:x proximity;
-  /* padding-left と同値にすること。ずらすとスナップ位置が左端から外れる */
-  scroll-padding-left:var(--rail-x);
-  scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.rail-track::-webkit-scrollbar{display:none}
-/* flex-basis の % はトラックの content box（＝.wrap の内寸）に対して解決される。
-   上の padding と負マージンが対になっている限り、--rail-vis 枚が本文幅に一致する */
-.rail-track > *{scroll-snap-align:start;
-  flex:0 0 calc((100% - (var(--rail-vis) - 1) * var(--rail-gap)) / var(--rail-vis))}
-
-/* 操作UI。.rail-static は枚数が収まりきりスクロール不要な状態（JSが付与） */
-.rail-ui{display:none;align-items:center;gap:12px}
-.rail.rail-ready .rail-ui{display:flex}
-.rail.rail-static .rail-ui{display:none}
-.rail-count{margin-right:auto;font-family:var(--f-mono);font-size:11px;
-  letter-spacing:.12em;color:var(--muted)}
-.rail-btn{width:44px;height:44px;flex:0 0 auto;border-radius:50%;
-  border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--txt);
-  display:grid;place-items:center;cursor:pointer;
-  transition:border-color .3s,color .3s,transform .3s,opacity .3s}
-.rail-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.rail-btn:hover:not(:disabled){border-color:var(--accent-2);color:var(--accent-2);
-  transform:translateY(-2px)}
-.rail-btn:active:not(:disabled){transform:translateY(0) scale(.94)}
-.rail-btn:disabled{opacity:.28;cursor:default}
-
-@media (max-width:1024px){.rail{--rail-vis:2}}
-@media (max-width:768px){.rail{--rail-vis:1.12;--rail-gap:16px}}
-@media (max-width:600px){.rail{--rail-vis:1.06}}
-@media (max-width:480px){.rail-btn{width:40px;height:40px}}
-
-/* ============================================================
-   11. ENGAGEMENT
-       カード枠は .case を流用し、下部メタのみ専用指定
+   14. ENGAGEMENT（カード枠は §12 を流用し、下部メタのみ専用指定）
    ============================================================ */
 .case .eng-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;
   margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
@@ -449,28 +620,32 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   11-2. カード内の高さ揃え（.case ＝ CASES / ENGAGEMENT 共通）
+   15. カード内の高さ揃え（.case ＝ CASES / ENGAGEMENT 共通）
+       ※ 必ず §13・§14 より後ろに置くこと。
+         §13 / §14 の margin-top（同詳細度 0-2-0）を後勝ちで
+         打ち消す前提で書いている
        ・カードは横一列で等高（flex/grid の stretch）になるが、内部は
          通常フローのため h3 の行数差で下部メタの区切り線がずれる。
-         §8 の .flow と同じく縦フレックス化し、最終子を下端へ寄せる
+         §11 の .flow と同じく最終子を下端へ寄せる
        ・.case > * の flex:0 0 auto は必須。省くと flex-shrink:1 が効き、
-         aspect-ratio:16/9 のサムネイル（§17）が縦に潰れる
+         aspect-ratio:16/9 のサムネイル（§18）が縦に潰れる
        ・:last-child / :nth-last-child(2) は「dl がカードの最終子」である
          ことが前提。カード末尾にボタン等を足す場合は必ずこの2行を見直すこと
        ・間隔を dl の margin-top ではなく直前要素の margin-bottom で作るのは、
          margin-top:auto（余剰の吸収）と最小間隔の確保を両立させるため。
          片方だけ変えないこと
-       ・§10（.cs-steps）/ §11（.eng-meta）の margin-top を後勝ちで
-         打ち消している。必ず §10・§11 より後ろに置くこと
    ============================================================ */
-.case{display:flex;flex-direction:column}
 .case > *{flex:0 0 auto}
 .case > :last-child{margin-top:auto}
 .case > :nth-last-child(2){margin-bottom:22px}
 
 /* ============================================================
-   12. FAQ
-       details/summary で構成。JS不要・キーボード操作は §18 が担保
+   16. FAQ
+       details/summary で構成。JS不要・キーボード操作は §20 が担保。
+       ＋／− の見た目と動きはこの節が唯一の正（open時は横線1本＝「−」）
+       ※ height:auto の補間は Safari／Firefox 未対応（interpolate-size 非対応）
+         のため、.mo-a の実測値は common.js の initFaq が与える。
+         閉状態の height:0 はJS前提なので素のCSSでは指定しない
    ============================================================ */
 .faq{max-width:880px;border-top:1px solid var(--line)}
 .faq details{border-bottom:1px solid var(--line)}
@@ -478,18 +653,24 @@ nav a.gnav:hover::after{width:100%}
   padding:22px 46px 22px 32px;font-size:14.5px;font-weight:700;line-height:1.75}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::before{content:"Q";position:absolute;left:0;top:23px;
-  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:var(--accent-2)}
-/* ▼ ＋／− のトグル記号。open時に縦棒を落として「−」にする */
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:var(--accent-2);
+  transition:translate .3s var(--mo-ease)}
+.faq summary:hover::before{translate:2px 0}
+/* ▼ ＋／− のトグル記号。縦棒を background-size で 0 に縮めて「−」にする */
 .faq summary::after{content:"";position:absolute;right:6px;top:31px;width:13px;height:13px;
   background:
-    linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat,
-    linear-gradient(var(--accent-2),var(--accent-2)) center/1px 100% no-repeat}
-.faq details[open] summary::after{
-  background:linear-gradient(var(--accent-2),var(--accent-2)) center/100% 1px no-repeat}
+    linear-gradient(var(--accent-2),var(--accent-2)) center no-repeat,
+    linear-gradient(var(--accent-2),var(--accent-2)) center no-repeat;
+  background-size:100% 1px,1px 100%;
+  transition:background-size .38s var(--mo-ease),transform .45s var(--mo-ease)}
+.faq details[open] summary::after{background-size:100% 1px,1px 0;transform:rotate(180deg)}
 .faq .a{position:relative;padding:0 6px 26px 32px;
   font-size:13.5px;line-height:1.95;color:var(--muted)}
 .faq .a::before{content:"A";position:absolute;left:0;top:0;
   font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#7d94ab}
+/* JSが開閉時のみ付与するクラス */
+.faq .mo-a{overflow:hidden;
+  transition:height .38s var(--mo-ease),padding-bottom .38s var(--mo-ease)}
 
 @media (max-width:600px){
   .faq summary{padding:20px 40px 20px 26px;font-size:14px}
@@ -498,23 +679,16 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   13. 技術スタック
-       ※ TECHNOLOGY セクションは掲載保留中だが、
-         再挿入時にそのまま使うため残置している。削除しないこと
-   ============================================================ */
-.stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
-.stack li{font-family:var(--f-mono);font-size:12px;color:#b9cbdb;border:1px solid var(--line);
-  border-radius:2px;padding:9px 16px;background:rgba(255,255,255,.03);transition:.25s}
-.stack li:hover{border-color:var(--accent-2);color:var(--accent-2)}
-
-/* ============================================================
-   14. 会社概要 / CTA / フッター
+   17. 会社概要 / CTA / フッター
    ============================================================ */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
-.tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);
+  vertical-align:top}
 .tbl th{width:180px;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:.06em}
-.cta{background:linear-gradient(115deg,#0d1b2a,#16304a 55%,#0a3a5c);position:relative;overflow:hidden;text-align:center}
-.cta::before{content:"";position:absolute;width:620px;height:620px;right:-160px;top:-260px;border-radius:50%;
+.cta{background:linear-gradient(115deg,#0d1b2a,#16304a 55%,#0a3a5c);
+  position:relative;overflow:hidden;text-align:center}
+.cta::before{content:"";position:absolute;width:620px;height:620px;right:-160px;top:-260px;
+  border-radius:50%;
   background:radial-gradient(circle,rgba(0,194,168,.18),transparent 65%)}
 .cta h2{font-size:clamp(21px,3.4vw,36px);line-height:1.55;font-weight:700;position:relative}
 .cta p{margin:20px auto 0;max-width:38em;color:#c8d6e4;font-size:14.5px;position:relative}
@@ -523,7 +697,8 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
 /* フッターナビは4列。列間 gap は 40px。広げると 1024〜1180px 付近で折り返す */
 .ft-nav{display:flex;flex-wrap:wrap;gap:40px}
-.ft-nav h4{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:var(--accent-2);margin-bottom:16px}
+.ft-nav h4{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--accent-2);margin-bottom:16px}
 .ft-nav a{display:block;font-size:13px;color:var(--muted);line-height:2.3;transition:.2s}
 .ft-nav a:hover{color:var(--txt)}
 .ft-btm{margin-top:52px;padding-top:24px;border-top:1px solid var(--line);
@@ -531,17 +706,254 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
 
 /* ============================================================
-   15. 出現アニメーション
+   18. 写真
    ============================================================ */
-.rv{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)}
-.rv.on{opacity:1;transform:none}
-/* JSが発火しなかった場合の保険（ここを唯一の正とする。各ページHEADで再定義しない） */
-html.cfi-fallback .rv{opacity:1;transform:none}
+.ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
+.ph-fig img{width:100%;height:100%;object-fit:cover;
+  transition:transform .7s cubic-bezier(.22,1,.36,1)}
+.ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
+
+/* ---- 事例サムネイル（§12 の --cpx / --cpy に完全追従） ---- */
+.case .ph-fig{aspect-ratio:16/9;
+  margin:calc(var(--cpy) * -1) calc(var(--cpx) * -1) 22px;
+  border-radius:3px 3px 0 0}
+.case:hover .ph-fig img{transform:scale(1.05)}
+
+/* ---- Company 写真 ---- */
+.cmp-wrap{display:grid;grid-template-columns:1.35fr .8fr;gap:calc(var(--gap) + 16px);
+  align-items:start}
+.cmp-wrap .ph-fig{aspect-ratio:4/3;border:1px solid var(--line);border-radius:4px}
+
+/* ---- フルブリード帯 ---- */
+.band{position:relative;overflow:hidden;background:var(--ink);
+  height:clamp(190px,28vw,340px);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.band img{width:100%;height:100%;object-fit:cover;
+  opacity:.3;filter:saturate(.55) contrast(1.05)}
+.band::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,rgba(15,107,224,.26),rgba(0,194,168,.16))}
+
+/* ---- Approach ステップ写真 ---- */
+.flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
+  border:1px solid var(--line)}
+.flow .st:hover .ph-fig img{transform:scale(1.04)}
+
+@media (max-width:768px){
+  .cmp-wrap{grid-template-columns:1fr;gap:var(--gap)}
+  .cmp-wrap .ph-fig{max-width:520px}
+}
+@media (max-width:600px){
+  .flow .st .ph-fig{max-width:340px}
+}
+@media (max-width:480px){
+  .band{height:clamp(160px,42vw,220px)}
+}
 
 /* ============================================================
-   16. レスポンシブ
+   19. 出現アニメーション（.rv → .on）
+       ・--i は common.js が付与する連番。CSS側で遅延に変換する
+       ・段差の遅延をJSの setTimeout でずらさないこと（transition の
+         途中で class が付き、要素ごとに速度が不揃いに見える）
+       ・種類は data-mo-stagger の値で切り替える（"" | "s" | "f"）
+       ・html.cfi-fallback はJSが発火しなかった場合の保険。
+         ここを唯一の正とし、各ページHEADで再定義しない
+   ============================================================ */
+.rv{opacity:0;
+  transition-property:opacity,transform;
+  transition-duration:var(--mo-dur);
+  transition-timing-function:var(--mo-ease);
+  transition-delay:calc(var(--i,0) * var(--mo-stg));
+  transform:translateY(var(--mo-shift))}
+.rv.on{opacity:1;transform:none}
+.rv-s{transform:translateY(var(--mo-shift)) scale(.96)}   /* 縮み＋上げ */
+.rv-s.on{transform:none}
+.rv-f{transform:none}                                     /* フェードのみ（table 行など） */
+/* 段差表示の親コンテナ用。.on を受け取るだけで自身は動かさない
+   （§8 のアイコン描画や §11 の接続線が親の .on を参照している） */
+.rv-hold{opacity:1;transform:none}
+html.cfi-fallback .rv{opacity:1;transform:none}
+
+/* ------------------------------------------------------------
+   19-2 モバイルメニューの段差表示
+        JSが nav.mo-ready を付けた場合のみ有効（JS無効時は即表示）
+        ※ 960px は §23 のハンバーガー切替点と必ず一致させること
+   ------------------------------------------------------------ */
+@media (max-width:960px){
+  nav.mo-ready ul li{opacity:0;translate:0 -12px;
+    transition:opacity .32s ease,translate .32s var(--mo-ease)}
+  nav.mo-ready.open ul li{opacity:1;translate:0;
+    transition-delay:calc(var(--i,0) * 45ms + 90ms)}
+}
+
+/* ------------------------------------------------------------
+   19-3 モバイル横スクロール（APPROACH / CASES / ENGAGEMENT が使用）
+   ------------------------------------------------------------ */
+@media (max-width:768px){
+  .v-scroll{display:flex;gap:16px;overflow-x:auto;
+    /* ▼ 縦を明示的に閉じる。CSS Overflow 3 の規定により overflow-x:auto を
+       指定すると overflow-y の visible は auto へ計算されるため、
+       書かないとこの要素が縦にもスクロールできる入れ子スクローラになる。
+       縦スクロール範囲が 1px でも生じるとタッチがここへラッチし、
+       指を離すまでページ側へスクロールが連鎖しない。
+       ※ この指定と下の「.v-scroll > .rv」は必ずセットで入れること */
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    /* mandatory は斜めスワイプでも強制的にスナップするため proximity へ */
+    scroll-snap-type:x proximity;
+    margin:0 calc(var(--pad) * -1);padding:0 var(--pad) 10px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .v-scroll::-webkit-scrollbar{display:none}
+  .v-scroll > *{flex:0 0 84%;scroll-snap-align:center}
+
+  /* ▼ 上の overflow-y:hidden とセット。§19 の初期位置 translateY(26px) は
+     (a) このスクローラに縦スクロール範囲を与える（ラッチの発生源）
+     (b) hidden 下では下端が切れる
+     の両方を起こすため、横スクロール時だけフェードのみに切り替える。
+     詳細度 0-2-0 で .rv / .rv-s に勝つ */
+  .v-scroll > .rv,.v-scroll > .rv-s{transform:none}
+
+  .v-hint{margin-top:10px;font-family:var(--f-mono);font-size:11px;
+    letter-spacing:.1em;color:var(--muted);
+    animation:moHint 2.4s ease-in-out infinite}
+  @keyframes moHint{0%,100%{translate:0 0;opacity:.72}50%{translate:6px 0;opacity:1}}
+}
+@media (min-width:769px){.v-hint{display:none}}
+
+/* ============================================================
+   20. アクセシビリティ / 状態表現
+   ============================================================ */
+
+/* 20-1 キーボードフォーカス（マウス操作時には出さない） */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--accent-2);outline-offset:3px;border-radius:2px}
+.btn:focus-visible{outline-offset:4px}
+nav a.gnav:focus-visible::after{width:100%}
+
+/* 20-2 未確定リンク／未記入項目
+        ここを唯一の正とする（各ページHEADで再定義しない）
+        URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
+a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
+a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
+  font-size:10px;letter-spacing:.06em}
+.is-todo-text{color:#ffb4a2}
+
+/* ============================================================
+   21. スクロール連動（view() / scroll()）
+       ・animation ショートハンドは animation-timeline をリセットするため、
+         必ず animation → animation-timeline → animation-range の順で書く
+       ・Firefox は既定で未対応。@supports で囲んでいるため、
+         非対応環境では静止表示に落ちる
+       ・§18 の hover transform:scale を殺さないよう、
+         独立プロパティ（scale / translate）側で実装している
+   ============================================================ */
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference) and (min-width:769px){
+    /* base の scale は写真をわずかに詰める（トリミング）。
+       「デザインそのまま」を厳密に守る場合は scale 行のみ削除する。
+       will-change は min-width:769px 限定のためモバイルには影響しない */
+    .case .ph-fig img,.cmp-wrap .ph-fig img,.flow .st .ph-fig img{
+      scale:1.08;will-change:translate;
+      animation:moPara linear both;
+      animation-timeline:view();
+      animation-range:cover 0% cover 100%}
+    @keyframes moPara{from{translate:0 -3.5%}to{translate:0 3.5%}}
+
+    .band img{scale:1.14;will-change:translate;
+      animation:moBand linear both;
+      animation-timeline:view();
+      animation-range:cover 0% cover 100%}
+    @keyframes moBand{from{translate:0 -5%}to{translate:0 5%}}
+  }
+}
+
+/* ------------------------------------------------------------
+   21-2 【任意】.sec-grid の格子をスクロールでドリフトさせる
+         格子を背景から疑似要素へ移し、transform 系で動かす
+         （background-position の連続変化＝再描画を避けるため）。
+         副作用：.sec-grid に overflow:hidden が付き、
+         .wrap が z-index:1 になる。将来 .sec-grid 内に
+         position:sticky を置く予定があるならこのブロックは入れない。
+         不要な場合はこのブロックごと削除すれば §7 の静止格子に戻る。
+         ※ 該当4セクション（CHALLENGES / WHY / ENGAGEMENT / FAQ）ぶん
+           巨大な合成レイヤーを常時確保する。モバイルでスクロールが
+           重い場合、最初に切り離す候補はここ
+   ------------------------------------------------------------ */
+@supports (animation-timeline:scroll()){
+  @media (prefers-reduced-motion:no-preference){
+    .sec-grid{background-image:none;overflow:hidden}
+    .sec-grid > .wrap{position:relative;z-index:1}
+    .sec-grid::before{content:"";position:absolute;inset:-80px 0;z-index:0;
+      pointer-events:none;
+      background-image:var(--grid-img);
+      background-size:var(--grid-size) var(--grid-size);
+      background-position:center;
+      animation:moGrid linear both;
+      animation-timeline:scroll(root);
+      animation-range:0% 100%}
+    @keyframes moGrid{from{translate:0 -32px}to{translate:0 32px}}
+  }
+}
+
+/* ============================================================
+   22. contact（html.cfi-sub）専用
+       ・ページHEADで再定義しないこと。ここを唯一の正とする
+       ・アンカーのオフセットは §2 の scroll-padding-top が担当する。
+         #form に負の top を与えないこと（二重にかかる）
+   ============================================================ */
+html.cfi-sub{
+  /* ▼▼ 間隔の調整ダイヤル（黒帯の量はここだけで変わる） ▼▼
+       --cfi-gap-top    … ヒーロー下端 ⇄ フォーム上端
+       --cfi-gap-bottom … フォーム下端 ⇄ フッター上端 */
+  --cfi-gap-top:0px;
+  --cfi-gap-bottom:0px;
+  --cfi-boot-label:"CONTACT";   /* §3 のクローク文言 */
+}
+
+/* 起動中はSTUDIOの transition:all（.3s〜.4s）を停止（白フラッシュ対策） */
+html.cfi-boot.cfi-sub :is(.StudioCanvas,.render-canvas *,.sd,.sd *){
+  transition:none !important;animation:none !important}
+
+/* キャンバスの地色を先に暗くしておく */
+html.cfi-sub :is(#__nuxt,.StudioCanvas){background-color:var(--ink)}
+/* 100dvh の巨大ブロックを作らせない（白帯・黒帯の両方に効く） */
+html.cfi-sub .StudioCanvas,
+html.cfi-sub .StudioCanvas > .sd{min-height:0 !important}
+
+/* スタッキング順（ヘッダーを最前面に）＋ 黒帯除去。
+   ※ ラッパー各段の余白打ち消しは contact_body.html の trim() が担当する。
+     CSSに first-child / last-child の打ち消しを重ねて書かないこと */
+html.cfi-sub #__nuxt{position:relative;z-index:1;height:auto;min-height:0;
+  width:100%;overflow:visible;
+  padding:var(--cfi-gap-top) 0 var(--cfi-gap-bottom) !important}
+html.cfi-sub #cfi-top{position:relative;z-index:2}
+html.cfi-sub #cfi-bottom{position:relative;z-index:2;margin-top:0 !important}
+html.cfi-sub header#hd{z-index:2147483000}
+
+/* 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める） */
+html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
+html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
+  line-height:1.02;letter-spacing:.02em;font-weight:700;max-width:none}
+html.cfi-sub .hero-sub h1 span{display:block;font-family:var(--f-jp);
+  font-size:clamp(15px,2.2vw,20px);font-weight:700;color:#c8d6e4;
+  letter-spacing:.08em;margin-top:18px}
+html.cfi-sub .hero-sub p.lead{margin-top:24px}
+
+/* STUDIOフォームの操作反応。
+   STUDIOの生成クラスに依存しない汎用指定（構造が変わっても壊れない） */
+html.cfi-sub #__nuxt :is(input,textarea,select){
+  transition:box-shadow .3s ease,border-color .3s ease}
+html.cfi-sub #__nuxt :is(input,textarea,select):focus{
+  box-shadow:0 0 0 3px rgba(0,194,168,.22)}
+html.cfi-sub #__nuxt button{transition:transform .3s var(--mo-ease),box-shadow .3s ease}
+html.cfi-sub #__nuxt button:hover{transform:translateY(-2px)}
+html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
+
+/* ============================================================
+   23. レスポンシブ
       1280 / 1180 / 1024 / 960 / 768 / 600 / 480 / 360 を検証基準に設計
       ※ 960px はハンバーガー切替点。JSの MQ_DESK と必ず一致させること
+      ※ コンポーネント固有のブレークポイントは各節の末尾にある
    ============================================================ */
 
 /* ---- ~1280px：小型デスクトップ ---- */
@@ -555,8 +967,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   :root{--sec:96px;--gap:18px}
   nav ul{gap:18px}
   .svc article{padding:34px 26px}
-  .case{padding:28px 24px}
-  .case dl{gap:20px}
+  .case{--cpx:24px;--cpy:28px}
   .sec-head{margin-bottom:48px}
 }
 
@@ -564,7 +975,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 @media (max-width:1024px){
   :root{--sec:88px}
   .svc{grid-template-columns:repeat(2,1fr)}
-  /* ENGAGEMENT は3枚目も1カラム幅に揃える（全幅化すると間延びする） */
+  /* ENGAGEMENT / CASES は3枚目も1カラム幅に揃える（全幅化すると間延びする） */
   .works{grid-template-columns:repeat(2,1fr)}
   .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
   .flow::before{display:none}
@@ -592,7 +1003,6 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .hero{padding:calc(var(--hd) + 52px) 0 64px}
   .scroll-hint{display:none}
   .sec-head{margin-bottom:40px}
-  .sec-head-tech{margin-top:64px}
   .ticker ul{gap:38px}
   .tbl th{width:150px}
   footer{padding:56px 0 28px}
@@ -603,12 +1013,11 @@ html.cfi-fallback .rv{opacity:1;transform:none}
    ※ .works / .flow は ≤768px で .v-scroll により flex 化されるため
      ここで grid-template-columns を指定しても効かない（記述しないこと） */
 @media (max-width:600px){
-  /* --eyebrow-size は .sec-head p の 14px 化に追随 */
   :root{--sec:64px;--pad:20px;--eyebrow-size:14px}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .brsp{display:inline}
   .svc{grid-template-columns:1fr}
-  .sec-head p{font-size:14px}
+  .sec-head > p:not(.eyebrow){font-size:14px}
   /* 会社概要テーブルを縦積みに */
   .tbl,.tbl tbody,.tbl tr,.tbl th,.tbl td{display:block;width:100%}
   .tbl tr{padding:16px 0;border-bottom:1px solid var(--line)}
@@ -626,9 +1035,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .svc article{padding:30px 22px}
   /* アイコンは58px固定。モバイルでは余白のみ縮める */
   .svc .ico{margin:16px 0 18px}
-  .case{padding:26px 20px}
-  .case dl{gap:18px}
-  .case dd{font-size:22px}
+  .case{--cpx:20px;--cpy:26px}
   .ft-top{gap:32px}
   .ft-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 18px;width:100%}
   .ft-btm{flex-direction:column;gap:8px;margin-top:32px}
@@ -636,7 +1043,8 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 
 /* ---- 360px：最小幅 ---- */
 @media (max-width:360px){
-  :root{--pad:16px;--sec:56px;--hd:60px;--logo-mark:26px;--logo-name:27px}
+  :root{--pad:16px;--sec:56px;--hd:60px;--logo-mark:26px;--logo-name:27px;
+    --grid-size:48px}
   body{font-size:14px}
   .logo{gap:8px}
   .hero p.lead{font-size:13.5px}
@@ -645,622 +1053,51 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   .svc h3{font-size:16px}
   .svc p{font-size:13px}
   .case h3{font-size:15.5px}
-  .case dd{font-size:20px}
   .flow .dot{width:46px;height:46px;font-size:14px}
-  .stack li{font-size:11px;padding:7px 12px}
   .ticker li{font-size:11px}
   .ticker ul{gap:28px}
-  .sec-grid{background-size:48px 48px}
 }
 
+/* ============================================================
+   24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
+       ・duration の一括停止だけでは初期状態（opacity:0 / dashoffset 等）
+         が残るため、ここで最終状態に固定する
+       ・author 由来の !important は !important なしのインラインスタイルに
+         勝つため、JSが書き込む値も打ち消せる
+   ============================================================ */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  *,*::before,*::after{animation-duration:.001ms!important;
+    animation-iteration-count:1!important;transition-duration:.001ms!important}
   html{scroll-behavior:auto}
-  .rv{opacity:1;transform:none}
-}
 
-/* ============================================================
-   17. PHOTO EXTENSION
-   ============================================================ */
-.ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
-.ph-fig img{width:100%;height:100%;object-fit:cover;
-  transition:transform .7s cubic-bezier(.22,1,.36,1)}
-.ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
+  /* 起動クローク */
+  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
 
-/* ---- 事例サムネイル（.case の padding に完全追従） ---- */
-.case{--cpx:28px;--cpy:32px;overflow:hidden}
-.case .ph-fig{aspect-ratio:16/9;
-  margin:calc(var(--cpy) * -1) calc(var(--cpx) * -1) 22px;
-  border-radius:3px 3px 0 0}
-.case:hover .ph-fig img{transform:scale(1.05)}
+  /* ロゴ */
+  .logo .mark{transition:none!important;transform:none!important}
 
-/* ---- Company 写真 ---- */
-.cmp-wrap{display:grid;grid-template-columns:1.35fr .8fr;gap:calc(var(--gap) + 16px);
-  align-items:start}
-.cmp-wrap .ph-fig{aspect-ratio:4/3;border:1px solid var(--line);border-radius:4px}
-
-/* ---- フルブリード帯 ---- */
-.band{position:relative;overflow:hidden;background:var(--ink);
-  height:clamp(190px,28vw,340px);
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.band img{width:100%;height:100%;object-fit:cover;
-  opacity:.3;filter:saturate(.55) contrast(1.05)}
-.band::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,rgba(15,107,224,.26),rgba(0,194,168,.16))}
-
-/* ---- Approach ステップ写真 ---- */
-.flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
-  border:1px solid var(--line)}
-.flow .st:hover .ph-fig img{transform:scale(1.04)}
-
-/* ---- レスポンシブ（既存の検証幅に合わせる） ---- */
-@media (max-width:1180px){.case{--cpx:24px;--cpy:28px}}
-@media (max-width:768px){
-  .cmp-wrap{grid-template-columns:1fr;gap:var(--gap)}
-  .cmp-wrap .ph-fig{max-width:520px}
-}
-@media (max-width:600px){
-  .flow .st .ph-fig{max-width:340px}
-}
-@media (max-width:480px){
-  .case{--cpx:20px;--cpy:26px}
-  .band{height:clamp(160px,42vw,220px)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ph-fig img{transition:none!important;transform:none!important}
-}
-
-/* ============================================================
-   18. アクセシビリティ / 状態表現
-   ============================================================ */
-
-/* 18-1 キーボードフォーカス（マウス操作時には出さない） */
-:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
-  outline:2px solid var(--accent-2);outline-offset:3px;border-radius:2px}
-.btn:focus-visible{outline-offset:4px}
-nav a.gnav:focus-visible::after{width:100%}
-/* レールは tabindex="0" で矢印キー操作を受けるため、
-   フォーカス枠がカードの外側に出るよう offset を詰める */
-.rail-track:focus-visible{outline-offset:-2px}
-
-/* 18-2 未確定リンク／未記入項目
-        ここを唯一の正とする（各ページHEADで再定義しない）
-        URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
-a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
-a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
-  font-size:10px;letter-spacing:.06em}
-.is-todo-text{color:#ffb4a2}
-
-/* ============================================================
-   19. VISUAL-FIRST
-   ============================================================ */
-
-/* 19-1 セクション見出しの幅調整 */
-.sec-head.v-tight p{max-width:28em}
-
-/* ▼ 見出しを1行で組むブロック
-   .sec-head の max-width:44em は 15px 基準で実質 660px。clamp 上限 38px の
-   見出しは約 733px 必要なため、この制約を外さないと .brsp を消しても折り返す。
-   h2 のみ全幅を許し、アイブロウ・リード文は 44em を維持して可読性を保つ。
-   ※ 幅制約の解除と .brsp はセット。片方だけ変えると意図した改行位置にならない */
-.sec-head.v-1line{max-width:none}
-.sec-head.v-1line > *:not(h2){max-width:44em}
-
-/* 19-2 バー付きメトリクス（KPI）
-        ※ NUMBERS セクションは掲載保留中。再挿入時にそのまま使うため残置 */
-.v-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-  background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.v-metrics > div{background:var(--navy);padding:32px 24px}
-.v-metrics b{display:block;font-family:var(--f-en);font-weight:700;line-height:1;
-  font-size:clamp(34px,5vw,54px);letter-spacing:-.02em}
-.v-metrics small{display:block;margin-top:10px;color:var(--muted);
-  font-size:12.5px;letter-spacing:.04em}
-.v-bar{display:block;margin-top:18px;height:3px;border-radius:99px;overflow:hidden;
-  background:rgba(255,255,255,.08)}
-.v-bar i{display:block;width:0;height:100%;border-radius:99px;background:var(--grad);
-  transition:width 1.5s cubic-bezier(.22,1,.36,1) .2s}
-.rv.on .v-bar i, html.cfi-fallback .v-bar i{width:var(--w,70%)}
-@media (max-width:900px){.v-metrics{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:420px){.v-metrics > div{padding:24px 18px}}
-
-/* ============================================================
-   19-3. WHY CFI（3カード／背景写真）
-   ※ brightness と ::after のカラーストップはコントラスト計算済みの「対」。
-     どちらか一方だけを変更すると AA(4.5:1) を割る。必ずセットで調整すること。
-     写真が純白(255,255,255)という最悪条件でも、48%地点 5.7:1 /
-     66%地点 8.9:1 / 100%地点 11.5:1 を確保している。
-   ============================================================ */
-.v-why{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
-  background:var(--line);border-radius:4px;overflow:hidden}
-
-.v-why > div{position:relative;isolation:isolate;overflow:hidden;
-  background:var(--ink);
-  min-height:clamp(360px,30vw,430px);
-  padding:38px 30px 34px;
-  display:flex;flex-direction:column;justify-content:flex-end;
-  text-align:left}
-
-/* 背景写真（装飾）
-   opacity は 1 のまま。半透明にすると .sec-grid の格子柄が透ける。
-   暗さは brightness で作り、締めは ::after のスクリムに任せる */
-.v-why .vw-bg{position:absolute;inset:0;z-index:0;
-  width:100%;height:100%;object-fit:cover;
-  opacity:1;
-  filter:contrast(1.06) saturate(.60) brightness(.62);
-  transform:scale(1.02);
-  transition:transform .7s cubic-bezier(.22,1,.36,1),filter .5s ease}
-.v-why > div:hover .vw-bg{transform:scale(1.06);
-  filter:contrast(1.06) saturate(.72) brightness(.78)}
-
-/* 下部スクリム（上は素通し、文字の背後だけ締める。削除しないこと） */
-.v-why > div::after{content:"";position:absolute;inset:0;z-index:1;
-  pointer-events:none;
-  background:linear-gradient(180deg,
-    rgba(7,16,25,.06)  0%,
-    rgba(7,16,25,.16) 30%,
-    rgba(7,16,25,.52) 48%,
-    rgba(7,16,25,.80) 66%,
-    rgba(7,16,25,.92) 100%)}
-
-/* 上端のアクセント（カードの独立性を出す） */
-.v-why > div::before{content:"";position:absolute;top:0;left:0;
-  width:100%;height:2px;z-index:2;
-  background:var(--grad);opacity:.55}
-
-.v-why .vw-body{position:relative;z-index:3}
-
-/* ラベル（NEUTRAL / REALITY / SPEED） */
-.v-why h3 span{display:block;margin-bottom:14px;
-  font-family:var(--f-mono);font-size:11.5px;font-weight:600;
-  letter-spacing:.22em;color:var(--accent-2);
-  text-transform:uppercase;
-  text-shadow:0 1px 3px rgba(0,0,0,.6)}
-
-.v-why h3{font-size:clamp(16px,1.5vw,18.5px);font-weight:700;
-  line-height:1.62;letter-spacing:-.005em;color:var(--txt);
-  margin-bottom:16px;
-  text-shadow:0 1px 3px rgba(0,0,0,.6)}
-
-.v-why p{font-size:13.8px;line-height:1.95;color:var(--txt);
-  opacity:.86;letter-spacing:.005em;
-  text-shadow:0 1px 2px rgba(0,0,0,.55)}
-.v-why p{ min-height:7.8em; }   /* line-height:1.95 × 4行 = 7.8em */
-@media (max-width:768px){ .v-why p{ min-height:0; } }  /* 1カラム時は解除 */
-
-@media (max-width:960px){
-  .v-why{grid-template-columns:1fr 1fr}
-  .v-why > div:last-child{grid-column:1 / -1;min-height:280px}
-}
-@media (max-width:768px){
-  .v-why{grid-template-columns:1fr;gap:2px}
-  .v-why > div{min-height:300px;padding:32px 24px}
-  .v-why > div:last-child{grid-column:auto;min-height:300px}
-  .v-why h3{margin-bottom:14px}
-}
-
-/* ------------------------------------------------------------
-   19-4 モバイル横スクロール（APPROACH / ENGAGEMENT が使用）
-        ※ CASES は §10-2 の .rail へ移行済み。.v-scroll と併用しないこと
-   ------------------------------------------------------------ */
-@media (max-width:768px){
-  .v-scroll{display:flex;gap:16px;overflow-x:auto;
-    /* ▼ 縦を明示的に閉じる。CSS Overflow 3 の規定により overflow-x:auto を
-       指定すると overflow-y の visible は auto へ計算されるため、
-       書かないとこの要素が縦にもスクロールできる入れ子スクローラになる。
-       縦スクロール範囲が 1px でも生じるとタッチがここへラッチし、
-       指を離すまでページ側へスクロールが連鎖しない。
-       hidden でも横スクロールとスナップは従来どおり動作する。
-       ※ この指定と下の「.v-scroll > .rv」は必ずセットで入れること */
-    overflow-y:hidden;
-    overscroll-behavior-x:contain;
-    /* mandatory は斜めスワイプでも強制的にスナップするため proximity へ。
-       カード中央で止まる見た目はほぼ変わらない */
-    scroll-snap-type:x proximity;
-    margin:0 calc(var(--pad) * -1);padding:0 var(--pad) 10px;
-    scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .v-scroll::-webkit-scrollbar{display:none}
-  .v-scroll > *{flex:0 0 84%;scroll-snap-align:center}
-
-  /* ▼ 上の overflow-y:hidden とセット。§20-1 の初期位置 translateY(26px) は
-     (a) このスクローラに縦スクロール範囲を与える（ラッチの発生源）
-     (b) hidden 下では下端が切れる
-     の両方を起こすため、横スクロール時だけフェードのみに切り替える
-     （§20-1 の .rv-f と同じ扱い）。詳細度 0-2-0 で .rv / .rv-s に勝つ */
-  .v-scroll > .rv,.v-scroll > .rv-s{transform:none}
-
-  .v-hint{margin-top:10px;font-family:var(--f-mono);font-size:11px;
-    letter-spacing:.1em;color:var(--muted)}
-}
-@media (min-width:769px){.v-hint{display:none}}
-
-@media (prefers-reduced-motion:reduce){
-  .v-bar i{transition:none!important;width:var(--w,70%)!important}
-  .v-why .vw-bg{transition:none!important;transform:none!important}
-}
-
-/* ============================================================
-   20. MOTION
-   ────────────────────────────────────────────────────────────
-   ■ このブロックは必ずファイル末尾に置くこと。
-     §15（.rv）／§12（FAQ open）／§9（.case）を同詳細度で
-     後勝ちさせる前提で書いている。
-   ■ 原則 transform / translate / scale / opacity / clip-path のみを動かす。
-     width・background-position・box-shadow の連続変化は使わない
-     （前2者は再描画、box-shadow は合成不可のため）。
-   ■ 追加した装飾アニメーションには必ず html.cfi-fallback 用の
-     打ち消しを併記している。JSが落ちても要素が消えないようにするため。
-   ■ prefers-reduced-motion:reduce は 20-19 で一括して打ち消す。
-   ============================================================ */
-:root{
-  --mo-dur:.72s;                        /* リビール速度 */
-  --mo-ease:cubic-bezier(.22,1,.36,1);
-  --mo-stg:80ms;                        /* 1枚あたりの遅延（段差の強さ） */
-  --mo-shift:26px;                      /* リビールの移動量 */
-
-  /* ▼ 流し用グラデーション（--grad とは別物。両端を同色で閉じた折り返し型）
-     accent → accent-2 → accent。タイル境界が同色になるため継ぎ目が出ない。
-     配色を変える場合は 0% と 100% を必ず同じ値に保つこと。
-     ※ --grad（静止用）と混同しないこと。片方だけ変えると
-       ボタン・進捗バー・アイブロウ装飾線の配色が変わる */
-  --mo-grad-loop:linear-gradient(115deg,
-    var(--accent)   0%,
-    var(--accent-2) 50%,
-    var(--accent)  100%);
-}
-
-/* ------------------------------------------------------------
-   20-1 リビール拡張（§15 .rv を上書き）
-        --i は common.js が付与する連番。CSS側で遅延に変換する
-   ------------------------------------------------------------ */
-.rv{
-  transition-property:opacity,transform,clip-path;
-  transition-duration:var(--mo-dur);
-  transition-timing-function:var(--mo-ease);
-  transition-delay:calc(var(--i,0) * var(--mo-stg));
-  transform:translateY(var(--mo-shift))}
-.rv.on{transform:none}
-
-/* 方向・種類のバリエーション（data-mo-stagger="l|r|s|f" で付与される） */
-.rv-l{transform:translate(calc(var(--mo-shift) * -1.6),0)}
-.rv-r{transform:translate(calc(var(--mo-shift) * 1.6),0)}
-.rv-s{transform:translateY(var(--mo-shift)) scale(.96)}
-.rv-f{transform:none}                   /* フェードのみ（table 行など） */
-.rv-l.on,.rv-r.on,.rv-s.on{transform:none}
-.rv-clip{opacity:1;transform:none;clip-path:inset(0 0 100% 0)}
-.rv-clip.on{clip-path:inset(0 0 0 0)}
-
-/* 段差表示の親コンテナ用。.on を受け取るだけで自身は動かさない
-   （§20-7 のアイコン描画や §20-9 の接続線が親の .on を参照している） */
-.rv-hold{opacity:1;transform:none;clip-path:none}
-
-html.cfi-fallback .rv-clip{clip-path:none}
-html.cfi-fallback .rv-hold{opacity:1}
-
-/* ------------------------------------------------------------
-   20-2 アイブロウの装飾線を左から引く
-        未発火（:not(.on)）のときだけ縮めるフェイルセーフ方式
-   ------------------------------------------------------------ */
-.eyebrow::before{transform-origin:left;transition:transform .8s var(--mo-ease) .1s}
-.rv:not(.on) .eyebrow::before,
-.eyebrow.rv:not(.on)::before{transform:scaleX(0)}
-
-/* ------------------------------------------------------------
-   20-3 グラデーション文字をゆるやかに流す
-        ※ シームレス条件。以下3点は必ずセットで守ること
-          (1) 配色は両端が同色の折り返し型（--mo-grad-loop）。
-              2色2ストップにすると、タイル境界で
-              accent-2 → accent の段差が文字の上を横切る。
-          (2) background-size は 200%。position の 0%→200% が
-              ちょうどタイル1枚分の移動になり、1周が継ぎ目なく閉じる。
-              端数（220% 等）にすると周回ごとに位置がずれて跳ねる。
-          (3) background-repeat:repeat を明示。要素幅の外へ動かすため、
-              no-repeat にすると色が抜ける。
-        ※ 動きを減らす設定では §16 末尾により終端（200%）で静止するが、
-          上記(2)の条件下では初期状態と同一の見た目に着地する。
-        常時ループ。合成できずペイントが走るため、
-        負荷が気になる場合はこのブロックごと削除する（静止表示に戻る）
-   ------------------------------------------------------------ */
-@keyframes moGrad{to{background-position:200% 50%}}
-.hero h1 em,.chl-note em,.grad-txt{
-  background-image:var(--mo-grad-loop);
-  background-size:200% 100%;
-  background-repeat:repeat;
-  background-position:0 50%;
-  animation:moGrad 12s linear infinite}
-
-/* ------------------------------------------------------------
-   20-4 ボタン：光沢スイープ＋押下フィードバック
-   ------------------------------------------------------------ */
-.btn{position:relative;overflow:hidden;isolation:isolate}
-.btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
-  transform:skewX(-18deg);translate:-170% 0;pointer-events:none}
-.btn:hover::after{animation:moSheen .8s var(--mo-ease)}
-@keyframes moSheen{from{translate:-170% 0}to{translate:240% 0}}
-.btn-p:hover{transform:translateY(-2px) scale(1.015)}
-.btn-g:hover{transform:translateY(-2px)}
-.btn:active{transform:translateY(0) scale(.98)}
-
-/* ------------------------------------------------------------
-   20-5 ヘッダー：進捗バー＋下方向スクロールで格納
-        --p / .hd-up は common.js の initScroll が供給する
-   ------------------------------------------------------------ */
-header{transition:background .3s,box-shadow .3s,transform .42s var(--mo-ease)}
-header.hd-up{transform:translateY(-100%)}
-.hd-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;z-index:2;
-  background:var(--grad);transform:scaleX(var(--p,0));transform-origin:0 50%;
-  will-change:transform;pointer-events:none}
-
-/* ------------------------------------------------------------
-   20-6 モバイルメニュー：項目を順に落とす
-        JSが nav.mo-ready を付けた場合のみ有効（JS無効時は即表示）
-        ※ 960px は §16 のハンバーガー切替点と必ず一致させること
-   ------------------------------------------------------------ */
-@media (max-width:960px){
-  nav.mo-ready ul li{opacity:0;translate:0 -12px;
-    transition:opacity .32s ease,translate .32s var(--mo-ease)}
-  nav.mo-ready.open ul li{opacity:1;translate:0;
-    transition-delay:calc(var(--i,0) * 45ms + 90ms)}
-}
-
-/* ------------------------------------------------------------
-   20-7 SERVICE：アイコンを線で描き起こす
-        stroke-dasharray / stroke-dashoffset は継承プロパティのため
-        <use> のシャドウツリー内の path にも効く。
-        --ico-len はアイコン形状に対する概算値。実機で詰める調整点。
-        ※ .svc はカード間の隙間（1px）が --line の地色。カード単位の
-          リビールにすると隙間から明るい線色が透けるため、コンテナ単位の
-          出現＋内部要素の動きに限定している
-   ------------------------------------------------------------ */
-.svc .ico{stroke-dasharray:var(--ico-len,300);stroke-dashoffset:var(--ico-len,300);
-  transition:stroke-dashoffset 1.2s var(--mo-ease) var(--ico-d,0s),
-             transform .45s var(--mo-ease)}
-.svc.rv.on .ico,html.cfi-fallback .svc .ico{stroke-dashoffset:0}
-.svc article:nth-child(2) .ico{--ico-d:.10s}
-.svc article:nth-child(3) .ico{--ico-d:.20s}
-.svc article:nth-child(4) .ico{--ico-d:.30s}
-.svc article:nth-child(5) .ico{--ico-d:.40s}
-.svc article:nth-child(6) .ico{--ico-d:.50s}
-.svc article:hover .ico{transform:translateY(-5px) scale(1.05)}
-.svc h3{transition:transform .45s var(--mo-ease)}
-.svc article:hover h3{transform:translateX(3px)}
-
-/* ------------------------------------------------------------
-   20-8 CHALLENGES：チェックマークを描く
-        §7 の transform:rotate(-45deg) を保持したまま scale を足す
-        ※ 「.chl > li」（子結合子）であること。子孫セレクタにすると
-          カード内の箇条書き（.chl-pt）にもマッチする。
-          §7 / §20-19 と必ず揃えること
-   ------------------------------------------------------------ */
-.chl > li::before{opacity:0;transform:rotate(-45deg) scale(.3);
-  transition:transform .5s var(--mo-ease) .18s,opacity .3s ease .18s}
-.chl > li.on::before,html.cfi-fallback .chl > li::before{
-  opacity:1;transform:rotate(-45deg) scale(1)}
-.chl > li.on:hover::before{transform:rotate(-45deg) scale(1.14)}
-
-/* ------------------------------------------------------------
-   20-9 APPROACH：接続線を左から引く／番号ドットの脈動
-        ※ .flow / .v-scroll に align-items を足さないこと（§8 の禁止事項）
-        ※ 脈動は box-shadow ではなく疑似要素の scale+opacity で作る。
-          box-shadow は合成できずペイントが毎フレーム走るため、
-          APPROACH が画面に入った直後（＝スクロール中）に
-          ドット4個ぶんの連続再描画が発生する。戻さないこと。
-          .flow .dot には §8 で position:relative が付いているため追加不要
-   ------------------------------------------------------------ */
-.flow::before{transform:scaleX(0);transform-origin:left;
-  transition:transform 1.1s var(--mo-ease) .1s}
-.flow.on::before,html.cfi-fallback .flow::before{transform:scaleX(1)}
-.flow .dot{transition:transform .45s var(--mo-ease)}
-.flow .st:hover .dot{transform:scale(1.08)}
-.flow .dot::after{content:"";position:absolute;inset:-1px;border-radius:50%;
-  border:1px solid var(--accent-2);opacity:0;pointer-events:none}
-.flow .st.on .dot::after{animation:moDot 3.4s ease-out .3s 2}
-@keyframes moDot{
-  0%{scale:1;opacity:.45}
-  40%,100%{scale:1.55;opacity:0}}
-
-/* ------------------------------------------------------------
-   20-10 CASES / ENGAGEMENT：影の深度＋内部行の順送り
-         §9 の transform:translateY(-5px) は維持し、影のみ追加
-         ※ ホバー時の浮きと影は .rail-track の上下 padding
-           （§10-2 --rail-lift / --rail-drop）で逃がしている。
-           影を強くする場合は --rail-drop も併せて増やすこと
-   ------------------------------------------------------------ */
-.case{transition:transform .4s var(--mo-ease),border-color .3s,box-shadow .4s ease}
-.case:hover{box-shadow:0 18px 44px rgba(0,0,0,.34)}
-.case.rv .cs-steps > div,.case.rv .eng-meta > div{
-  opacity:0;translate:0 8px;
-  transition:opacity .5s ease,translate .5s var(--mo-ease)}
-.case.rv.on .cs-steps > div,.case.rv.on .eng-meta > div{opacity:1;translate:0}
-.case.rv.on .cs-steps > div:nth-child(2),
-.case.rv.on .eng-meta > div:nth-child(2){transition-delay:.14s}
-.case.rv.on .cs-steps > div:nth-child(3),
-.case.rv.on .eng-meta > div:nth-child(3){transition-delay:.28s}
-html.cfi-fallback .case .cs-steps > div,
-html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
-
-/* ------------------------------------------------------------
-   20-11 WHY CFI：背景写真の寄り引き＋本文の押し上げ
-         ※ §19-3 の brightness／スクリムのカラーストップは変更しない
-           （コントラスト計算済みの「対」を崩さないため）
-         ※ §19-3 が transform:scale を使っているため、こちらは独立
-           プロパティ scale を使って衝突を避けている
-   ------------------------------------------------------------ */
-.v-why .vw-bg{transition:transform .7s var(--mo-ease),filter .5s ease,
-              scale .9s var(--mo-ease)}
-.v-why.rv .vw-bg{scale:1.14}
-.v-why.rv.on .vw-bg,html.cfi-fallback .v-why .vw-bg{scale:1}
-.v-why.rv .vw-body{opacity:0;translate:0 18px;
-  transition:opacity .7s ease,translate .7s var(--mo-ease)}
-.v-why.rv.on .vw-body{opacity:1;translate:0}
-.v-why > div:nth-child(2) .vw-body{transition-delay:.12s}
-.v-why > div:nth-child(3) .vw-body{transition-delay:.24s}
-html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
-
-/* ------------------------------------------------------------
-   20-12 FAQ：＋／− の変形と本文の高さアニメーション
-         open 時の見た目（横線1本＝「−」）は §12 と同一に着地する。
-         縦棒を background-size で 100% → 0 に縮め、
-         全体を 180deg 回して動きを付けているだけ。
-         ※ height:auto の補間は Safari／Firefox 未対応のため
-           （interpolate-size 非対応）、実測値はJS側が与える
-   ------------------------------------------------------------ */
-.faq summary::after{background-size:100% 1px,1px 100%;
-  transition:background-size .38s var(--mo-ease),transform .45s var(--mo-ease)}
-.faq details[open] summary::after{
-  background:
-    linear-gradient(var(--accent-2),var(--accent-2)) center no-repeat,
-    linear-gradient(var(--accent-2),var(--accent-2)) center no-repeat;
-  background-size:100% 1px,1px 0;
-  transform:rotate(180deg)}
-.faq summary::before{transition:translate .3s var(--mo-ease)}
-.faq summary:hover::before{translate:2px 0}
-/* JSが開閉時のみ付与するクラス。閉状態の height:0 はJS前提のため
-   素のCSSでは指定しない（JS無効時は素の details 開閉に戻る） */
-.faq .mo-a{overflow:hidden;
-  transition:height .38s var(--mo-ease),padding-bottom .38s var(--mo-ease)}
-
-/* ------------------------------------------------------------
-   20-13 ティッカー：ホバーで停止／項目ホバーで着色
-   ------------------------------------------------------------ */
-.ticker:hover ul{animation-play-state:paused}
-.ticker li{transition:color .3s ease}
-.ticker li:hover{color:var(--accent-2)}
-
-/* ------------------------------------------------------------
-   20-14 モバイルのスワイプ誘導を動かす
-   ------------------------------------------------------------ */
-@keyframes moHint{0%,100%{translate:0 0;opacity:.72}50%{translate:6px 0;opacity:1}}
-.v-hint{animation:moHint 2.4s ease-in-out infinite}
-
-/* ------------------------------------------------------------
-   20-15 ヒーローのパララックス
-         ※ カスタムプロパティ経由にしないこと。継承するため .hero に
-           値を書くと配下すべて（canvas・見出し・リード文・CTA）の
-           スタイル再計算が毎フレーム走る。
-           実値は common.js の initScroll が
-           .hero .wrap の translate / opacity と
-           .scroll-hint の opacity へ直接書き込む
-         ※ ここに初期値を書かないこと（JS無効時は静止表示に落ちる）
-         ※ §20-19 の !important 打ち消しは、author由来の !important が
-           !important なしのインラインスタイルに勝つため有効
-   ------------------------------------------------------------ */
-.hero .wrap{will-change:translate,opacity}
-.scroll-hint{will-change:opacity}
-
-/* ------------------------------------------------------------
-   20-16 写真のスクロール連動パララックス
-         ・animation ショートハンドは animation-timeline をリセットするため、
-           必ず animation → animation-timeline → animation-range の順で書く
-         ・Firefox 現行版は animation-timeline 未対応。@supports で
-           囲んでいるため、非対応環境では元の静止表示に落ちる
-         ・base の scale は写真をわずかに詰める（トリミング）。
-           「デザインそのまま」を厳密に守る場合は scale 行のみ削除する
-         ・§17 の hover transform:scale を殺さないよう、
-           独立プロパティ（scale / translate）側で実装している
-         ・will-change は対象画像ぶんのレイヤーを恒久的に確保する。
-           min-width:769px 限定のためモバイルには影響しない
-   ------------------------------------------------------------ */
-@supports (animation-timeline:view()){
-  @media (prefers-reduced-motion:no-preference) and (min-width:769px){
-    .case .ph-fig img,.cmp-wrap .ph-fig img,.flow .st .ph-fig img{
-      scale:1.08;will-change:translate;
-      animation:moPara linear both;
-      animation-timeline:view();
-      animation-range:cover 0% cover 100%}
-    @keyframes moPara{from{translate:0 -3.5%}to{translate:0 3.5%}}
-
-    .band img{scale:1.14;will-change:translate;
-      animation:moBand linear both;
-      animation-timeline:view();
-      animation-range:cover 0% cover 100%}
-    @keyframes moBand{from{translate:0 -5%}to{translate:0 5%}}
-  }
-}
-
-/* ------------------------------------------------------------
-   20-17 【任意】.sec-grid の格子をスクロールでドリフトさせる
-         格子を背景から疑似要素へ移し、transform 系で動かす
-         （background-position の連続変化＝再描画を避けるため）。
-         副作用：.sec-grid に overflow:hidden が付き、
-         .wrap が z-index:1 になる。将来 .sec-grid 内に
-         position:sticky を置く予定があるならこのブロックは入れない。
-         不要な場合はこのブロックごと削除すれば元の静止格子に戻る。
-         ※ 該当4セクション（CHALLENGES / WHY / ENGAGEMENT / FAQ）ぶん
-           巨大な合成レイヤーを常時確保する。モバイルでスクロールが
-           重い場合、最初に切り離す候補はここ
-   ------------------------------------------------------------ */
-@supports (animation-timeline:scroll()){
-  @media (prefers-reduced-motion:no-preference){
-    .sec-grid{background-image:none;overflow:hidden}
-    .sec-grid > .wrap{position:relative;z-index:1}
-    .sec-grid::before{content:"";position:absolute;inset:-80px 0;z-index:0;
-      pointer-events:none;
-      background-image:linear-gradient(var(--line) 1px,transparent 1px),
-                       linear-gradient(90deg,var(--line) 1px,transparent 1px);
-      background-size:64px 64px;background-position:center;
-      animation:moGrid linear both;
-      animation-timeline:scroll(root);
-      animation-range:0% 100%}
-    @keyframes moGrid{from{translate:0 -32px}to{translate:0 32px}}
-    @media (max-width:360px){.sec-grid::before{background-size:48px 48px}}
-  }
-}
-
-/* ------------------------------------------------------------
-   20-18 contact：STUDIOフォームの操作反応
-         STUDIOの生成クラスに依存しない汎用指定。
-         STUDIO側の構造が変わって効かなくなっても壊れない設計
-   ------------------------------------------------------------ */
-html.cfi-sub #__nuxt :is(input,textarea,select){
-  transition:box-shadow .3s ease,border-color .3s ease}
-html.cfi-sub #__nuxt :is(input,textarea,select):focus{
-  box-shadow:0 0 0 3px rgba(0,194,168,.22)}
-html.cfi-sub #__nuxt button{transition:transform .3s var(--mo-ease),box-shadow .3s ease}
-html.cfi-sub #__nuxt button:hover{transform:translateY(-2px)}
-html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
-
-/* ------------------------------------------------------------
-   20-19 動きを減らす設定での打ち消し
-         §16 末尾の一括 transition-duration:.001ms だけでは
-         初期状態（opacity:0 / clip-path / dashoffset）が残るため、
-         ここで最終状態に固定する
-   ------------------------------------------------------------ */
-@media (prefers-reduced-motion:reduce){
-  .rv,.rv-clip,.rv-hold{opacity:1!important;transform:none!important;
-    clip-path:none!important}
+  /* リビール */
+  .rv,.rv-hold{opacity:1!important;transform:none!important}
   .eyebrow::before,.flow::before{transform:none!important}
+
+  /* コンポーネント別 */
   .svc .ico{stroke-dasharray:none!important;stroke-dashoffset:0!important}
-  /* 「.chl > li」であること（§7 / §20-8 と揃えること） */
+  /* 「.chl > li」であること（§9 と揃えること） */
   .chl > li::before{opacity:1!important;transform:rotate(-45deg)!important}
-  .v-why .vw-bg{scale:1!important}
+  .v-why .vw-bg{transition:none!important;transform:none!important;scale:1!important}
   .v-why .vw-body,
   .case .cs-steps > div,.case .eng-meta > div{opacity:1!important;translate:0!important}
   /* 脈動は ::after へ移設済み。::after は既定 opacity:0 なので消えたままになる */
   .flow .st .dot,.flow .st .dot::after{animation:none!important}
+  .ph-fig img{transition:none!important;transform:none!important}
+  .faq summary::after{transform:none!important}
+  .btn::after{display:none}
+  .ticker ul,.v-hint{animation:none!important}
+
   /* JSはこの設定下では書き込まないが、実行中に切り替わった場合の保険 */
   .hero .wrap{translate:none!important;opacity:1!important}
   .scroll-hint{opacity:1!important}
   header.hd-up{transform:none!important}
   nav.mo-ready ul li{opacity:1!important;translate:none!important;
     transition-delay:0s!important}
-  .ticker ul,.v-hint{animation:none!important}
-  .btn::after{display:none}
-  .faq summary::after{transform:none!important}
 }
-
-/* ------------------------------------------------------------
-   20-20 RAIL（§10-2 と対）
-         ※ 意図的に §20-19（動きを減らす設定の打ち消し）より後ろに置いている。
-           §20-19 側は .rv の transform を !important で無効化しており、
-           下の2行はいずれも打ち消しと同じ結果に着地するため衝突しない。
-         ・トラックは overflow-y:hidden のため、§20-1 の初期位置
-           translateY(26px) が下端で切れる。横スクロール時はフェードのみへ
-           切り替える（§19-4 の .v-scroll と同じ扱い）。0-2-0 で .rv に勝つ
-         ・段差遅延は2枚ぶん（160ms）で頭打ちにする。common.js は --i を
-           6 で折り返すため、素のままだと4枚目以降が最大400ms待たされ、
-           ボタンを押してから遅れて出る
-   ------------------------------------------------------------ */
-.rail-track > .rv,.rail-track > .rv-s{transform:none}
-.rail-track > .rv{transition-delay:calc(min(var(--i,0),2) * var(--mo-stg))}
