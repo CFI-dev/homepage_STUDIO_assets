@@ -248,20 +248,33 @@ nav a.gnav:hover::after{width:100%}
    場合に使うため残置している */
 .chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
 
-/* ▼ カード本文の箇条書き（rev:2026-09-14 新設）
-     ・「・」は ::before で描く。§1 の li{list-style:none} により ::marker は
-       出ないため、list-style には頼らない
-     ・grid で「・」と本文を別カラムに分け、折り返しを本文カラム内へ閉じ込める。
+/* ▼ カード本文の箇条書き（rev:2026-09-14 新設／同日 中黒→丸ドットへ変更）
+     ・行頭記号は content:"・" や "⚫︎" などの文字ではなく CSS で作図する。
+       U+26AB（⚫）は Unicode 既定が絵文字表示のため、環境によって
+       カラー絵文字で描かれ、サイズ・色・字形が制御できない。
+       U+FE0E を付けてもフォント側にテキスト字形が無ければ効かない。
+       §7 のチェックマークと同じく「記号は作図」で統一する
+     ・grid で記号と本文を別カラムに分け、折り返しを本文カラム内へ閉じ込める。
        text-indent の負値方式はブロックの1行目にしか効かず、
        hanging / each-line キーワードはブラウザ差が大きいため採らない
-     ・1em は全角中黒の送り幅。font-size に自動追従するので px 固定にしないこと
-     ・行間は --chl-pt-gap を唯一の正とする（従来の <br> と同じ密度に
-       寄せるなら 0〜4px へ下げる） */
+     ・1em カラムは全角1文字ぶんの送り幅。font-size に自動追従するので
+       px 固定にしないこと
+     ・ドットの縦位置は 1行目の行ボックス中央。--chl-pt-lh を line-height と
+       margin-top の両方で参照しているため、行間を変えても自動で追従する。
+       ※ line-height を直書きしないこと（追従が切れる）
+     ・調整ダイヤルは以下3つ。ここを唯一の正とする
+         --chl-pt-dot … ドット径（大きすぎると本文と競合する）
+         --chl-pt-gap … 項目間の余白（0〜4px で従来の <br> と同密度）
+         --chl-pt-lh  … 本文の行間 */
 .chl-pt{--chl-pt-gap:8px;
   display:grid;gap:var(--chl-pt-gap);margin-top:10px}
-.chl-pt > li{display:grid;grid-template-columns:1em 1fr;
-  font-size:13px;line-height:1.9;color:var(--muted)}
-.chl-pt > li::before{content:"・";display:block;text-align:center}
+.chl-pt > li{--chl-pt-dot:.48em;--chl-pt-lh:1.9;
+  display:grid;grid-template-columns:1em 1fr;
+  font-size:13px;line-height:var(--chl-pt-lh);color:var(--muted)}
+.chl-pt > li::before{content:"";
+  width:var(--chl-pt-dot);height:var(--chl-pt-dot);border-radius:50%;
+  background:currentColor;
+  margin:calc((var(--chl-pt-lh) * 1em - var(--chl-pt-dot)) / 2) auto 0}
 
 /* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと */
 .chl-note{margin-top:36px;padding-left:22px;position:relative;
