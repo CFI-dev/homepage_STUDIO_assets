@@ -398,8 +398,8 @@ nav a.gnav:hover::after{width:100%}
          li::before の left/width を変えたら必ずここも再計算すること
        --chl-lh    … 本文行間。ドットの縦位置 calc がこの値を参照する */
   --chl-pl:54px;
-  --chl-dot:5px;
-  --chl-dot-x:-11px;
+  --chl-dot:7px;
+  --chl-dot-x:-14px;
   --chl-lh:1.9;
   display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
