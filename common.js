@@ -1,22 +1,40 @@
 "use strict";
 
 /* ============================================================
-   CFI コーポレートサイト メインスクリプト
-   ・ハンバーガー切替点 960px（MQ_DESK）は common.css §16 と必ず一致させること
-   ・common.css §20（MOTION）と対になっている。片方だけ更新しないこと
-   ・scroll の window 購読は §2 の1本のみ。他所で addEventListener('scroll')
-     を増やさないこと（rAF の間引きが効かなくなる）
+   CFI メインスクリプト（home / contact 共用）
+   ────────────────────────────────────────────────────────────
+   ■ 触る前に必ず読むこと
+   ・ハンバーガー切替点 960px（MQ_DESK）は common.css §23 と必ず一致させること
+   ・common.css と対になっている。片方だけ更新しないこと
+     §5 → .hd-prog の --p / header.hd-up / .hero .wrap の translate
+     §7 → .rv に .on ／ nav.mo-ready ／ 各要素の --i
+     §8 → .faq .mo-a の実測 height
+   ・window スクロールの購読は §5 の1本のみ。他所で
+     addEventListener('scroll') を増やさないこと（rAF の間引きが効かなくなる）
+   ・ページ側HTMLに必要なのは window.CFI_CONFIG の宣言のみ。
+     リンク解決・DOM配置・クローク解除はすべてここが担う
+   ・未使用化した initRail / initCounter は parking.js へ退避してある。
+     本番では読み込まないこと
+   ・このファイルは DOM（#cfi-root / #cfi-top）より後に読み込むこと
    ============================================================ */
 
 (function () {
   /* ------------------------------------------------------------
-     0. 二重読み込みガード
+     1. 二重読み込みガード / 設定 / 共通ヘルパー
+        CFI_CONFIG が無い場合は home 扱いで動く（最低限は壊れない）
      ------------------------------------------------------------ */
   if (window.__cfiCommonLoaded) return;
   window.__cfiCommonLoaded = true;
 
+  var CFG      = window.CFI_CONFIG || {};
+  var PAGE     = CFG.page === "contact" ? "contact" : "home";
+  var HOME     = CFG.home || "/";
+  var CONTACT  = CFG.contact || "/contact";
+
+  var html   = document.documentElement;
   var MQ_DESK = matchMedia("(min-width:961px)");
-  var rm = matchMedia("(prefers-reduced-motion: reduce)");
+  var rm      = matchMedia("(prefers-reduced-motion: reduce)");
+  var HAS_IO  = typeof IntersectionObserver === "function";
 
   /* matchMedia の change 購読（Safari 13以下は addListener のみ） */
   function onMQ(mq, fn) {
@@ -24,56 +42,171 @@
     else if (typeof mq.addListener === "function") mq.addListener(fn);
   }
 
-  var HAS_IO = typeof IntersectionObserver === "function";
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
 
   /* 公開API置き場。initScroll / initReveal の両方から書き込む */
   var CFI = (window.CFI = window.CFI || {});
 
   /* ------------------------------------------------------------
-     1. モバイルメニュー
+     2. リンク解決 / 未確定リンク
+        ・data-cfi-nav="home" → HOME、"home#cases" → HOME + '#cases'、
+          "contact" → CONTACT。ページ間でパスを書き分けないための仕組み
+        ・data-cfi-todo は href が未設定のものだけを無効化する。
+          URLが決まったら属性を外すだけで通常リンクに戻る
+     ------------------------------------------------------------ */
+  (function initLinks() {
+    each(document.querySelectorAll("[data-cfi-nav]"), function (a) {
+      var v = a.getAttribute("data-cfi-nav") || "";
+      var href = null;
+      if (v === "contact") href = CONTACT;
+      else if (v.indexOf("home") === 0) href = HOME + v.slice(4);
+      if (href) a.setAttribute("href", href.replace("//", "/"));
+    });
+
+    each(document.querySelectorAll("a[data-cfi-todo]"), function (a) {
+      var h = a.getAttribute("href");
+      if (h && h !== "#") return;
+      a.classList.add("is-todo");
+      a.setAttribute("aria-disabled", "true");
+      a.setAttribute("tabindex", "-1");
+      a.removeAttribute("href");
+      a.addEventListener("click", function (e) { e.preventDefault(); });
+    });
+  })();
+
+  /* ------------------------------------------------------------
+     3. DOM配置
+        home    … #cfi-root を body 直下へ移し、STUDIO既存DOMを伏せる
+                  （#__nuxt は common.css §3 が display:none で伏せる。
+                    ここでの display 指定はその他の兄弟要素向け）
+        contact … ヘッダー＋ヒーロー(#cfi-top)を #__nuxt の直前へ移す。
+                  フッター(#cfi-bottom)はフォームの後ろに残す
+     ------------------------------------------------------------ */
+  (function initPlacement() {
+    var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+
+    if (PAGE === "contact") {
+      var top = document.getElementById("cfi-top");
+      if (!top) return;
+      var nuxt = document.getElementById("__nuxt");
+      if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
+      else document.body.insertBefore(top, document.body.firstChild);
+      return;
+    }
+
+    var root = document.getElementById("cfi-root");
+    if (!root) {
+      /* 器が無い＝表示できないので幕だけは必ず上げる */
+      html.classList.remove("cfi-boot", "cfi-boot-out");
+      return;
+    }
+    if (root.parentNode !== document.body) document.body.appendChild(root);
+    Array.prototype.slice.call(document.body.children).forEach(function (el) {
+      if (el !== root && !SKIP[el.tagName]) el.style.display = "none";
+    });
+  })();
+
+  /* ------------------------------------------------------------
+     4. 起動クローク解除 / リビールのフォールバック
+        ・解除の演出（.28s / .3s）は common.css §3 と対。数値を変える場合は
+          両方を揃えること
+        ・contact はSTUDIOのキャンバス描画＋配色注入を待つ。
+          home は待つ対象が無いので DOMContentLoaded 直後に上げる
+        ・最終保険の3秒は、各ページHEADの3.5秒より必ず先に発火させること
+     ------------------------------------------------------------ */
+  (function initBoot() {
+    function reveal() {
+      if (!html.classList.contains("cfi-boot")) return;
+      html.classList.add("cfi-boot-out");
+      setTimeout(function () {
+        html.classList.remove("cfi-boot", "cfi-boot-out");
+      }, 300);
+    }
+
+    if (PAGE === "contact") {
+      var waited = 0;
+      var poll = setInterval(function () {
+        waited += 50;
+        var canvas = document.querySelector("#__nuxt .StudioCanvas, #__nuxt .sd");
+        if (canvas || waited >= 2000) {
+          clearInterval(poll);
+          /* STUDIO側の .3s〜.4s transition が終わり切るまで待つ */
+          setTimeout(reveal, 480);
+        }
+      }, 50);
+      addEventListener("load", function () { setTimeout(reveal, 480); });
+    } else if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(reveal, 120);
+      });
+      addEventListener("load", reveal);
+    } else {
+      setTimeout(reveal, 120);
+      addEventListener("load", reveal);
+    }
+
+    setTimeout(reveal, 3000);   /* 最終保険 */
+
+    /* リビールが発火しなかった場合の保険。
+       クローク中は判定しない（幕の裏では監視が始まらないため） */
+    var tries = 0;
+    (function check() {
+      if (html.classList.contains("cfi-boot") && ++tries < 12) {
+        setTimeout(check, 500);
+        return;
+      }
+      setTimeout(function () {
+        var rv = document.querySelector("#cfi-root .rv, #cfi-top .rv, #cfi-bottom .rv");
+        if (rv && !rv.classList.contains("on")) html.classList.add("cfi-fallback");
+      }, 1200);
+    })();
+  })();
+
+  /* ------------------------------------------------------------
+     5. モバイルメニュー
         ・項目の段差表示用に --i を付与し、nav.mo-ready を立てる。
-          CSS(§20-6)は mo-ready が無ければ何もしないため、
+          CSS(§19-2)は mo-ready が無ければ何もしないため、
           JSが落ちた場合は従来どおり即表示になる
      ------------------------------------------------------------ */
   (function initNav() {
-    const burger = document.getElementById("burger");
-    const nav = document.getElementById("nav");
+    var burger = document.getElementById("burger");
+    var nav = document.getElementById("nav");
     if (!burger || !nav) return;
 
-    const closeNav = () => {
+    function closeNav() {
       burger.classList.remove("on");
       nav.classList.remove("open");
       burger.setAttribute("aria-expanded", "false");
       burger.setAttribute("aria-label", "メニューを開く");
-    };
+    }
 
-    burger.addEventListener("click", () => {
-      const open = burger.classList.toggle("on");
+    burger.addEventListener("click", function () {
+      var open = burger.classList.toggle("on");
       nav.classList.toggle("open", open);
       burger.setAttribute("aria-expanded", String(open));
       burger.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
     });
 
     /* 段差表示用インデックス（CSS側で 45ms 刻みの遅延に変換される） */
-    Array.prototype.forEach.call(nav.querySelectorAll("ul > li"), (li, i) => {
+    each(nav.querySelectorAll("ul > li"), function (li, i) {
       li.style.setProperty("--i", i);
     });
     nav.classList.add("mo-ready");
 
-    nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
-
-    /* PC幅に戻したら閉じる */
-    onMQ(MQ_DESK, (e) => {
-      if (e.matches) closeNav();
+    each(nav.querySelectorAll("a"), function (a) {
+      a.addEventListener("click", closeNav);
     });
 
-    addEventListener("keydown", (e) => {
+    /* PC幅に戻したら閉じる */
+    onMQ(MQ_DESK, function (e) { if (e.matches) closeNav(); });
+
+    addEventListener("keydown", function (e) {
       if (e.key === "Escape") closeNav();
     });
   })();
 
   /* ------------------------------------------------------------
-     2. スクロール連動（影 / 格納 / 進捗バー / ヒーローのパララックス）
+     6. スクロール連動（影 / 格納 / 進捗バー / ヒーローのパララックス）
         ▼ カクつき対策。以下3点が設計の要。崩さないこと
           ・frame() 内でレイアウトを伴う読み取り（scrollHeight /
             offsetHeight）を行わない。クラス書き込みの直後に読むと
@@ -86,23 +219,23 @@
           ・.hd-up は ±10px のヒステリシスを持たせる。2px しきい値だと
             慣性スクロールの微振動で往復し、backdrop-filter 付きの
             fixed ヘッダーの再合成を繰り返す
-        ・scroll の購読は全体でこの1本のみ。rAF で1フレーム1回に間引く
+        ・window スクロールの購読は全体でこの1本のみ。rAF で1フレーム1回に間引く
      ------------------------------------------------------------ */
   (function initScroll() {
-    const hd = document.getElementById("hd");
-    const prog = document.querySelector(".hd-prog");
-    const nav = document.getElementById("nav");
-    const hero = document.querySelector(".hero");
-    const heroWrap = hero && hero.querySelector(".wrap");
-    const hint = document.querySelector(".scroll-hint");
+    var hd = document.getElementById("hd");
+    var prog = document.querySelector(".hd-prog");
+    var nav = document.getElementById("nav");
+    var hero = document.querySelector(".hero");
+    var heroWrap = hero && hero.querySelector(".wrap");
+    var hint = document.querySelector(".scroll-hint");
     if (!hd && !prog && !hero) return;
 
-    let last = 0;
-    let ticking = false;
-    let soft = rm.matches;      /* 動きを減らす設定では格納とパララックスを止める */
-    let maxScroll = 0;
-    let heroH = 1;
-    let up = false;             /* .hd-up の現在状態。無駄な class 書換を避ける */
+    var last = 0;
+    var ticking = false;
+    var soft = rm.matches;      /* 動きを減らす設定では格納とパララックスを止める */
+    var maxScroll = 0;
+    var heroH = 1;
+    var up = false;             /* .hd-up の現在状態。無駄な class 書換を避ける */
 
     /* ▼ レイアウトを伴う読み取りはこの関数に隔離する。
          スクロール中は絶対に呼ばないこと */
@@ -113,14 +246,14 @@
 
     function frame() {
       ticking = false;
-      const y = window.scrollY || window.pageYOffset || 0;  /* 読み取りはここだけ */
+      var y = window.scrollY || window.pageYOffset || 0;  /* 読み取りはここだけ */
 
       /* --- 以降は書き込みのみ。読み取りを混ぜないこと --- */
 
-      /* 2-1 ヘッダー影 */
+      /* 6-1 ヘッダー影 */
       if (hd) hd.classList.toggle("scr", y > 40);
 
-      /* 2-2 読了進捗バー（maxScroll は measure() のキャッシュ値） */
+      /* 6-2 読了進捗バー（maxScroll は measure() のキャッシュ値） */
       if (prog) {
         prog.style.setProperty(
           "--p",
@@ -128,14 +261,14 @@
         );
       }
 
-      /* 2-3 下方向スクロールでヘッダーを格納。
+      /* 6-3 下方向スクロールでヘッダーを格納。
              メニュー展開中は隠さない（操作不能になるため） */
       if (hd && !soft) {
-        const open = nav && nav.classList.contains("open");
-        const d = y - last;
+        var open = nav && nav.classList.contains("open");
+        var d = y - last;
         /* しきい値未満の揺れでは last を更新せず、移動量を累積させる */
         if (Math.abs(d) >= 10 || y <= 240) {
-          const next = d > 0 && y > 240 && !open;
+          var next = d > 0 && y > 240 && !open;
           if (next !== up) {
             up = next;
             hd.classList.toggle("hd-up", up);
@@ -146,9 +279,9 @@
         last = y;
       }
 
-      /* 2-4 ヒーローのパララックス（合成可能プロパティへ直接書込） */
+      /* 6-4 ヒーローのパララックス（合成可能プロパティへ直接書込） */
       if (heroWrap && !soft) {
-        const p = Math.min(y / heroH, 1);
+        var p = Math.min(y / heroH, 1);
         heroWrap.style.translate = "0 " + (p * 46).toFixed(2) + "px";
         heroWrap.style.opacity = (1 - p * 0.9).toFixed(3);
         if (hint) hint.style.opacity = Math.max(0, 1 - p * 2.4).toFixed(3);
@@ -163,50 +296,25 @@
     }
 
     addEventListener("scroll", onScroll, { passive: true });
-    addEventListener(
-      "resize",
-      function () {
-        measure();
-        onScroll();
-      },
-      { passive: true }
-    );
+    addEventListener("resize", function () { measure(); onScroll(); }, { passive: true });
 
     /* ▼ 文書高の変化に追随させる。
          画像の遅延読込確定や FAQ の開閉で高さが変わるため、
          これが無いと進捗バーの値が一時的にずれる */
-    addEventListener("load", function () {
-      measure();
-      onScroll();
-    });
+    addEventListener("load", function () { measure(); onScroll(); });
     if (typeof ResizeObserver === "function" && document.body) {
-      new ResizeObserver(function () {
-        measure();
-        onScroll();
-      }).observe(document.body);
+      new ResizeObserver(function () { measure(); onScroll(); }).observe(document.body);
     }
 
     /* 後から生成されるDOM（STUDIOフォーム等）用の手動再計測フック */
-    CFI.remeasure = function () {
-      measure();
-      onScroll();
-    };
+    CFI.remeasure = function () { measure(); onScroll(); };
 
     /* 設定が実行中に切り替わった場合も追従（残った状態を戻す） */
-    onMQ(rm, (e) => {
+    onMQ(rm, function (e) {
       soft = e.matches;
-      if (!soft) {
-        onScroll();
-        return;
-      }
-      if (hd) {
-        hd.classList.remove("hd-up");
-        up = false;
-      }
-      if (heroWrap) {
-        heroWrap.style.translate = "";
-        heroWrap.style.opacity = "";
-      }
+      if (!soft) { onScroll(); return; }
+      if (hd) { hd.classList.remove("hd-up"); up = false; }
+      if (heroWrap) { heroWrap.style.translate = ""; heroWrap.style.opacity = ""; }
       if (hint) hint.style.opacity = "";
     });
 
@@ -215,30 +323,29 @@
   })();
 
   /* ------------------------------------------------------------
-     3. ティッカー複製（シームレスループ用）
+     7. ティッカー複製（シームレスループ用）
         ※ 二重複製を防ぐためフラグで一度だけ実行
      ------------------------------------------------------------ */
   (function initTicker() {
-    const tk = document.getElementById("tk");
+    var tk = document.getElementById("tk");
     if (!tk || tk.dataset.cfiDuped === "1") return;
     tk.innerHTML += tk.innerHTML;
     tk.dataset.cfiDuped = "1";
   })();
 
   /* ------------------------------------------------------------
-     4. 出現アニメーション（.rv → .on）
+     8. 出現アニメーション（.rv → .on）
         (a) 起動クローク（html.cfi-boot）が引き始めるまで監視を開始しない。
             幕の裏で演出が完了し「動かないページ」に見えるのを防ぐ。
         (b) 後から生成されるDOM（STUDIOフォーム等）を
             window.CFI.reveal(target) で追加登録できる。
         (c) [data-mo-stagger] の直下要素を個別リビールへ展開する。
-        (d) 段差の遅延は setTimeout ではなく CSS の --i（§20-1）が担う。
+            属性値は方向指定（"" | "s" | "f"）。CSS §19 の .rv-s / .rv-f と対
+        (d) 段差の遅延は setTimeout ではなく CSS の --i（§19）が担う。
             JSでずらすと transition の途中で class が付き、
             要素ごとに速度が不揃いに見えるため。ここを戻さないこと
      ------------------------------------------------------------ */
   (function initReveal() {
-    var html = document.documentElement;
-
     /* 非対応環境／動きを減らす設定では即時表示 */
     var INSTANT = !HAS_IO || rm.matches;
 
@@ -300,42 +407,36 @@
     }
 
     /* ▼ [data-mo-stagger] の展開
-         属性値は方向指定（"" | "l" | "r" | "s" | "f"）。
          親は .rv-hold を足して「.on を受け取るだけの器」に変える。
-         §20-7（アイコン描画）や §20-9（接続線）が親の .on を
-         参照しているため、親からクラスを外してはいけない。
-         ※ .v-scroll / .rail-track 配下の子は §19-4 / §20-20 が
-           transform を打ち消すため、横スクロール時はフェードのみになる
-           （縦ラッチ防止のため overflow-y:hidden が必要なことによる） */
+         §8（アイコン描画）や §11（接続線）が親の .on を参照しているため、
+         親からクラスを外してはいけない。
+         ※ .v-scroll 配下の子は CSS §19-3 が transform を打ち消すため、
+           横スクロール時はフェードのみになる
+           （縦ラッチ防止の overflow-y:hidden が必要なことによる） */
     function expandStagger() {
       var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, TEMPLATE: 1, NOSCRIPT: 1 };
-      Array.prototype.forEach.call(
-        document.querySelectorAll("[data-mo-stagger]"),
-        function (box) {
-          if (box.dataset.moDone === "1") return;
-          box.dataset.moDone = "1";
+      each(document.querySelectorAll("[data-mo-stagger]"), function (box) {
+        if (box.dataset.moDone === "1") return;
+        box.dataset.moDone = "1";
 
-          var v = box.getAttribute("data-mo-stagger");
-          var kids = Array.prototype.filter.call(box.children, function (el) {
-            return !SKIP[el.tagName];
-          });
-          if (!kids.length) return;
+        var v = box.getAttribute("data-mo-stagger");
+        var kids = Array.prototype.filter.call(box.children, function (el) {
+          return !SKIP[el.tagName];
+        });
+        if (!kids.length) return;
 
-          box.classList.add("rv", "rv-hold");
-          kids.forEach(function (el, i) {
-            el.classList.add("rv");
-            if (v) el.classList.add("rv-" + v);
-            /* 6で折り返す。項目数が多い列で遅延が伸び続けるのを防ぐ。
-               レール（§8）は §20-20 側でさらに2枚ぶんへ頭打ちにしている */
-            el.style.setProperty("--i", i % 6);
-          });
-          observe(kids);
-        }
-      );
+        box.classList.add("rv", "rv-hold");
+        kids.forEach(function (el, i) {
+          el.classList.add("rv");
+          if (v) el.classList.add("rv-" + v);
+          /* 6で折り返す。項目数が多い列で遅延が伸び続けるのを防ぐ */
+          el.style.setProperty("--i", i % 6);
+        });
+        observe(kids);
+      });
     }
 
     CFI.reveal = observe;
-    CFI.stagger = expandStagger;   /* 後から生成されるDOM用 */
 
     /* 展開 → 初期分を登録（この時点では監視を始めない） */
     expandStagger();
@@ -366,62 +467,7 @@
   })();
 
   /* ------------------------------------------------------------
-     5. カウントアップ
-        ※ NUMBERS セクションは掲載保留中だが、再挿入時にそのまま
-          機能させるため残置している。削除しないこと
-     ------------------------------------------------------------ */
-  (function initCounter() {
-    const targets = document.querySelectorAll("[data-count]");
-    if (!targets.length) return;
-
-    /* 数値として解釈できるものだけを対象にする */
-    const list = Array.prototype.filter.call(targets, (el) => isFinite(+el.dataset.count));
-    if (!list.length) return;
-
-    const settle = (el) => {
-      el.textContent = +el.dataset.count + (el.dataset.suffix || "");
-    };
-
-    /* 非対応環境／動きを減らす設定では即時確定値 */
-    if (!HAS_IO || rm.matches) {
-      list.forEach(settle);
-      return;
-    }
-
-    const cio = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (!e.isIntersecting) return;
-          const el = e.target;
-          const goal = +el.dataset.count;
-          const sfx = el.dataset.suffix || "";
-
-          if (rm.matches) {
-            settle(el);
-            cio.unobserve(el);
-            return;
-          }
-
-          const t0 = performance.now();
-          const D = 1400;
-          (function step(t) {
-            const p = Math.min((t - t0) / D, 1);
-            const v = Math.round(goal * (1 - Math.pow(1 - p, 3)));
-            el.textContent = v + sfx;
-            if (p < 1) requestAnimationFrame(step);
-          })(t0);
-
-          cio.unobserve(el);
-        });
-      },
-      { threshold: 0.6 }
-    );
-
-    list.forEach((el) => cio.observe(el));
-  })();
-
-  /* ------------------------------------------------------------
-     6. FAQ：開閉の高さアニメーション
+     9. FAQ：開閉の高さアニメーション
         ・details/summary の意味論は保持（open 属性を自分で操作する）
         ・height:auto の補間は Safari／Firefox 未対応（interpolate-size）
           のため、実測値をJSから与える方式を採る
@@ -430,15 +476,15 @@
         ・開閉による文書高の変化は initScroll の ResizeObserver が拾う
      ------------------------------------------------------------ */
   (function initFaq() {
-    const items = document.querySelectorAll(".faq details");
+    var items = document.querySelectorAll(".faq details");
     if (!items.length) return;
 
-    Array.prototype.forEach.call(items, function (d) {
-      const sum = d.querySelector("summary");
-      const body = d.querySelector(".a");
+    each(items, function (d) {
+      var sum = d.querySelector("summary");
+      var body = d.querySelector(".a");
       if (!sum || !body) return;
 
-      let busy = false;
+      var busy = false;
 
       sum.addEventListener("click", function (e) {
         if (rm.matches) return;                  /* 既定動作にまかせる */
@@ -446,12 +492,12 @@
         e.preventDefault();
         busy = true;
 
-        const closing = d.open;
+        var closing = d.open;
         if (!closing) d.open = true;             /* 開く前に高さを測るため */
 
         /* 下パディングはブレークポイントで変わるので毎回実測する */
-        const pb = getComputedStyle(body).paddingBottom;
-        const h = body.scrollHeight;
+        var pb = getComputedStyle(body).paddingBottom;
+        var h = body.scrollHeight;
 
         body.classList.add("mo-a");
         body.style.height = closing ? h + "px" : "0px";
@@ -466,7 +512,7 @@
           });
         });
 
-        let done = false;
+        var done = false;
         function finish() {
           if (done) return;
           done = true;
@@ -476,7 +522,7 @@
           body.style.paddingBottom = "";
           if (closing) d.open = false;
           busy = false;
-          if (CFI && typeof CFI.remeasure === "function") CFI.remeasure();
+          if (typeof CFI.remeasure === "function") CFI.remeasure();
         }
         function onEnd(ev) {
           if (ev.target === body && ev.propertyName === "height") finish();
@@ -488,80 +534,78 @@
   })();
 
   /* ------------------------------------------------------------
-     7. ヒーロー背景：ノードネットワーク＋アパーチャー
-        ※ 下層ページで #heroFx（SILK）を使う場合、この処理は
-          #heroCv が見つからず冒頭で return する。両者は排他
-        ▼ スクロール負荷対策。以下2点を戻さないこと
-          ・リンク判定の距離比較は二乗のまま行う。総当たり最大
-            72*71/2 = 2,556 組ぶんの平方根が毎フレーム走るため、
-            Math.hypot を内側ループで呼ばない
-          ・狭い画面では DPR 上限とノード数を引き下げる
+     10. ヒーロー背景A：ノードネットワーク＋アパーチャー（#heroCv）
+         ※ #heroFx（SILK＝§11）とは排他。同一ページに両方の canvas を
+           置かないこと。置くと rAF が二重に走り、pointermove も二重登録される
+         ▼ スクロール負荷対策。以下2点を戻さないこと
+           ・リンク判定の距離比較は二乗のまま行う。総当たり最大
+             72*71/2 = 2,556 組ぶんの平方根が毎フレーム走るため、
+             Math.hypot を内側ループで呼ばない
+           ・狭い画面では DPR 上限とノード数を引き下げる
      ------------------------------------------------------------ */
   (function initHeroCanvas() {
-    const cv = document.getElementById("heroCv");
-    const hero = document.querySelector(".hero");
+    var cv = document.getElementById("heroCv");
+    var hero = document.querySelector(".hero");
     if (!cv || !hero || typeof cv.getContext !== "function") return;
 
-    const g = cv.getContext("2d", { alpha: true });
+    var g = cv.getContext("2d", { alpha: true });
     if (!g) return;
 
-    const TAU = Math.PI * 2;
-    let W = 0, H = 0, DPR = 1, nodes = [], raf = null, visible = true, rzTimer = null;
+    var TAU = Math.PI * 2;
+    var W = 0, H = 0, DPR = 1, nodes = [], raf = null, visible = true, rzTimer = null;
 
     /* ▼ ポインタ追従（マウス環境のみ。タッチでは追従させない） */
-    const HOVER = matchMedia("(hover:hover) and (pointer:fine)");
-    const pt = { x: 0, y: 0, on: false };
-    let pulses = [], lastSpawn = 0;
+    var HOVER = matchMedia("(hover:hover) and (pointer:fine)");
+    var pt = { x: 0, y: 0, on: false };
+    var pulses = [], lastSpawn = 0;
 
     if (HOVER.matches) {
-      hero.addEventListener(
-        "pointermove",
-        function (e) {
-          const r = cv.getBoundingClientRect();
-          pt.x = e.clientX - r.left;
-          pt.y = e.clientY - r.top;
-          pt.on = true;
-        },
-        { passive: true }
-      );
+      hero.addEventListener("pointermove", function (e) {
+        var r = cv.getBoundingClientRect();
+        pt.x = e.clientX - r.left;
+        pt.y = e.clientY - r.top;
+        pt.on = true;
+      }, { passive: true });
       hero.addEventListener("pointerleave", function () { pt.on = false; });
     }
 
     /* 再現性のある擬似乱数（線形合同法）。静止画を毎回同じ絵にするため */
     function seeded(seed) {
-      let v = seed % 2147483647;
+      var v = seed % 2147483647;
       if (v <= 0) v += 2147483646;
-      return () => {
+      return function () {
         v = (v * 16807) % 2147483647;
         return (v - 1) / 2147483646;
       };
     }
 
     function build() {
-      const rnd = seeded(20160202);
+      var rnd = seeded(20160202);
       /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える。
          リンク描画は O(n^2) なので、ここの上限が効き幅として最も大きい */
-      const narrow = W < 768;
-      const cap = narrow ? 40 : 72;
-      const div = narrow ? 30000 : 22000;
-      const n = Math.round(Math.min(cap, Math.max(18, (W * H) / div)));
-      nodes = Array.from({ length: n }, () => ({
-        x: rnd() * W,
-        y: rnd() * H,
-        dx: 0,                          /* 描画用オフセット（追従分） */
-        dy: 0,
-        vx: (rnd() - 0.5) * 0.22,
-        vy: (rnd() - 0.5) * 0.22,
-        r: 0.9 + rnd() * 1.9,
-        c: rnd() > 0.62 ? "0,194,168" : "15,107,224",
-      }));
+      var narrow = W < 768;
+      var cap = narrow ? 40 : 72;
+      var div = narrow ? 30000 : 22000;
+      var n = Math.round(Math.min(cap, Math.max(18, (W * H) / div)));
+      nodes = Array.from({ length: n }, function () {
+        return {
+          x: rnd() * W,
+          y: rnd() * H,
+          dx: 0,                          /* 描画用オフセット（追従分） */
+          dy: 0,
+          vx: (rnd() - 0.5) * 0.22,
+          vy: (rnd() - 0.5) * 0.22,
+          r: 0.9 + rnd() * 1.9,
+          c: rnd() > 0.62 ? "0,194,168" : "15,107,224"
+        };
+      });
       pulses = [];
     }
 
     function resize() {
       /* 狭い画面は DPR を 1.5 で頭打ちにする（塗り面積が約44%減る） */
       DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
-      const r = cv.getBoundingClientRect();
+      var r = cv.getBoundingClientRect();
       W = r.width;
       H = r.height;
       if (!W || !H) return;               /* 非表示時の 0 サイズを回避 */
@@ -573,7 +617,7 @@
 
     /* アパーチャーマーク（3分割リング） */
     function aperture(cx, cy, R, rot, alpha) {
-      const grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      var grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
       grd.addColorStop(0, "rgba(15,107,224," + alpha + ")");
       grd.addColorStop(1, "rgba(0,194,168," + alpha + ")");
       g.save();
@@ -582,8 +626,8 @@
       g.strokeStyle = grd;
       g.lineWidth = R * 0.2;
       g.lineCap = "round";
-      for (let i = 0; i < 3; i++) {
-        const s = (i * TAU) / 3;
+      for (var i = 0; i < 3; i++) {
+        var s = (i * TAU) / 3;
         g.beginPath();
         g.arc(0, 0, R, s, s + 1.38);
         g.stroke();
@@ -600,20 +644,22 @@
       g.clearRect(0, 0, W, H);
 
       /* 狭い画面ではアパーチャーを中央寄り・小さめに配置 */
-      const narrow = W < 768;
-      const cx = narrow ? W * 0.5 : W * 0.74;
-      const cy = narrow ? H * 0.3 : H * 0.46;
-      const R0 = Math.min(W, H) * (narrow ? 0.16 : 0.22);
+      var narrow = W < 768;
+      var cx = narrow ? W * 0.5 : W * 0.74;
+      var cy = narrow ? H * 0.3 : H * 0.46;
+      var R0 = Math.min(W, H) * (narrow ? 0.16 : 0.22);
 
-      const LINK = Math.min(150, Math.max(80, W * 0.11));
-      const LINK2 = LINK * LINK;          /* 二乗比較用 */
+      var LINK = Math.min(150, Math.max(80, W * 0.11));
+      var LINK2 = LINK * LINK;          /* 二乗比較用 */
 
       /* 追加演出（追従・パルス・呼吸）を出してよい状態か */
-      const live = animate !== false && !rm.matches;
+      var live = animate !== false && !rm.matches;
+      var i, j, p;
 
       /* 静止描画では座標を進めない（毎回同じ絵になる） */
       if (animate !== false) {
-        for (const p of nodes) {
+        for (i = 0; i < nodes.length; i++) {
+          p = nodes[i];
           p.x += p.vx;
           p.y += p.vy;
           if (p.x < 0 || p.x > W) p.vx *= -1;
@@ -623,15 +669,16 @@
 
       /* ▼ カーソルへの引き寄せ。表示位置(dx,dy)だけを補間で動かし、
            離脱時は 0 へ緩やかに戻す。座標本体(x,y)は書き換えない */
-      const PR = 190, PR2 = PR * PR;
-      for (const p of nodes) {
-        let tx = 0, ty = 0;
+      var PR = 190, PR2 = PR * PR;
+      for (i = 0; i < nodes.length; i++) {
+        p = nodes[i];
+        var tx = 0, ty = 0;
         if (live && pt.on) {
-          const ax = pt.x - p.x, ay = pt.y - p.y, d2 = ax * ax + ay * ay;
-          if (d2 < PR2) {
-            const f = (1 - d2 / PR2) * 0.18;
-            tx = ax * f;
-            ty = ay * f;
+          var ax0 = pt.x - p.x, ay0 = pt.y - p.y, d20 = ax0 * ax0 + ay0 * ay0;
+          if (d20 < PR2) {
+            var f = (1 - d20 / PR2) * 0.18;
+            tx = ax0 * f;
+            ty = ay0 * f;
           }
         }
         p.dx += (tx - p.dx) * 0.12;
@@ -642,16 +689,16 @@
          ※ 距離は二乗で判定し、閾値内の組だけ平方根を取る。
            Math.hypot を総当たりで呼ばないこと */
       g.lineWidth = 1;
-      for (let i = 0; i < nodes.length; i++) {
-        const a = nodes[i];
-        const ax = a.x + a.dx, ay = a.y + a.dy;
-        for (let j = i + 1; j < nodes.length; j++) {
-          const b = nodes[j];
-          const bx = b.x + b.dx, by = b.y + b.dy;
-          const ux = ax - bx, uy = ay - by;
-          const d2 = ux * ux + uy * uy;
+      for (i = 0; i < nodes.length; i++) {
+        var a = nodes[i];
+        var ax = a.x + a.dx, ay = a.y + a.dy;
+        for (j = i + 1; j < nodes.length; j++) {
+          var b = nodes[j];
+          var bx = b.x + b.dx, by = b.y + b.dy;
+          var ux = ax - bx, uy = ay - by;
+          var d2 = ux * ux + uy * uy;
           if (d2 > LINK2) continue;
-          const d = Math.sqrt(d2);
+          var d = Math.sqrt(d2);
           g.strokeStyle = "rgba(0,194,168," + (0.16 * (1 - d / LINK)).toFixed(3) + ")";
           g.beginPath();
           g.moveTo(ax, ay);
@@ -662,14 +709,15 @@
 
       /* カーソルから近傍ノードへの線 */
       if (live && pt.on) {
-        const CR = 150, CR2 = CR * CR;
-        for (const p of nodes) {
-          const px = p.x + p.dx, py = p.y + p.dy;
-          const ux = pt.x - px, uy = pt.y - py;
-          const d2 = ux * ux + uy * uy;
-          if (d2 > CR2) continue;
-          const d = Math.sqrt(d2);
-          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - d / CR)).toFixed(3) + ")";
+        var CR = 150, CR2 = CR * CR;
+        for (i = 0; i < nodes.length; i++) {
+          p = nodes[i];
+          var px = p.x + p.dx, py = p.y + p.dy;
+          var cux = pt.x - px, cuy = pt.y - py;
+          var cd2 = cux * cux + cuy * cuy;
+          if (cd2 > CR2) continue;
+          var cd = Math.sqrt(cd2);
+          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - cd / CR)).toFixed(3) + ")";
           g.beginPath();
           g.moveTo(pt.x, pt.y);
           g.lineTo(px, py);
@@ -678,7 +726,8 @@
       }
 
       /* ノード本体 */
-      for (const p of nodes) {
+      for (i = 0; i < nodes.length; i++) {
+        p = nodes[i];
         g.fillStyle = "rgba(" + p.c + ",0.55)";
         g.beginPath();
         g.arc(p.x + p.dx, p.y + p.dy, p.r, 0, TAU);
@@ -689,31 +738,31 @@
            （1.5秒に1回のみの探索なので二乗比較のままでよい） */
       if (live && t - lastSpawn > 1500 && nodes.length > 2) {
         lastSpawn = t;
-        const i = Math.floor(Math.random() * nodes.length);
-        const a = nodes[i];
-        let best = -1, bd2 = Infinity;
-        for (let j = 0; j < nodes.length; j++) {
-          if (j === i) continue;
-          const ux = a.x - nodes[j].x, uy = a.y - nodes[j].y;
-          const d2 = ux * ux + uy * uy;
-          if (d2 < bd2 && d2 > 576) { bd2 = d2; best = j; }   /* 576 = 24^2 */
+        var si = Math.floor(Math.random() * nodes.length);
+        var sa = nodes[si];
+        var best = -1, bd2 = Infinity;
+        for (j = 0; j < nodes.length; j++) {
+          if (j === si) continue;
+          var sux = sa.x - nodes[j].x, suy = sa.y - nodes[j].y;
+          var sd2 = sux * sux + suy * suy;
+          if (sd2 < bd2 && sd2 > 576) { bd2 = sd2; best = j; }   /* 576 = 24^2 */
         }
-        const lim = LINK * 1.3;
-        if (best >= 0 && bd2 < lim * lim) pulses.push({ a: a, b: nodes[best], t0: t });
+        var lim = LINK * 1.3;
+        if (best >= 0 && bd2 < lim * lim) pulses.push({ a: sa, b: nodes[best], t0: t });
       }
       if (!live) pulses = [];
-      for (let k = pulses.length - 1; k >= 0; k--) {
-        const q = pulses[k];
-        const pr = (t - q.t0) / 1200;
+      for (var k = pulses.length - 1; k >= 0; k--) {
+        var q = pulses[k];
+        var pr = (t - q.t0) / 1200;
         if (pr >= 1) { pulses.splice(k, 1); continue; }
-        const e = pr * pr * (3 - 2 * pr);                 /* smoothstep */
-        const ax = q.a.x + q.a.dx, ay = q.a.y + q.a.dy;
-        const x = ax + (q.b.x + q.b.dx - ax) * e;
-        const y = ay + (q.b.y + q.b.dy - ay) * e;
-        const al = Math.sin(pr * Math.PI);                /* 出て消える */
+        var e = pr * pr * (3 - 2 * pr);                 /* smoothstep */
+        var qax = q.a.x + q.a.dx, qay = q.a.y + q.a.dy;
+        var x = qax + (q.b.x + q.b.dx - qax) * e;
+        var y = qay + (q.b.y + q.b.dy - qay) * e;
+        var al = Math.sin(pr * Math.PI);                /* 出て消える */
         g.strokeStyle = "rgba(0,194,168," + (0.28 * al).toFixed(3) + ")";
         g.beginPath();
-        g.moveTo(ax, ay);
+        g.moveTo(qax, qay);
         g.lineTo(x, y);
         g.stroke();
         g.fillStyle = "rgba(0,194,168," + (0.9 * al).toFixed(3) + ")";
@@ -723,7 +772,7 @@
       }
 
       /* 背面グロー */
-      const halo = g.createRadialGradient(cx, cy, R0 * 0.2, cx, cy, R0 * 1.9);
+      var halo = g.createRadialGradient(cx, cy, R0 * 0.2, cx, cy, R0 * 1.9);
       halo.addColorStop(0, "rgba(0,194,168,0.11)");
       halo.addColorStop(0.55, "rgba(15,107,224,0.07)");
       halo.addColorStop(1, "rgba(15,107,224,0)");
@@ -735,9 +784,9 @@
       /* 二重リング：外周はゆっくり逆回転。
          呼吸（±3.5%）とスクロールによる微小ドリフトを加える。
          ※ window.scrollY の読み取りはレイアウトを起こさない（合成済み値） */
-      const R = R0 * (live ? 1 + Math.sin(t / 3800) * 0.035 : 1);
-      const sy = live ? Math.min(window.scrollY || 0, H) * 0.06 : 0;
-      const rot = (t / 26000) * TAU;
+      var R = R0 * (live ? 1 + Math.sin(t / 3800) * 0.035 : 1);
+      var sy = live ? Math.min(window.scrollY || 0, H) * 0.06 : 0;
+      var rot = (t / 26000) * TAU;
       aperture(cx, cy + sy, R * 1.42, -rot * 0.55, 0.16);
       aperture(cx, cy + sy, R, rot, 0.5);
 
@@ -750,46 +799,22 @@
       raf = requestAnimationFrame(draw);
     }
 
-    function still() {
-      stop();
-      draw(0, false);
-    }
-    function start() {
-      if (!raf && visible && !rm.matches) raf = requestAnimationFrame(draw);
-    }
-    function stop() {
-      if (raf) {
-        cancelAnimationFrame(raf);
-        raf = null;
-      }
-    }
-    function render() {
-      rm.matches ? still() : start();
-    }
+    function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+    function still() { stop(); draw(0, false); }
+    function start() { if (!raf && visible && !rm.matches) raf = requestAnimationFrame(draw); }
+    function render() { rm.matches ? still() : start(); }
 
     resize();
 
     /* モバイルのアドレスバー開閉による微小リサイズを間引く */
-    addEventListener(
-      "resize",
-      () => {
-        clearTimeout(rzTimer);
-        rzTimer = setTimeout(() => {
-          stop();
-          resize();
-          render();
-        }, 180);
-      },
-      { passive: true }
-    );
+    addEventListener("resize", function () {
+      clearTimeout(rzTimer);
+      rzTimer = setTimeout(function () { stop(); resize(); render(); }, 180);
+    }, { passive: true });
 
-    addEventListener("orientationchange", () => {
-      stop();
-      resize();
-      render();
-    });
+    addEventListener("orientationchange", function () { stop(); resize(); render(); });
 
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", function () {
       document.hidden ? stop() : render();
     });
 
@@ -798,11 +823,10 @@
 
     /* ヒーローが画面外なら停止（省電力） */
     if (HAS_IO) {
-      new IntersectionObserver((es) => {
-          visible = es[0].isIntersecting;
-          visible ? render() : stop();
-        }, { threshold: 0 })
-        .observe(hero);
+      new IntersectionObserver(function (es) {
+        visible = es[0].isIntersecting;
+        visible ? render() : stop();
+      }, { threshold: 0 }).observe(hero);
     }
 
     /* 初期描画（動きを減らす設定では静止画1枚） */
@@ -810,80 +834,364 @@
   })();
 
   /* ------------------------------------------------------------
-     8. 横スクロールレール（common.css §10-2 / §20-20 と対）
-        ・[data-rail] 配下の [data-rail-track] をカード1枚ずつ送る
-        ・属性名（data-rail / -track / -prev / -next / -count）は
-          CSS・HTMLと共有している。変更する場合は3箇所を揃えること
-        ・.rail-ready はJSが動いた場合のみ付与する。付かなければ
-          ボタンはCSS側で非表示のまま＝素の横スクロールに戻る
-        ・送り幅（カード幅＋gap）はブレークポイントで変わるため
-          毎回実測する。定数で持たないこと
-        ・scroll の購読はトラック内部のみ。§2 の window スクロールとは別
+     11. ヒーロー背景B：SILK（#heroFx／contact が使用）
+         ※ #heroCv（§10）とは排他。canvas は id で切り替える
+         ※ マスクは common.css §5 の .hfx-cv が担当（セットで扱うこと）
+         ・canvas は透明のまま。.hero の背景グラデ（§5）が常に透ける
+         ・配色は5点の階調ランプから帯ごとに別位置をサンプリングする。
+           ブランド2色を直接置くと色相差40度の段差が加算合成で濁る
      ------------------------------------------------------------ */
-  (function initRail() {
-    var rails = document.querySelectorAll("[data-rail]");
-    if (!rails.length) return;
+  (function initHeroSilk() {
+    var cv = document.getElementById("heroFx");
+    if (!cv || typeof cv.getContext !== "function") return;
+    var hero = (cv.closest && cv.closest(".hero")) || cv.parentNode;
+    var g = cv.getContext("2d", { alpha: true });
+    if (!g || !hero) return;
 
-    var SMOOTH = "scrollBehavior" in document.documentElement.style;
+    var HOVER = matchMedia("(hover:hover) and (pointer:fine)");
 
-    Array.prototype.forEach.call(rails, function (rail) {
-      var track = rail.querySelector("[data-rail-track]");
-      var prev = rail.querySelector("[data-rail-prev]");
-      var next = rail.querySelector("[data-rail-next]");
-      var count = rail.querySelector("[data-rail-count]");
-      if (!track || !prev || !next) return;
+    /* ============================================================
+       調整ダイヤル
+       ============================================================ */
+    /* PALETTE  'deep'（既定・重厚）/ 'brand'（ブランド2色に忠実）
+                / 'aurora'（淡アクア強め・明るい） */
+    var PALETTE = "deep";
 
-      var ticking = false;
+    var AMP   = 0.18;   /* 振幅（画面高比）。0.24 まで上げると相当に暴れる   */
+    var RATE  = 1.0;    /* 時間の進み。1.6 あたりから「速い」と感じ始める     */
+    var BANDS = 6;      /* 帯の本数（PC）。塗り面積は本数にほぼ比例する       */
+    var ALPHA = 0.115;  /* 帯の基準濃度。上げすぎると重なりが白飛びする       */
+    var SHEEN = 0.09;   /* 上縁の艶。0 で無効                                 */
+    var GLOW  = 0.10;   /* 交差部を底上げするベール。0 で無効                 */
 
-      function step() {
-        var first = track.firstElementChild;
-        if (!first) return track.clientWidth;
-        var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-        return Math.max(1, Math.round(first.getBoundingClientRect().width + gap));
+    /* ▼ 配色ランプ
+         ・端から端まで色相が単調に進むよう並べること。
+           順序を入れ替えると帯の途中で色が折り返し、段差になる
+         ・中間シアン（3点目）が blue→teal の継ぎ目を埋める要。
+           これを抜くと濁りが再発する */
+    var PALETTES = {
+      deep: [                /* 深藍 → accent → 中間シアン → accent-2 → 淡アクア */
+        [ 16,  58, 132],
+        [ 15, 107, 224],
+        [  0, 160, 220],
+        [  0, 194, 168],
+        [126, 236, 216]
+      ],
+      brand: [               /* ブランド2色に忠実。中間色は最小限 */
+        [ 12,  74, 170],
+        [ 15, 107, 224],
+        [  6, 156, 200],
+        [  0, 194, 168],
+        [ 92, 216, 198]
+      ],
+      aurora: [              /* 明るめ。濃色ヒーロー以外へ流用する場合向け */
+        [ 34,  92, 190],
+        [ 28, 132, 236],
+        [  0, 182, 226],
+        [ 26, 214, 186],
+        [162, 246, 228]
+      ]
+    };
+    var RAMP = PALETTES[PALETTE] || PALETTES.deep;
+
+    /* ランプ上の位置 p(0..1) から色を線形補間で取り出す */
+    function ramp(p) {
+      p = p < 0 ? 0 : (p > 1 ? 1 : p);
+      var x = p * (RAMP.length - 1);
+      var i = Math.min(Math.floor(x), RAMP.length - 2);
+      var f = x - i, a = RAMP[i], b = RAMP[i + 1];
+      return [ (a[0] + (b[0] - a[0]) * f) | 0,
+               (a[1] + (b[1] - a[1]) * f) | 0,
+               (a[2] + (b[2] - a[2]) * f) | 0 ];
+    }
+    function rgba(c, a) {
+      return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a.toFixed(3) + ")";
+    }
+
+    var SEG = 18;                                   /* 帯1本あたりの頂点数 */
+    var W = 0, H = 0, DPR = 1, rb = [], raf = null, vis = true, rzT = null;
+    var pt = { x: .5, y: .5, tx: .5, ty: .5, on: false };
+
+    if (HOVER.matches) {
+      hero.addEventListener("pointermove", function (e) {
+        var r = cv.getBoundingClientRect();
+        pt.tx = (e.clientX - r.left) / (r.width  || 1);
+        pt.ty = (e.clientY - r.top ) / (r.height || 1);
+        pt.on = true;
+      }, { passive: true });
+      hero.addEventListener("pointerleave", function () { pt.on = false; });
+    }
+
+    /* ▼ 帯の生成。グラデーションと頂点バッファはここで一度だけ作る。
+         毎フレーム createLinearGradient を呼ぶとGCが跳ねる */
+    function build() {
+      var narrow = W < 768;
+      var n = narrow ? 4 : BANDS;
+      var N = SEG + 1;
+      rb = [];
+
+      for (var i = 0; i < n; i++) {
+        var u = n > 1 ? i / (n - 1) : .5;           /* 0=上 1=下 */
+
+        /* ▼ 帯ごとにランプ上の位置をずらす。
+             上の帯＝深藍寄り、下の帯＝ティール寄りになり、
+             ヒーロー全体に縦方向の色相グラデーションが生まれる */
+        var h  = 0.06 + u * 0.70;
+        var cL = ramp(h - 0.14);                    /* 左端 */
+        var cM = ramp(h + 0.04);                    /* 中央 */
+        var cR = ramp(h + 0.22);                    /* 右端 */
+        var a  = ALPHA * (0.80 + u * 0.35);
+
+        /* 横方向にも色相を進める。左右で表情が変わり、平板にならない */
+        var grd = g.createLinearGradient(-W * 0.12, 0, W * 1.12, 0);
+        grd.addColorStop(0.00, rgba(cL, 0));
+        grd.addColorStop(0.18, rgba(cL, a * 0.72));
+        grd.addColorStop(0.50, rgba(cM, a));
+        grd.addColorStop(0.82, rgba(cR, a * 0.58));
+        grd.addColorStop(1.00, rgba(cR, 0));
+
+        rb.push({
+          base: H * (0.16 + u * 0.62),              /* 定位置 */
+          a1: H * AMP * (0.55 + 0.45 * ((i * 0.37) % 1)),  /* 乱数を使わず再現性を持たせる */
+          a2: H * AMP * 0.34,
+          k1: 1.1 + u * 0.9,                        /* 横方向の波数 */
+          k2: 2.4 + u * 1.6,
+          s1: (0.06 + u * 0.05) * RATE,             /* 位相速度。小さいほど優雅 */
+          s2: (0.09 - u * 0.03) * RATE,
+          ph: u * 4.1,
+          th: H * (0.05 + 0.055 * (1 - u)),         /* 帯の厚み */
+          tilt: (u - 0.5) * H * 0.22,               /* 傾き。平行を避けて動きを出す */
+          grad: grd,
+          sheen: rgba(ramp(Math.min(h + 0.30, 1)), SHEEN * (0.55 + u * 0.45)),
+          top: new Float32Array(N * 2),             /* 頂点バッファ（使い回す） */
+          bot: new Float32Array(N * 2)
+        });
+      }
+    }
+
+    function resize() {
+      DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
+      var r = cv.getBoundingClientRect();
+      W = r.width; H = r.height;
+      if (!W || !H) return;                         /* 非表示時の 0 サイズを回避 */
+      cv.width  = Math.round(W * DPR);
+      cv.height = Math.round(H * DPR);
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      build();
+    }
+
+    /* ▼ 点列を二次ベジェで結ぶ（中点をアンカーにする定番手法）。
+         上辺と下辺は必ず1本の連続パスとして繋ぐこと。
+         下辺の描き始めに moveTo を使うと新しいサブパスが立ち、
+         closePath が上下を閉じないまま塗りに回る
+         rev  … true で配列を逆順に辿る（下辺の復路用）
+         first… true なら moveTo、false なら lineTo で開始する */
+    function curveArr(arr, n, first, rev) {
+      var s = rev ? n - 1 : 0, d = rev ? -1 : 1, k, i0, i1, mx, my;
+      i0 = s * 2;
+      if (first) g.moveTo(arr[i0], arr[i0 + 1]);
+      else       g.lineTo(arr[i0], arr[i0 + 1]);
+      for (k = 1; k < n - 1; k++) {
+        i0 = (s + d * k) * 2;
+        i1 = (s + d * (k + 1)) * 2;
+        mx = (arr[i0] + arr[i1]) * 0.5;
+        my = (arr[i0 + 1] + arr[i1 + 1]) * 0.5;
+        g.quadraticCurveTo(arr[i0], arr[i0 + 1], mx, my);
+      }
+      i0 = (s + d * (n - 1)) * 2;
+      g.lineTo(arr[i0], arr[i0 + 1]);
+    }
+
+    function band(r, T, warp) {
+      var N = SEG + 1, x0 = -W * 0.12, span = W * 1.24, i;
+      for (i = 0; i < N; i++) {
+        var u = i / SEG;
+        var x = x0 + span * u;
+        var y = r.base
+              + r.tilt * (u - 0.5) * 2
+              + r.a1 * Math.sin(u * 6.28318 * r.k1 + T * r.s1 + r.ph)
+              + r.a2 * Math.sin(u * 6.28318 * r.k2 - T * r.s2)
+              + warp * Math.sin(u * 6.28318 + r.ph);          /* ポインタによる歪み */
+        var th = r.th * (0.55 + 0.45 * Math.sin(u * 6.28318 * 1.7 + T * r.s2 * 1.3 + r.ph));
+        r.top[i * 2] = x; r.top[i * 2 + 1] = y;
+        r.bot[i * 2] = x; r.bot[i * 2 + 1] = y + th;
       }
 
-      function sync() {
-        ticking = false;
-        var max = track.scrollWidth - track.clientWidth;
-        var x = track.scrollLeft;
-        /* 端の判定に1pxの遊びを持たせる。
-           小数の scrollLeft で disabled が解除されないのを防ぐ */
-        prev.disabled = x <= 1;
-        next.disabled = x >= max - 1;
-        /* 枚数が収まりきる幅ではUIごと隠す（CSS .rail-static） */
-        rail.classList.toggle("rail-static", max <= 1);
+      /* 本体（上辺 → 下辺の復路 → 閉じる。単一サブパス） */
+      g.beginPath();
+      curveArr(r.top, N, true,  false);
+      curveArr(r.bot, N, false, true);
+      g.closePath();
+      g.fillStyle = r.grad;
+      g.fill();
 
-        if (!count) return;
-        var s = step();
-        var total = track.children.length;
-        var per = Math.max(1, Math.round(track.clientWidth / s));
-        var first = x >= max - 1
-          ? Math.max(1, total - per + 1)
-          : Math.min(Math.max(1, total - per + 1), Math.round(x / s) + 1);
-        var last = Math.min(total, first + per - 1);
-        count.textContent = (first === last ? first : first + "–" + last) + " / " + total;
+      /* 上縁の艶。光が布の稜線を走る表現 */
+      if (SHEEN > 0) {
+        g.beginPath();
+        curveArr(r.top, N, true, false);
+        g.strokeStyle = r.sheen;
+        g.lineWidth = 1;
+        g.stroke();
       }
+    }
 
-      function onScroll() {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(sync);
+    function draw(t) {
+      var live = !rm.matches;
+      var T = live ? t / 1000 : 0;
+
+      /* ポインタ追従は慣性付き。値を直に入れると帯が痙攣する */
+      pt.x += ((pt.on ? pt.tx : .5) - pt.x) * 0.045;
+      pt.y += ((pt.on ? pt.ty : .5) - pt.y) * 0.045;
+      var warp = live ? (pt.y - 0.5) * H * 0.20 : 0;
+
+      g.clearRect(0, 0, W, H);
+
+      /* 加算合成。帯が重なった部分だけが光る＝交差が主役になる */
+      g.globalCompositeOperation = "lighter";
+      g.lineCap  = "round";
+      g.lineJoin = "round";
+      for (var i = 0; i < rb.length; i++) band(rb[i], T, warp);
+
+      /* 交差の輝きを底上げする薄いベール。色はランプ中央から取り、
+         帯と同じ色系に収める（別色を置くと途端に安っぽくなる） */
+      if (GLOW > 0) {
+        var cx = W * (0.30 + pt.x * 0.40);
+        var cy = H * (0.30 + pt.y * 0.30);
+        var v  = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.62);
+        v.addColorStop(0.0, rgba(ramp(0.64), GLOW));
+        v.addColorStop(0.55, rgba(ramp(0.30), GLOW * 0.38));
+        v.addColorStop(1.0, rgba(ramp(0.10), 0));
+        g.fillStyle = v;
+        g.fillRect(0, 0, W, H);
       }
+      g.globalCompositeOperation = "source-over";
 
-      function go(dir) {
-        var d = step() * dir;
-        if (SMOOTH) track.scrollBy({ left: d, behavior: rm.matches ? "auto" : "smooth" });
-        else track.scrollLeft += d;
-      }
+      if (!live) { raf = null; return; }             /* 動きを減らす設定＝静止1枚 */
+      raf = requestAnimationFrame(draw);
+    }
 
-      prev.addEventListener("click", function () { go(-1); });
-      next.addEventListener("click", function () { go(1); });
-      track.addEventListener("scroll", onScroll, { passive: true });
-      addEventListener("resize", onScroll, { passive: true });
-      if (typeof ResizeObserver === "function") new ResizeObserver(onScroll).observe(track);
+    function stop()   { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+    function start()  { if (!raf && vis) raf = requestAnimationFrame(draw); }
+    function render() { if (rm.matches) { stop(); draw(0); } else start(); }
 
-      rail.classList.add("rail-ready");
-      sync();
+    resize(); render();
+
+    /* モバイルのアドレスバー開閉による微小リサイズを間引く */
+    addEventListener("resize", function () {
+      clearTimeout(rzT);
+      rzT = setTimeout(function () { stop(); resize(); render(); }, 180);
+    }, { passive: true });
+
+    addEventListener("orientationchange", function () { stop(); resize(); render(); });
+
+    document.addEventListener("visibilitychange", function () {
+      document.hidden ? stop() : render();
     });
+
+    /* ヒーローが画面外なら停止（省電力。§10 と同じ方針） */
+    if (HAS_IO) {
+      new IntersectionObserver(function (es) {
+        vis = es[0].isIntersecting; vis ? render() : stop();
+      }, { threshold: 0 }).observe(hero);
+    }
+
+    /* 設定が実行中に切り替わった場合も追従 */
+    onMQ(rm, render);
+  })();
+
+  /* ------------------------------------------------------------
+     12. contact：STUDIOラッパーの縦余白を打ち消す（黒帯対策）
+         ※ ここが唯一の正。common.css 側に first-child / last-child の
+           margin 打ち消しを重ねて書かないこと（二重管理になる）
+         ※ 間隔は common.css §22 の --cfi-gap-top / --cfi-gap-bottom で調整する
+     ------------------------------------------------------------ */
+  (function initStudioFrame() {
+    if (PAGE !== "contact") return;
+
+    function trim() {
+      var nuxt = document.getElementById("__nuxt");
+      if (!nuxt) return;
+      var kids = nuxt.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (el.tagName === "SCRIPT" || el.tagName === "STYLE") continue;
+        var cs = getComputedStyle(el);
+        if (parseFloat(cs.paddingTop)    > 0) el.style.paddingTop    = "0px";
+        if (parseFloat(cs.paddingBottom) > 0) el.style.paddingBottom = "0px";
+        if (parseFloat(cs.marginTop)     > 0) el.style.marginTop     = "0px";
+        if (parseFloat(cs.marginBottom)  > 0) el.style.marginBottom  = "0px";
+        if (cs.minHeight !== "0px" && cs.minHeight !== "auto") el.style.minHeight = "0px";
+      }
+    }
+
+    /* フォームは非同期マウントのため、最長6秒のあいだ様子を見る */
+    var n = 0, t = setInterval(function () {
+      trim();
+      if (++n > 20) clearInterval(t);
+    }, 300);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", trim);
+    } else {
+      trim();
+    }
+    addEventListener("load", trim);
+  })();
+
+  /* ------------------------------------------------------------
+     13. contact：STUDIOフォームにリビール演出を付与
+         ・STUDIOはラッパーを一枚ずつ入れ子にするため、
+           「子が2つ以上に分岐した最初の階層」をリビール単位とみなす
+         ・遅延はCSS(§19)が --i から算出するため、ここでは番号だけ渡す
+         ・STUDIOの生成クラスには依存しない。構造が変わっても壊れない
+     ------------------------------------------------------------ */
+  (function initFormReveal() {
+    if (PAGE !== "contact") return;
+    if (rm.matches || !HAS_IO) return;   /* 動きを減らす設定では素の表示 */
+
+    var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+    var MAX_UNITS = 8;   /* これを超える分割はまとめて1枚として出す */
+
+    function pickTargets(root) {
+      var node = root, guard = 0;
+      while (node && guard++ < 10) {
+        var kids = Array.prototype.filter.call(node.children, function (el) {
+          return !SKIP[el.tagName] && el.getBoundingClientRect().height > 0;
+        });
+        if (!kids.length)            return node === root ? [] : [node];
+        if (kids.length === 1)       { node = kids[0]; continue; }
+        if (kids.length > MAX_UNITS) return [node];
+        return kids;
+      }
+      return [node];
+    }
+
+    function apply() {
+      var nuxt = document.getElementById("__nuxt");
+      if (!nuxt || nuxt.dataset.cfiRv === "1") return false;
+      var targets = pickTargets(nuxt);
+      if (!targets.length) return false;
+
+      nuxt.dataset.cfiRv = "1";
+      targets.forEach(function (el, i) {
+        el.classList.add("rv");
+        el.style.setProperty("--i", i);
+      });
+
+      if (typeof CFI.reveal === "function") CFI.reveal(targets);
+      else targets.forEach(function (el) { el.classList.add("on"); });
+      return true;
+    }
+
+    /* フォームは非同期マウントのため最長2秒ポーリング */
+    var n = 0, t = setInterval(function () {
+      if (apply() || ++n > 40) clearInterval(t);
+    }, 50);
+
+    /* 最終保険：5秒経っても .on が付かない要素は強制表示 */
+    setTimeout(function () {
+      var nuxt = document.getElementById("__nuxt");
+      if (!nuxt) return;
+      each(nuxt.querySelectorAll(".rv"), function (el) { el.classList.add("on"); });
+    }, 5000);
   })();
 })();
