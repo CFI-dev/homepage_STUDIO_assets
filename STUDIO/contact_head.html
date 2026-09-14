@@ -1,102 +1,52 @@
 <!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
-
 <script>
 (function(){
   var h = document.documentElement;
-
-  /* 通常読み込み用クローク：初回ペイント前に確定させる */
-  h.classList.add('cfi-on');
-  h.classList.add('cfi-boot');
-
-  /* 保険：BODY側が動かなくても3.5秒で必ず解除（contact と同値） */
+  h.className += ' cfi-sub cfi-boot';
+  /* 保険：BODYコードが動かなくても3.5秒で必ず解除（home と同挙動に統一） */
   setTimeout(function(){
     h.classList.add('cfi-boot-out');
     setTimeout(function(){
       h.classList.remove('cfi-boot','cfi-boot-out');
     }, 280);
   }, 3500);
-
-  var OV_ID = 'cfi-ov';
-
-  /* 戻る／進む用クローク：
-     擬似要素はbfcache復元フレームでの再現が不確実なため、
-     実DOM要素＋インラインスタイルで構成する */
-  function cloak(){
-    var el = document.getElementById(OV_ID);
-    if (!el){
-      el = document.createElement('div');
-      el.id = OV_ID;
-      el.setAttribute('aria-hidden','true');
-      el.style.cssText =
-        'position:fixed;inset:0;z-index:2147483640;pointer-events:none;' +
-        'background:' +
-          'radial-gradient(1200px 600px at 18% 0%,rgba(15,107,224,.28),transparent 62%),' +
-          'radial-gradient(900px 500px at 92% 18%,rgba(0,194,168,.18),transparent 62%),' +
-          '#071019;';
-      el.innerHTML =
-        '<div style="position:absolute;left:0;right:0;top:44%;text-align:center;' +
-        'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
-        'font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;' +
-        'color:#a5b7c9;opacity:.9">CREATE FROM IDEAS</div>';
-      (document.body || h).appendChild(el);
-    }
-    el.style.display = 'block';
-    h.style.overflow = 'hidden';
-    return el;
-  }
-
-  /* 離脱時にクロークを貼る。
-     bfcache は pagehide 完了後のDOM状態を保存するため、
-     戻る／進むで復元された最初の描画からクロークが見える */
-  window.addEventListener('pagehide', cloak);
-
-  window.addEventListener('pageshow', function(e){
-    if (e.persisted){
-      cloak();          /* 復元直後に念のため再適用 */
-      location.reload();
-    } else {
-      /* 通常読み込み：DOMオーバーレイは使わない（CSS側が担当） */
-      var el = document.getElementById(OV_ID);
-      if (el) el.style.display = 'none';
-      h.style.overflow = '';
-    }
-  });
 })();
 </script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
 
 <style>
 /* ============================================================
-   1. 土台（クラス付与前でも白フラッシュしないよう html に直指定）
+   1. 土台
       ※ scroll-behavior / scroll-padding-top / a.is-todo /
         html.cfi-fallback .rv は common.css を唯一の正とし、
         ここでは再定義しない
    ============================================================ */
-html{background:#071019}
-html.cfi-on{
+html{background:#071019}          /* クラス付与前でも白フラッシュを防ぐ */
+html.cfi-sub{
+  /* ▼▼ 間隔の調整ダイヤル（ここだけ触れば黒帯の量が変わります） ▼▼ */
+  --cfi-gap-top:0px;      /* ヒーロー下端 ⇄ フォーム上端 */
+  --cfi-gap-bottom:0px;   /* フォーム下端 ⇄ フッター上端 */
+  /* ▲▲ 少し空けたい場合は 24px / 32px などに ▲▲ */
+
   /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す） */
   --rebranding-loading-bg:#071019;
   --rebranding-loading-bar:#00c2a8;
 }
-html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
+html.cfi-sub body{margin:0;padding:0;background:#071019;height:auto;
   overflow-x:hidden;overflow-y:visible;position:static;display:block}
 
-/* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
-html.cfi-on #__nuxt{display:none !important}
-
 /* ============================================================
-   2. 起動クローク（通常読み込み時／FOUC・白フラッシュ防止）
-      ※ contact 側と数値・演出を必ず一致させること
+   2. 起動クローク（フォームのチラつき防止）
+      ※ home 側と数値・演出を必ず一致させること
    ============================================================ */
 html.cfi-boot{overflow:hidden}
 html.cfi-boot #__nuxt,
-html.cfi-boot #teleports,
-html.cfi-boot #cfi-root{visibility:hidden !important}
+html.cfi-boot #teleports{visibility:hidden !important}
 
 html.cfi-boot body::before{
   content:"";
@@ -108,7 +58,7 @@ html.cfi-boot body::before{
   opacity:1;transition:opacity .28s ease
 }
 html.cfi-boot body::after{
-  content:"CREATE FROM IDEAS";
+  content:"CONTACT";
   position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
   text-align:center;
   font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
@@ -120,4 +70,52 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 @media (prefers-reduced-motion:reduce){
   html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
 }
+
+/* ============================================================
+   3. 白フラッシュ対策（STUDIOキャンバス側）
+      ※ このページは #__nuxt を表示するため全て有効。削除しないこと
+   ============================================================ */
+/* 起動中はSTUDIOの transition:all（.3s〜.4s）を停止 */
+html.cfi-boot .StudioCanvas,
+html.cfi-boot .render-canvas *,
+html.cfi-boot .sd,
+html.cfi-boot .sd *{transition:none !important;animation:none !important}
+
+/* キャンバスの地色を先に暗くしておく */
+html.cfi-sub #__nuxt,
+html.cfi-sub .StudioCanvas{background-color:#071019}
+
+/* 100dvh の巨大ブロックを作らせない（白帯・黒帯の両方に効く） */
+html.cfi-sub .StudioCanvas{min-height:0 !important}
+html.cfi-sub .StudioCanvas > .sd{min-height:0 !important}
+
+/* ============================================================
+   4. スタッキング順（ヘッダーを最前面に）＋ 黒帯除去
+   ============================================================ */
+html.cfi-sub #__nuxt{position:relative;z-index:1;height:auto;min-height:0;
+  width:100%;overflow:visible;
+  padding:var(--cfi-gap-top) 0 var(--cfi-gap-bottom) !important}
+html.cfi-sub #cfi-top{position:relative;z-index:2}
+html.cfi-sub #cfi-bottom{position:relative;z-index:2;margin-top:0 !important}
+html.cfi-sub header#hd{z-index:2147483000}
+
+/* 黒帯除去：STUDIO側ラッパーの余白を打ち消す */
+html.cfi-sub #__nuxt > *:first-child{margin-top:0 !important}
+html.cfi-sub #__nuxt > *:last-child{margin-bottom:0 !important}
+
+/* ============================================================
+   5. 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める）
+   ============================================================ */
+html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
+html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
+  line-height:1.02;letter-spacing:.02em;font-weight:700;max-width:none}
+html.cfi-sub .hero-sub h1 span{display:block;font-family:var(--f-jp);
+  font-size:clamp(15px,2.2vw,20px);font-weight:700;color:#c8d6e4;
+  letter-spacing:.08em;margin-top:18px}
+html.cfi-sub .hero-sub p.lead{margin-top:24px}
+
+/* ============================================================
+   6. フォームのアンカー用オフセット
+   ============================================================ */
+html.cfi-sub #form{display:block;position:relative;top:calc(var(--hd) * -1);height:0}
 </style>
