@@ -10,6 +10,12 @@
        (2) §19-4 .v-scroll の縦ラッチ解消（overflow-y の明示 + 初期変形の抑止）
        (3) §20-3 グラデーション文字の継ぎ目解消（折り返し型 + 整数倍タイル）
        (4) §20-9 / §20-15 スクロール性能対策（合成可能プロパティへ移行）
+   ・rev:2026-09-14 CHALLENGES カード本文を箇条書き化。以下3箇所はセットで更新すること
+       (1) §7     .chl li → .chl > li（子結合子化）＋ .chl-pt を新設
+       (2) §20-8  .chl li::before → .chl > li::before
+       (3) §20-19 .chl li::before → .chl > li::before
+       ※ 子孫セレクタのままカード内に <li> を足すと、各行にカード枠と
+         チェックマークが描かれる。片方だけ直しても破綻する
    ============================================================ */
 
 /* ============================================================
@@ -219,21 +225,43 @@ nav a.gnav:hover::after{width:100%}
   border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
 /* ============================================================
-   7. CHALLENGES（rev:2026-09-08 新設）
+   7. CHALLENGES（rev:2026-09-08 新設／rev:2026-09-14 箇条書き化）
       ・チェックマークは ::before で作図（SVG symbol は追加しない方針）
       ・カード地色は --panel ではなく --navy（不透明）。
         .sec-grid 上に置くため、半透明にすると格子柄が透ける
+      ・rev:2026-09-14 カード本文を .chl-pt（<ul>）へ変更したため、
+        カード枠とチェックマークの指定は「直下の li」だけに限定した。
+        .chl li（子孫セレクタ）のままだと .chl-pt の各行にも
+        枠・背景・padding-left:54px・チェックマークが適用される。
+        §20-8 / §20-19 も同じ形に揃えること
    ============================================================ */
 .chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
-.chl li{position:relative;background:var(--navy);border:1px solid var(--line);
+.chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
   border-radius:3px;padding:26px 24px 24px 54px;transition:border-color .3s,transform .3s}
-.chl li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
+.chl > li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
 /* ▼ チェックマーク（装飾）。削除しないこと */
-.chl li::before{content:"";position:absolute;left:22px;top:34px;
+.chl > li::before{content:"";position:absolute;left:22px;top:34px;
   width:15px;height:8px;border-left:2px solid var(--accent-2);
   border-bottom:2px solid var(--accent-2);transform:rotate(-45deg)}
 .chl h3{font-size:14.5px;font-weight:700;line-height:1.7}
+/* 通常段落。現状 CHALLENGES では未使用だが、カード内に地の文を混ぜる
+   場合に使うため残置している */
 .chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
+
+/* ▼ カード本文の箇条書き（rev:2026-09-14 新設）
+     ・「・」は ::before で描く。§1 の li{list-style:none} により ::marker は
+       出ないため、list-style には頼らない
+     ・grid で「・」と本文を別カラムに分け、折り返しを本文カラム内へ閉じ込める。
+       text-indent の負値方式はブロックの1行目にしか効かず、
+       hanging / each-line キーワードはブラウザ差が大きいため採らない
+     ・1em は全角中黒の送り幅。font-size に自動追従するので px 固定にしないこと
+     ・行間は --chl-pt-gap を唯一の正とする（従来の <br> と同じ密度に
+       寄せるなら 0〜4px へ下げる） */
+.chl-pt{--chl-pt-gap:8px;
+  display:grid;gap:var(--chl-pt-gap);margin-top:10px}
+.chl-pt > li{display:grid;grid-template-columns:1em 1fr;
+  font-size:13px;line-height:1.9;color:var(--muted)}
+.chl-pt > li::before{content:"・";display:block;text-align:center}
 
 /* 課題群 → SERVICE への橋渡し文。前提を作る要。削除しないこと */
 .chl-note{margin-top:36px;padding-left:22px;position:relative;
@@ -894,12 +922,14 @@ header.hd-up{transform:translateY(-100%)}
 /* ------------------------------------------------------------
    20-8 CHALLENGES：チェックマークを描く
         §7 の transform:rotate(-45deg) を保持したまま scale を足す
+        ※ rev:2026-09-14 .chl li → .chl > li。カード内の箇条書き（.chl-pt）
+          にもマッチしてしまうため。§7 / §20-19 と必ず揃えること
    ------------------------------------------------------------ */
-.chl li::before{opacity:0;transform:rotate(-45deg) scale(.3);
+.chl > li::before{opacity:0;transform:rotate(-45deg) scale(.3);
   transition:transform .5s var(--mo-ease) .18s,opacity .3s ease .18s}
-.chl li.on::before,html.cfi-fallback .chl li::before{
+.chl > li.on::before,html.cfi-fallback .chl > li::before{
   opacity:1;transform:rotate(-45deg) scale(1)}
-.chl li.on:hover::before{transform:rotate(-45deg) scale(1.14)}
+.chl > li.on:hover::before{transform:rotate(-45deg) scale(1.14)}
 
 /* ------------------------------------------------------------
    20-9 APPROACH：接続線を左から引く／番号ドットの脈動
@@ -1092,7 +1122,8 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
     clip-path:none!important}
   .eyebrow::before,.flow::before{transform:none!important}
   .svc .ico{stroke-dasharray:none!important;stroke-dashoffset:0!important}
-  .chl li::before{opacity:1!important;transform:rotate(-45deg)!important}
+  /* rev:2026-09-14 .chl li → .chl > li（§7 / §20-8 と揃えること） */
+  .chl > li::before{opacity:1!important;transform:rotate(-45deg)!important}
   .v-why .vw-bg{scale:1!important}
   .v-why .vw-body,
   .case .cs-steps > div,.case .eng-meta > div{opacity:1!important;translate:0!important}
