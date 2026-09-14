@@ -248,29 +248,38 @@ nav a.gnav:hover::after{width:100%}
    場合に使うため残置している */
 .chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
 
-/* ▼ カード本文の箇条書き（rev:2026-09-14 新設／同日 中黒→丸ドットへ変更）
-     ・行頭記号は content:"・" や "⚫︎" などの文字ではなく CSS で作図する。
-       U+26AB（⚫）は Unicode 既定が絵文字表示のため、環境によって
-       カラー絵文字で描かれ、サイズ・色・字形が制御できない。
-       U+FE0E を付けてもフォント側にテキスト字形が無ければ効かない。
-       §7 のチェックマークと同じく「記号は作図」で統一する
+/* ▼ カード本文の箇条書き（rev:2026-09-14 新設／同日 位置調整）
+     ・行頭記号は文字ではなく CSS で作図する。U+26AB（⚫）は Unicode 既定が
+       絵文字表示のため、環境によってカラー絵文字で描かれ色もサイズも
+       制御できない。§7 のチェックマークと同じく「記号は作図」で統一する
      ・grid で記号と本文を別カラムに分け、折り返しを本文カラム内へ閉じ込める。
-       text-indent の負値方式はブロックの1行目にしか効かず、
-       hanging / each-line キーワードはブラウザ差が大きいため採らない
-     ・1em カラムは全角1文字ぶんの送り幅。font-size に自動追従するので
-       px 固定にしないこと
-     ・ドットの縦位置は 1行目の行ボックス中央。--chl-pt-lh を line-height と
-       margin-top の両方で参照しているため、行間を変えても自動で追従する。
-       ※ line-height を直書きしないこと（追従が切れる）
-     ・調整ダイヤルは以下3つ。ここを唯一の正とする
-         --chl-pt-dot … ドット径（大きすぎると本文と競合する）
+       text-indent の負値方式は1行目にしか効かないため採らない
+     ・▼ 本文の開始位置を h3 に揃える仕組み（ここが要）
+       .chl > li の padding-left:54px が h3 の左端。記号カラムぶんだけ
+       ul を負マージンで引き出すことで、本文カラムの左端が 54px に一致する。
+       margin-left と grid-template-columns は必ず同じ --chl-pt-out を参照
+       させること。片方だけ変えると本文が h3 からずれる
+     ・▼ --chl-pt-out:24px の根拠（.chl > li::before の実測から算出）
+       チェックマークは left:22px / width:15px → 中心 29.5px。
+       h3 の左端は 54px。その中間は約 42px。
+       記号カラムは 54px から左へ 24px、ドットは margin:auto でその中央＝
+       カード左端から 42px に置かれる。
+       ※ 54px / 22px は全ブレークポイントで固定のため、ここも px で持つ。
+         em にすると font-size 変更時にチェックマークとの整合が崩れる
+     ・調整ダイヤルは以下4つ。ここを唯一の正とする
+         --chl-pt-out … 記号カラム幅＝引き出し量（大きいほどドットが左へ）
+         --chl-pt-dot … ドット径
          --chl-pt-gap … 項目間の余白（0〜4px で従来の <br> と同密度）
          --chl-pt-lh  … 本文の行間 */
-.chl-pt{--chl-pt-gap:8px;
-  display:grid;gap:var(--chl-pt-gap);margin-top:10px}
+.chl-pt{--chl-pt-gap:8px;--chl-pt-out:24px;
+  display:grid;gap:var(--chl-pt-gap);margin-top:10px;
+  margin-left:calc(var(--chl-pt-out) * -1)}
 .chl-pt > li{--chl-pt-dot:.48em;--chl-pt-lh:1.9;
-  display:grid;grid-template-columns:1em 1fr;
+  display:grid;grid-template-columns:var(--chl-pt-out) 1fr;
   font-size:13px;line-height:var(--chl-pt-lh);color:var(--muted)}
+/* ドットは横＝カラム中央（margin:auto）、縦＝1行目の行ボックス中央。
+   縦位置は --chl-pt-lh と --chl-pt-dot から算出しているため、
+   行間や径を変えても自動で追従する（line-height を直書きしないこと） */
 .chl-pt > li::before{content:"";
   width:var(--chl-pt-dot);height:var(--chl-pt-dot);border-radius:50%;
   background:currentColor;
