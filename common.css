@@ -3,24 +3,12 @@
 /* ============================================================
    CFI コーポレートサイト 共通スタイル
    ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
-   ・rev:2026-09-08 ARCHITECTURE（.arch2 系および旧 .arch/.lyr/.arch-rail）を全削除
-   ・rev:2026-09-10 §20 MOTION を新設（§1〜§19 は変更なし）
-   ・rev:2026-09-11 以下4点を修正。common.js も同時に更新すること
-       (1) §1    STUDIOベースリセット h1〜h6{color:rgb(51,51,51)} の打ち消し
-       (2) §19-4 .v-scroll の縦ラッチ解消（overflow-y の明示 + 初期変形の抑止）
-       (3) §20-3 グラデーション文字の継ぎ目解消（折り返し型 + 整数倍タイル）
-       (4) §20-9 / §20-15 スクロール性能対策（合成可能プロパティへ移行）
-   ・rev:2026-09-14 CHALLENGES カード本文を箇条書き化。以下3箇所はセットで更新すること
-       (1) §7     .chl li → .chl > li（子結合子化）＋ .chl-pt を新設
-       (2) §20-8  .chl li::before → .chl > li::before
-       (3) §20-19 .chl li::before → .chl > li::before
-       ※ 子孫セレクタのままカード内に <li> を足すと、各行にカード枠と
-         チェックマークが描かれる。片方だけ直しても破綻する
-   ・rev:2026-09-14b §21 CASES CAROUSEL を新設（§1〜§20 は変更なし）
-       ・CASES を6枚の横ループ＋自動送りへ変更。common.js §8 と対。
-         片方だけ入れると、6枚が押し潰れる／縦積みになるかのどちらかになる
-       ・home_body.html の CASES セクションも同時に差し替えること
-         （.works.v-scroll → .cs-wrap > .cs-loop、.v-hint → .cs-ui）
+   ・§20 MOTION は必ずファイル末尾に置くこと（後勝ちを前提に書いている）
+   ・CHALLENGES のカード枠とチェックマークは「.chl > li」（子結合子）で
+     限定している。子孫セレクタに戻すと .chl-pt の各行にも枠と
+     チェックマークが描かれる。§7 / §20-8 / §20-20 の3箇所セットで扱うこと
+   ・CASES は §10-2 の RAIL（横1行＋ボタン送り）を使う。
+     CSS・JS・HTMLの3点セット（common.js initRail / data-rail 属性）
    ============================================================ */
 
 /* ============================================================
@@ -65,7 +53,7 @@ a{color:inherit;text-decoration:none}
 li{list-style:none}
 img,svg,canvas{display:block;max-width:100%}
 
-/* ▼ rev:2026-09-11 STUDIOが<head>に自動出力するベースリセット
+/* ▼ STUDIOが<head>に自動出力するベースリセット
      h1,h2,h3,h4,h5,h6{color:rgb(51,51,51);line-height:1} の打ち消し。
      要素選択子(0-0-1)は継承より強いため、colorを明示していない見出しが
      すべて #333 になる。body スコープ(0-0-2)で勝たせることで、
@@ -230,15 +218,14 @@ nav a.gnav:hover::after{width:100%}
   border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
 /* ============================================================
-   7. CHALLENGES（rev:2026-09-08 新設／rev:2026-09-14 箇条書き化）
+   7. CHALLENGES
       ・チェックマークは ::before で作図（SVG symbol は追加しない方針）
       ・カード地色は --panel ではなく --navy（不透明）。
         .sec-grid 上に置くため、半透明にすると格子柄が透ける
-      ・rev:2026-09-14 カード本文を .chl-pt（<ul>）へ変更したため、
-        カード枠とチェックマークの指定は「直下の li」だけに限定した。
-        .chl li（子孫セレクタ）のままだと .chl-pt の各行にも
+      ・カード枠とチェックマークの指定は「直下の li」だけに限定している。
+        .chl li（子孫セレクタ）にすると .chl-pt の各行にも
         枠・背景・padding-left:54px・チェックマークが適用される。
-        §20-8 / §20-19 も同じ形に揃えること
+        §20-8 / §20-20 も同じ形に揃えること
    ============================================================ */
 .chl{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
@@ -253,7 +240,7 @@ nav a.gnav:hover::after{width:100%}
    場合に使うため残置している */
 .chl p{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.9}
 
-/* ▼ カード本文の箇条書き（rev:2026-09-14 新設／同日 位置調整）
+/* ▼ カード本文の箇条書き
      ・行頭記号は文字ではなく CSS で作図する。U+26AB（⚫）は Unicode 既定が
        絵文字表示のため、環境によってカラー絵文字で描かれ色もサイズも
        制御できない。§7 のチェックマークと同じく「記号は作図」で統一する
@@ -306,8 +293,8 @@ nav a.gnav:hover::after{width:100%}
 
 /* ============================================================
    8. アプローチ
-   rev:2026-09-07 本文の行数差（01のみ3行）で .dur と写真が1行分下へずれるため、
-     カード内部を縦フレックス化し、.dur 以降を下端へ寄せて位置を揃える。
+   本文の行数差（01のみ3行）で .dur と写真が1行分下へずれるため、
+   カード内部を縦フレックス化し、.dur 以降を下端へ寄せて位置を揃える。
      ・.flow は PC=grid／≤768px=.v-scroll による flex。いずれも align-items の
        既定値 stretch により .st は同一行内で必ず等高になる。その等高を前提に
        .dur の margin-top:auto で余剰スペースを本文と .dur の間へ逃がす。
@@ -339,6 +326,8 @@ nav a.gnav:hover::after{width:100%}
 
 /* ============================================================
    9. 事例カード（.case ＝ CASES / ENGAGEMENT 共通の器）
+      ※ .works は ENGAGEMENT が使用する grid。CASES は §10-2 の
+        .rail-track（flex）へ移行済みのため、両者を併用しないこと
    ============================================================ */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .case{background:var(--panel);border:1px solid var(--line);border-radius:4px;
@@ -353,7 +342,7 @@ nav a.gnav:hover::after{width:100%}
 .case dd{font-family:var(--f-en);font-size:26px;font-weight:700;line-height:1.2;margin-top:4px}
 
 /* ============================================================
-   10. CASES（定性表示／rev:2026-09-08）
+   10. CASES（定性表示）
        ・数値KPIを撤去し「課題→打ち手→変化」の3段で見せる
        ・上の .case dl（詳細度0-1-1）に負けないよう、必ず
          .case .cs-steps（0-2-0）以上の形で書くこと
@@ -373,7 +362,77 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   11. ENGAGEMENT（rev:2026-09-08 新設）
+   10-2. RAIL（横1行の横スクロール＋ボタン送り）
+      ・カード種別に依存しない汎用コンポーネント。CASES が使用する
+      ・[data-rail] / [data-rail-track] / [data-rail-prev|next] /
+        [data-rail-count] は common.js の initRail が参照する。
+        属性名を変える場合は CSS・JS・HTML の3点を揃えること
+      ・ボタンは .rail-ready（JSが付与）が無ければ表示されない。
+        JSが落ちた場合は素の横スクロールに戻る
+      ・トラックに .works を併用しないこと（.works は grid のため衝突する）
+      ・.v-scroll とも併用しないこと（≤768px で item 幅指定が競合する）
+   ============================================================ */
+.rail{position:relative;
+  /* ▼ 調整ダイヤル。ここを唯一の正とする
+       --rail-vis  … 1画面に見せる枚数（小数可。1.12 なら次の1枚が覗く）
+       --rail-gap  … カード間隔
+       --rail-x    … 左右の逃がし＝ブリード量。--pad と同値にすることで
+                     カード左端がセクション本文の左端と一致する
+       --rail-lift … 上の逃がし（§9 のホバー -5px ぶん）
+       --rail-drop … 下の逃がし（§20-10 のホバー影 0 18px 44px ぶん）
+                     ＝ボタン行との間隔も兼ねる */
+  --rail-vis:3;
+  --rail-gap:var(--gap);
+  --rail-x:var(--pad);
+  --rail-lift:20px;
+  --rail-drop:40px}
+
+.rail-track{display:flex;gap:var(--rail-gap);
+  overflow-x:auto;
+  /* ▼ 縦を明示的に閉じる。CSS Overflow 3 の規定により overflow-x:auto を
+     指定すると overflow-y の visible は auto へ計算されるため、書かないと
+     この要素が縦にもスクロールできる入れ子スクローラになる（§19-4 と同じ）。
+     ただし hidden はカードのホバー浮きと影を切るため、padding で逃がし
+     同量の負マージンで見た目の位置を戻す。padding と margin は必ずセット */
+  overflow-y:hidden;
+  padding:var(--rail-lift) var(--rail-x) var(--rail-drop);
+  margin:calc(var(--rail-lift) * -1) calc(var(--rail-x) * -1) 0;
+  overscroll-behavior-x:contain;
+  /* mandatory は斜めスワイプでも強制的にスナップするため proximity にする */
+  scroll-snap-type:x proximity;
+  /* padding-left と同値にすること。ずらすとスナップ位置が左端から外れる */
+  scroll-padding-left:var(--rail-x);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail-track::-webkit-scrollbar{display:none}
+/* flex-basis の % はトラックの content box（＝.wrap の内寸）に対して解決される。
+   上の padding と負マージンが対になっている限り、--rail-vis 枚が本文幅に一致する */
+.rail-track > *{scroll-snap-align:start;
+  flex:0 0 calc((100% - (var(--rail-vis) - 1) * var(--rail-gap)) / var(--rail-vis))}
+
+/* 操作UI。.rail-static は枚数が収まりきりスクロール不要な状態（JSが付与） */
+.rail-ui{display:none;align-items:center;gap:12px}
+.rail.rail-ready .rail-ui{display:flex}
+.rail.rail-static .rail-ui{display:none}
+.rail-count{margin-right:auto;font-family:var(--f-mono);font-size:11px;
+  letter-spacing:.12em;color:var(--muted)}
+.rail-btn{width:44px;height:44px;flex:0 0 auto;border-radius:50%;
+  border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--txt);
+  display:grid;place-items:center;cursor:pointer;
+  transition:border-color .3s,color .3s,transform .3s,opacity .3s}
+.rail-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rail-btn:hover:not(:disabled){border-color:var(--accent-2);color:var(--accent-2);
+  transform:translateY(-2px)}
+.rail-btn:active:not(:disabled){transform:translateY(0) scale(.94)}
+.rail-btn:disabled{opacity:.28;cursor:default}
+
+@media (max-width:1024px){.rail{--rail-vis:2}}
+@media (max-width:768px){.rail{--rail-vis:1.12;--rail-gap:16px}}
+@media (max-width:600px){.rail{--rail-vis:1.06}}
+@media (max-width:480px){.rail-btn{width:40px;height:40px}}
+
+/* ============================================================
+   11. ENGAGEMENT
        カード枠は .case を流用し、下部メタのみ専用指定
    ============================================================ */
 .case .eng-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;
@@ -390,7 +449,27 @@ nav a.gnav:hover::after{width:100%}
 }
 
 /* ============================================================
-   12. FAQ（rev:2026-09-08 新設）
+   11-2. カード内の高さ揃え（.case ＝ CASES / ENGAGEMENT 共通）
+       ・カードは横一列で等高（flex/grid の stretch）になるが、内部は
+         通常フローのため h3 の行数差で下部メタの区切り線がずれる。
+         §8 の .flow と同じく縦フレックス化し、最終子を下端へ寄せる
+       ・.case > * の flex:0 0 auto は必須。省くと flex-shrink:1 が効き、
+         aspect-ratio:16/9 のサムネイル（§17）が縦に潰れる
+       ・:last-child / :nth-last-child(2) は「dl がカードの最終子」である
+         ことが前提。カード末尾にボタン等を足す場合は必ずこの2行を見直すこと
+       ・間隔を dl の margin-top ではなく直前要素の margin-bottom で作るのは、
+         margin-top:auto（余剰の吸収）と最小間隔の確保を両立させるため。
+         片方だけ変えないこと
+       ・§10（.cs-steps）/ §11（.eng-meta）の margin-top を後勝ちで
+         打ち消している。必ず §10・§11 より後ろに置くこと
+   ============================================================ */
+.case{display:flex;flex-direction:column}
+.case > *{flex:0 0 auto}
+.case > :last-child{margin-top:auto}
+.case > :nth-last-child(2){margin-bottom:22px}
+
+/* ============================================================
+   12. FAQ
        details/summary で構成。JS不要・キーボード操作は §18 が担保
    ============================================================ */
 .faq{max-width:880px;border-top:1px solid var(--line)}
@@ -442,8 +521,7 @@ nav a.gnav:hover::after{width:100%}
 .cta .hero-cta{justify-content:center;position:relative}
 footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32px}
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
-/* rev:2026-09-08 フッターナビは4列。列間 gap を 52px → 40px へ縮め、
-   1024〜1180px 付近での折返しを抑える */
+/* フッターナビは4列。列間 gap は 40px。広げると 1024〜1180px 付近で折り返す */
 .ft-nav{display:flex;flex-wrap:wrap;gap:40px}
 .ft-nav h4{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:var(--accent-2);margin-bottom:16px}
 .ft-nav a{display:block;font-size:13px;color:var(--muted);line-height:2.3;transition:.2s}
@@ -486,7 +564,7 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 @media (max-width:1024px){
   :root{--sec:88px}
   .svc{grid-template-columns:repeat(2,1fr)}
-  /* WORKS は3枚目も1カラム幅に揃える（全幅化すると写真が過大になる） */
+  /* ENGAGEMENT は3枚目も1カラム幅に揃える（全幅化すると間延びする） */
   .works{grid-template-columns:repeat(2,1fr)}
   .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
   .flow::before{display:none}
@@ -642,6 +720,9 @@ html.cfi-fallback .rv{opacity:1;transform:none}
   outline:2px solid var(--accent-2);outline-offset:3px;border-radius:2px}
 .btn:focus-visible{outline-offset:4px}
 nav a.gnav:focus-visible::after{width:100%}
+/* レールは tabindex="0" で矢印キー操作を受けるため、
+   フォーカス枠がカードの外側に出るよう offset を詰める */
+.rail-track:focus-visible{outline-offset:-2px}
 
 /* 18-2 未確定リンク／未記入項目
         ここを唯一の正とする（各ページHEADで再定義しない）
@@ -759,11 +840,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 }
 
 /* ------------------------------------------------------------
-   19-4 モバイル横スクロール
-        rev:2026-09-11 タップしたまま縦スワイプするとページが
-        スクロールしない不具合を修正（詳細は各行のコメント参照）
-        ※ rev:2026-09-14b CASES は §21 の .cs-loop へ移行したため、
-          ここが効くのは APPROACH（.flow）と ENGAGEMENT（.works）のみ
+   19-4 モバイル横スクロール（APPROACH / ENGAGEMENT が使用）
+        ※ CASES は §10-2 の .rail へ移行済み。.v-scroll と併用しないこと
    ------------------------------------------------------------ */
 @media (max-width:768px){
   .v-scroll{display:flex;gap:16px;overflow-x:auto;
@@ -802,9 +880,9 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 }
 
 /* ============================================================
-   20. MOTION（rev:2026-09-10 新設／rev:2026-09-11 性能対策）
+   20. MOTION
    ────────────────────────────────────────────────────────────
-   ■ このブロックは §21 の直前に置くこと。
+   ■ このブロックは必ずファイル末尾に置くこと。
      §15（.rv）／§12（FAQ open）／§9（.case）を同詳細度で
      後勝ちさせる前提で書いている。
    ■ 原則 transform / translate / scale / opacity / clip-path のみを動かす。
@@ -951,8 +1029,9 @@ header.hd-up{transform:translateY(-100%)}
 /* ------------------------------------------------------------
    20-8 CHALLENGES：チェックマークを描く
         §7 の transform:rotate(-45deg) を保持したまま scale を足す
-        ※ rev:2026-09-14 .chl li → .chl > li。カード内の箇条書き（.chl-pt）
-          にもマッチしてしまうため。§7 / §20-19 と必ず揃えること
+        ※ 「.chl > li」（子結合子）であること。子孫セレクタにすると
+          カード内の箇条書き（.chl-pt）にもマッチする。
+          §7 / §20-19 と必ず揃えること
    ------------------------------------------------------------ */
 .chl > li::before{opacity:0;transform:rotate(-45deg) scale(.3);
   transition:transform .5s var(--mo-ease) .18s,opacity .3s ease .18s}
@@ -963,10 +1042,10 @@ header.hd-up{transform:translateY(-100%)}
 /* ------------------------------------------------------------
    20-9 APPROACH：接続線を左から引く／番号ドットの脈動
         ※ .flow / .v-scroll に align-items を足さないこと（§8 の禁止事項）
-        rev:2026-09-11 脈動を box-shadow から疑似要素の scale+opacity へ変更。
+        ※ 脈動は box-shadow ではなく疑似要素の scale+opacity で作る。
           box-shadow は合成できずペイントが毎フレーム走るため、
-          APPROACH が画面に入った直後（＝スクロール中）の約7秒間、
-          ドット4個ぶんの連続再描画が発生していた。
+          APPROACH が画面に入った直後（＝スクロール中）に
+          ドット4個ぶんの連続再描画が発生する。戻さないこと。
           .flow .dot には §8 で position:relative が付いているため追加不要
    ------------------------------------------------------------ */
 .flow::before{transform:scaleX(0);transform-origin:left;
@@ -984,9 +1063,9 @@ header.hd-up{transform:translateY(-100%)}
 /* ------------------------------------------------------------
    20-10 CASES / ENGAGEMENT：影の深度＋内部行の順送り
          §9 の transform:translateY(-5px) は維持し、影のみ追加
-         ※ rev:2026-09-14b CASES は §21 でカード単位の .rv を持たないため、
-           内部行の順送りは ENGAGEMENT 側でのみ発火する。
-           CASES 側の初期状態は §21-6 で打ち消している
+         ※ ホバー時の浮きと影は .rail-track の上下 padding
+           （§10-2 --rail-lift / --rail-drop）で逃がしている。
+           影を強くする場合は --rail-drop も併せて増やすこと
    ------------------------------------------------------------ */
 .case{transition:transform .4s var(--mo-ease),border-color .3s,box-shadow .4s ease}
 .case:hover{box-shadow:0 18px 44px rgba(0,0,0,.34)}
@@ -1057,13 +1136,12 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
 
 /* ------------------------------------------------------------
    20-15 ヒーローのパララックス
-         rev:2026-09-11 --hp（カスタムプロパティ）経由を廃止。
-           カスタムプロパティは継承するため .hero に値を書くと
-           配下すべて（canvas・見出し・リード文・CTA）の
-           スタイル再計算が毎フレーム走っていた。
+         ※ カスタムプロパティ経由にしないこと。継承するため .hero に
+           値を書くと配下すべて（canvas・見出し・リード文・CTA）の
+           スタイル再計算が毎フレーム走る。
            実値は common.js の initScroll が
            .hero .wrap の translate / opacity と
-           .scroll-hint の opacity へ直接書き込む。
+           .scroll-hint の opacity へ直接書き込む
          ※ ここに初期値を書かないこと（JS無効時は静止表示に落ちる）
          ※ §20-19 の !important 打ち消しは、author由来の !important が
            !important なしのインラインスタイルに勝つため有効
@@ -1083,8 +1161,6 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
            独立プロパティ（scale / translate）側で実装している
          ・will-change は対象画像ぶんのレイヤーを恒久的に確保する。
            min-width:769px 限定のためモバイルには影響しない
-         ※ rev:2026-09-14b CASES（.cs-loop 配下）はスクロールコンテナが
-           document でなくなるため成立しない。§21-4 で明示的に外している
    ------------------------------------------------------------ */
 @supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference) and (min-width:769px){
@@ -1156,7 +1232,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
     clip-path:none!important}
   .eyebrow::before,.flow::before{transform:none!important}
   .svc .ico{stroke-dasharray:none!important;stroke-dashoffset:0!important}
-  /* rev:2026-09-14 .chl li → .chl > li（§7 / §20-8 と揃えること） */
+  /* 「.chl > li」であること（§7 / §20-8 と揃えること） */
   .chl > li::before{opacity:1!important;transform:rotate(-45deg)!important}
   .v-why .vw-bg{scale:1!important}
   .v-why .vw-body,
@@ -1174,146 +1250,17 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .faq summary::after{transform:none!important}
 }
 
-/* ============================================================
-   21. CASES CAROUSEL（rev:2026-09-14b 新設／common.js §8 と対）
-   ────────────────────────────────────────────────────────────
-   ■ このブロックは必ずファイル末尾に置くこと。
-     §20-16（写真パララックス）と §20-10（内部行の順送り）を
-     同詳細度で後勝ちさせる前提で書いている。
-   ■ CASES だけを全幅で横スクロール化する。ENGAGEMENT は従来どおり
-     .works + .v-scroll（§19-4）のまま。両者を混ぜないこと。
-     .works を直接書き換えると ENGAGEMENT にも自動送りが波及する。
-   ■ 無限ループは common.js が「前後に1セットずつ複製」して作る。
-     CSS側は等間隔（＝全カード同幅）であることだけを保証すればよい。
-     カード幅を可変にすると setW の算出が崩れてループが跳ねる。
-   ■ .cs-loop は overflow-x:auto のため、CSS Overflow 3 の規定により
-     overflow-y の visible も auto へ計算される。§19-4 と同じ理由で
-     overflow-y:hidden を明示すること（縦ラッチ防止）。
-   ============================================================ */
-
 /* ------------------------------------------------------------
-   21-1 スクロールコンテナ
-        ・--cs-per … 1画面あたりの枚数。ここを唯一の正とする
-        ・縦の padding は .case:hover の translateY(-5px)（§9）と
-          box-shadow（§20-10）の逃げ場。margin の負値と必ず対で変えること。
-          片方だけ変えると影が切れる／セクション間隔がずれる
+   20-20 RAIL（§10-2 と対）
+         ※ 意図的に §20-19（動きを減らす設定の打ち消し）より後ろに置いている。
+           §20-19 側は .rv の transform を !important で無効化しており、
+           下の2行はいずれも打ち消しと同じ結果に着地するため衝突しない。
+         ・トラックは overflow-y:hidden のため、§20-1 の初期位置
+           translateY(26px) が下端で切れる。横スクロール時はフェードのみへ
+           切り替える（§19-4 の .v-scroll と同じ扱い）。0-2-0 で .rv に勝つ
+         ・段差遅延は2枚ぶん（160ms）で頭打ちにする。common.js は --i を
+           6 で折り返すため、素のままだと4枚目以降が最大400ms待たされ、
+           ボタンを押してから遅れて出る
    ------------------------------------------------------------ */
-.cs-wrap{position:relative}
-
-.cs-loop{
-  --cs-per:3;
-  display:flex;
-  gap:var(--gap);
-  overflow-x:auto;
-  overflow-y:hidden;                 /* §19-4 と同趣旨。書かないと縦ラッチする */
-  overscroll-behavior-x:contain;
-  scroll-snap-type:x proximity;      /* mandatory は斜めスワイプで暴れる */
-  scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;
-  scroll-padding-left:var(--pad);
-  /* 左右：--pad ぶん外へ逃がして画面端まで流す（§19-4 と同じ手法）
-     上下：ホバーの浮き上がりと影のクリップ回避（下は影の逃げ場を厚めに） */
-  margin:-10px calc(var(--pad) * -1) -18px;
-  padding:10px var(--pad) 30px;
-}
-.cs-loop::-webkit-scrollbar{display:none}
-
-.cs-loop > .case{
-  flex:0 0 calc((100% - var(--gap) * (var(--cs-per) - 1)) / var(--cs-per));
-  scroll-snap-align:start}
-
-@media (max-width:1024px){.cs-loop{--cs-per:2}}
-@media (max-width:768px){
-  .cs-loop{margin-bottom:-14px;padding-bottom:24px}
-  .cs-loop > .case{flex-basis:84%}          /* .v-scroll と同じピーク量 */
-}
-
-/* ------------------------------------------------------------
-   21-2 操作UI（JSが .cs-ready を付けるまで出さない）
-        JS無効時は素の横スクロールとして成立させる。ボタンだけ残って
-        押しても何も起きない状態を作らないため
-        ※ 自動送りには停止手段を必ず用意すること（WCAG 2.2.2）。
-          .cs-btn[data-cs="toggle"] を削除しないこと
-   ------------------------------------------------------------ */
-.cs-ui{display:none;align-items:center;gap:12px;margin-top:18px}
-.cs-wrap.cs-ready .cs-ui{display:flex}
-
-.cs-btn{width:36px;height:36px;flex:0 0 auto;
-  display:grid;place-items:center;border-radius:50%;
-  border:1px solid var(--line);background:rgba(255,255,255,.03);
-  color:var(--muted);cursor:pointer;
-  transition:border-color .25s,color .25s,transform .25s var(--mo-ease)}
-.cs-btn:hover{border-color:var(--accent-2);color:var(--accent-2)}
-.cs-btn:active{transform:scale(.94)}
-.cs-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-/* 再生／停止アイコンの出し分け。状態は common.js が .is-paused で持つ */
-.cs-btn .i-play{display:none}
-.cs-btn.is-paused .i-play{display:block}
-.cs-btn.is-paused .i-pause{display:none}
-
-.cs-dots{display:flex;align-items:center;gap:8px;margin-left:auto}
-.cs-dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;
-  background:rgba(255,255,255,.22);cursor:pointer;
-  transition:background .3s ease,transform .3s var(--mo-ease)}
-.cs-dots button:hover{background:rgba(255,255,255,.4)}
-.cs-dots button[aria-current="true"]{background:var(--accent-2);transform:scale(1.3)}
-
-@media (max-width:480px){
-  .cs-dots{gap:6px}
-  .cs-dots button{width:7px;height:7px}
-}
-
-/* ------------------------------------------------------------
-   21-3 リビール
-        カード単位（data-mo-stagger）にはしない。横スクロール外の
-        4〜6枚目が IntersectionObserver で発火せず opacity:0 のまま
-        自動送りで流れてくるため。帯ごと1回で出す。
-        ※ .cs-loop に data-mo-stagger を付けないこと
-   ------------------------------------------------------------ */
-.cs-loop.rv{transform:translateY(var(--mo-shift))}
-.cs-loop.rv.on{transform:none}
-
-/* ------------------------------------------------------------
-   21-4 §20-16 パララックスの打ち消し（削除しないこと）
-        .cs-loop がブロック軸のスクロールコンテナになるため、
-        view() は document ではなくここを参照し、縦のスクロール量が
-        無いので timeline が inactive になる。
-        scale:1.08 だけが残ると写真がトリミングされたまま静止するため、
-        §20-16 と同じ @supports / @media 条件で明示的に戻す
-   ------------------------------------------------------------ */
-@supports (animation-timeline:view()){
-  @media (prefers-reduced-motion:no-preference) and (min-width:769px){
-    .cs-loop .case .ph-fig img{
-      scale:1;will-change:auto;
-      animation:none;animation-timeline:auto}
-  }
-}
-
-/* ------------------------------------------------------------
-   21-5 複製カードの扱い
-        common.js が前後へ1セットずつ複製する（計3セット）。
-        複製には aria-hidden と data-cs-clone が付く。
-        見た目は原本と完全に同一でなければループの継ぎ目が見えるため、
-        ここで差を付ける指定を足さないこと
-   ------------------------------------------------------------ */
-.cs-loop > .case[data-cs-clone]{pointer-events:auto}
-
-/* ------------------------------------------------------------
-   21-6 §20-10（内部行の順送り）の打ち消し
-        CASES のカードは .rv を持たないため §20-10 は本来発火しないが、
-        将来 .rv を足した場合に4〜6枚目が opacity:0 のまま流れてくる。
-        .cs-loop 配下では常に表示側へ固定する
-   ------------------------------------------------------------ */
-.cs-loop .case .cs-steps > div{opacity:1;translate:0}
-
-/* ------------------------------------------------------------
-   21-7 動きを減らす設定
-        複製も自動送りも common.js 側で行わない（素の横スクロール6枚）。
-        操作UIは表示されるが、停止ボタンだけはJSが hidden にする
-   ------------------------------------------------------------ */
-@media (prefers-reduced-motion:reduce){
-  .cs-loop.rv{transform:none!important}
-  .cs-btn:active{transform:none!important}
-  .cs-dots button[aria-current="true"]{transform:none!important}
-}
+.rail-track > .rv,.rail-track > .rv-s{transform:none}
+.rail-track > .rv{transition-delay:calc(min(var(--i,0),2) * var(--mo-stg))}
