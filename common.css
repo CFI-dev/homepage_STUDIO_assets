@@ -16,6 +16,11 @@
        (3) §20-19 .chl li::before → .chl > li::before
        ※ 子孫セレクタのままカード内に <li> を足すと、各行にカード枠と
          チェックマークが描かれる。片方だけ直しても破綻する
+   ・rev:2026-09-14b §21 CASES CAROUSEL を新設（§1〜§20 は変更なし）
+       ・CASES を6枚の横ループ＋自動送りへ変更。common.js §8 と対。
+         片方だけ入れると、6枚が押し潰れる／縦積みになるかのどちらかになる
+       ・home_body.html の CASES セクションも同時に差し替えること
+         （.works.v-scroll → .cs-wrap > .cs-loop、.v-hint → .cs-ui）
    ============================================================ */
 
 /* ============================================================
@@ -757,6 +762,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
    19-4 モバイル横スクロール
         rev:2026-09-11 タップしたまま縦スワイプするとページが
         スクロールしない不具合を修正（詳細は各行のコメント参照）
+        ※ rev:2026-09-14b CASES は §21 の .cs-loop へ移行したため、
+          ここが効くのは APPROACH（.flow）と ENGAGEMENT（.works）のみ
    ------------------------------------------------------------ */
 @media (max-width:768px){
   .v-scroll{display:flex;gap:16px;overflow-x:auto;
@@ -797,7 +804,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
 /* ============================================================
    20. MOTION（rev:2026-09-10 新設／rev:2026-09-11 性能対策）
    ────────────────────────────────────────────────────────────
-   ■ このブロックは必ずファイル末尾に置くこと。
+   ■ このブロックは §21 の直前に置くこと。
      §15（.rv）／§12（FAQ open）／§9（.case）を同詳細度で
      後勝ちさせる前提で書いている。
    ■ 原則 transform / translate / scale / opacity / clip-path のみを動かす。
@@ -977,6 +984,9 @@ header.hd-up{transform:translateY(-100%)}
 /* ------------------------------------------------------------
    20-10 CASES / ENGAGEMENT：影の深度＋内部行の順送り
          §9 の transform:translateY(-5px) は維持し、影のみ追加
+         ※ rev:2026-09-14b CASES は §21 でカード単位の .rv を持たないため、
+           内部行の順送りは ENGAGEMENT 側でのみ発火する。
+           CASES 側の初期状態は §21-6 で打ち消している
    ------------------------------------------------------------ */
 .case{transition:transform .4s var(--mo-ease),border-color .3s,box-shadow .4s ease}
 .case:hover{box-shadow:0 18px 44px rgba(0,0,0,.34)}
@@ -1073,6 +1083,8 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
            独立プロパティ（scale / translate）側で実装している
          ・will-change は対象画像ぶんのレイヤーを恒久的に確保する。
            min-width:769px 限定のためモバイルには影響しない
+         ※ rev:2026-09-14b CASES（.cs-loop 配下）はスクロールコンテナが
+           document でなくなるため成立しない。§21-4 で明示的に外している
    ------------------------------------------------------------ */
 @supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference) and (min-width:769px){
@@ -1163,27 +1175,28 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 }
 
 /* ============================================================
-   21. CASES CAROUSEL（rev:2026-09-14 新設／common.js §8 と対）
+   21. CASES CAROUSEL（rev:2026-09-14b 新設／common.js §8 と対）
    ────────────────────────────────────────────────────────────
+   ■ このブロックは必ずファイル末尾に置くこと。
+     §20-16（写真パララックス）と §20-10（内部行の順送り）を
+     同詳細度で後勝ちさせる前提で書いている。
    ■ CASES だけを全幅で横スクロール化する。ENGAGEMENT は従来どおり
      .works + .v-scroll（§19-4）のまま。両者を混ぜないこと。
+     .works を直接書き換えると ENGAGEMENT にも自動送りが波及する。
    ■ 無限ループは common.js が「前後に1セットずつ複製」して作る。
-     CSS側は等間隔（= 全カード同幅）であることだけを保証すればよい。
+     CSS側は等間隔（＝全カード同幅）であることだけを保証すればよい。
      カード幅を可変にすると setW の算出が崩れてループが跳ねる。
    ■ .cs-loop は overflow-x:auto のため、CSS Overflow 3 の規定により
-     overflow-y も scroll container になる。§19-4 と同じ理由で
+     overflow-y の visible も auto へ計算される。§19-4 と同じ理由で
      overflow-y:hidden を明示すること（縦ラッチ防止）。
-   ■ ▼最重要▼ 上記により .cs-loop は「ブロック軸のスクロールコンテナ」
-     になるため、§20-16 の view() が document ではなく .cs-loop を拾う。
-     CASES の写真パララックスは成立しないので 21-4 で明示的に外す。
-     外さないと scale:1.08 だけが残り、写真が微妙に切れたまま止まる。
    ============================================================ */
 
 /* ------------------------------------------------------------
    21-1 スクロールコンテナ
         ・--cs-per … 1画面あたりの枚数。ここを唯一の正とする
-        ・縦の padding は .case:hover の translateY(-5px) と
-          box-shadow(§20-10) の逃げ場。margin の負値と必ず対で変えること
+        ・縦の padding は .case:hover の translateY(-5px)（§9）と
+          box-shadow（§20-10）の逃げ場。margin の負値と必ず対で変えること。
+          片方だけ変えると影が切れる／セクション間隔がずれる
    ------------------------------------------------------------ */
 .cs-wrap{position:relative}
 
@@ -1217,8 +1230,10 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 
 /* ------------------------------------------------------------
    21-2 操作UI（JSが .cs-ready を付けるまで出さない）
-        JS無効時は素の横スクロールとして成立する。ボタンだけ残って
+        JS無効時は素の横スクロールとして成立させる。ボタンだけ残って
         押しても何も起きない状態を作らないため
+        ※ 自動送りには停止手段を必ず用意すること（WCAG 2.2.2）。
+          .cs-btn[data-cs="toggle"] を削除しないこと
    ------------------------------------------------------------ */
 .cs-ui{display:none;align-items:center;gap:12px;margin-top:18px}
 .cs-wrap.cs-ready .cs-ui{display:flex}
@@ -1253,16 +1268,19 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
    21-3 リビール
         カード単位（data-mo-stagger）にはしない。横スクロール外の
         4〜6枚目が IntersectionObserver で発火せず opacity:0 のまま
-        自動送りで流れてくるため。帯ごと1回で出す
+        自動送りで流れてくるため。帯ごと1回で出す。
+        ※ .cs-loop に data-mo-stagger を付けないこと
    ------------------------------------------------------------ */
 .cs-loop.rv{transform:translateY(var(--mo-shift))}
 .cs-loop.rv.on{transform:none}
 
 /* ------------------------------------------------------------
    21-4 §20-16 パララックスの打ち消し（削除しないこと）
-        .cs-loop が block 軸のスクロールコンテナになるため、
-        view() が document ではなくここを参照し timeline が inactive
-        になる。scale だけ残るとトリミングされたまま静止するので戻す
+        .cs-loop がブロック軸のスクロールコンテナになるため、
+        view() は document ではなくここを参照し、縦のスクロール量が
+        無いので timeline が inactive になる。
+        scale:1.08 だけが残ると写真がトリミングされたまま静止するため、
+        §20-16 と同じ @supports / @media 条件で明示的に戻す
    ------------------------------------------------------------ */
 @supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference) and (min-width:769px){
@@ -1273,8 +1291,26 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 }
 
 /* ------------------------------------------------------------
-   21-5 動きを減らす設定
-        複製も自動送りも common.js 側で行わない。スナップだけ残す
+   21-5 複製カードの扱い
+        common.js が前後へ1セットずつ複製する（計3セット）。
+        複製には aria-hidden と data-cs-clone が付く。
+        見た目は原本と完全に同一でなければループの継ぎ目が見えるため、
+        ここで差を付ける指定を足さないこと
+   ------------------------------------------------------------ */
+.cs-loop > .case[data-cs-clone]{pointer-events:auto}
+
+/* ------------------------------------------------------------
+   21-6 §20-10（内部行の順送り）の打ち消し
+        CASES のカードは .rv を持たないため §20-10 は本来発火しないが、
+        将来 .rv を足した場合に4〜6枚目が opacity:0 のまま流れてくる。
+        .cs-loop 配下では常に表示側へ固定する
+   ------------------------------------------------------------ */
+.cs-loop .case .cs-steps > div{opacity:1;translate:0}
+
+/* ------------------------------------------------------------
+   21-7 動きを減らす設定
+        複製も自動送りも common.js 側で行わない（素の横スクロール6枚）。
+        操作UIは表示されるが、停止ボタンだけはJSが hidden にする
    ------------------------------------------------------------ */
 @media (prefers-reduced-motion:reduce){
   .cs-loop.rv{transform:none!important}
