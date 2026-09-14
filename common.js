@@ -3,18 +3,9 @@
 /* ============================================================
    CFI コーポレートサイト メインスクリプト
    ・ハンバーガー切替点 960px（MQ_DESK）は common.css §16 と必ず一致させること
-   ・rev:2026-09-10 MOTION 対応
-       (1) initNav      … 項目に --i を付与し nav.mo-ready を立てる
-       (2) initScroll   … 旧 initHeaderShadow を統合。--p / --hp / .hd-up
-       (3) initReveal   … data-mo-stagger の展開。段差遅延をCSS(--i)へ移管
-       (4) initFaq      … 新設。details の高さアニメーション
-       (5) initHeroCanvas … ポインタ追従・信号パルス・アパーチャーの呼吸
-   ・rev:2026-09-11 スクロール性能対策（common.css §20-9 / §20-15 と対）
-       (a) initScroll     … 読み書きの分離／計測のキャッシュ化／
-                            --hp 廃止（.hero .wrap へ直接書込）／
-                            .hd-up にヒステリシス（±10px）
-       (b) initHeroCanvas … 距離比較を二乗化、モバイルのDPR・ノード数を抑制
-   ・CSS側は common.css §20 が対（片方だけ更新しないこと）
+   ・common.css §20（MOTION）と対になっている。片方だけ更新しないこと
+   ・scroll の window 購読は §2 の1本のみ。他所で addEventListener('scroll')
+     を増やさないこと（rAF の間引きが効かなくなる）
    ============================================================ */
 
 (function () {
@@ -40,9 +31,9 @@
 
   /* ------------------------------------------------------------
      1. モバイルメニュー
-        rev:2026-09-10 項目の段差表示用に --i を付与し、
-        nav.mo-ready を立てる。CSS(§20-6)は mo-ready が無ければ
-        何もしないため、JSが落ちた場合は従来どおり即表示になる
+        ・項目の段差表示用に --i を付与し、nav.mo-ready を立てる。
+          CSS(§20-6)は mo-ready が無ければ何もしないため、
+          JSが落ちた場合は従来どおり即表示になる
      ------------------------------------------------------------ */
   (function initNav() {
     const burger = document.getElementById("burger");
@@ -83,15 +74,15 @@
 
   /* ------------------------------------------------------------
      2. スクロール連動（影 / 格納 / 進捗バー / ヒーローのパララックス）
-        rev:2026-09-10 旧 initHeaderShadow を統合。
-        rev:2026-09-11 カクつき対策。以下3点が設計の要。
+        ▼ カクつき対策。以下3点が設計の要。崩さないこと
           ・frame() 内でレイアウトを伴う読み取り（scrollHeight /
             offsetHeight）を行わない。クラス書き込みの直後に読むと
             強制同期レイアウトが毎フレーム発生する。計測は measure()
             に隔離し、resize / load / DOM変化時のみ実行する
-          ・パララックスは --hp ではなく .hero .wrap へ直接書く。
-            カスタムプロパティは継承するため、.hero に載せると
-            配下すべてのスタイル再計算が毎フレーム走る
+          ・パララックスはカスタムプロパティ経由にせず .hero .wrap へ
+            直接書く。カスタムプロパティは継承するため、.hero に載せると
+            配下すべて（canvas・見出し・リード文・CTA）の
+            スタイル再計算が毎フレーム走る
           ・.hd-up は ±10px のヒステリシスを持たせる。2px しきい値だと
             慣性スクロールの微振動で往復し、backdrop-filter 付きの
             fixed ヘッダーの再合成を繰り返す
@@ -236,16 +227,14 @@
 
   /* ------------------------------------------------------------
      4. 出現アニメーション（.rv → .on）
-        rev:2026-08-28
         (a) 起動クローク（html.cfi-boot）が引き始めるまで監視を開始しない。
             幕の裏で演出が完了し「動かないページ」に見えるのを防ぐ。
         (b) 後から生成されるDOM（STUDIOフォーム等）を
-            window.CFI.reveal(target) で追加登録できるようにする。
-        rev:2026-09-10
+            window.CFI.reveal(target) で追加登録できる。
         (c) [data-mo-stagger] の直下要素を個別リビールへ展開する。
-        (d) 段差の遅延を setTimeout から CSS の --i（§20-1）へ移管。
+        (d) 段差の遅延は setTimeout ではなく CSS の --i（§20-1）が担う。
             JSでずらすと transition の途中で class が付き、
-            要素ごとに速度が不揃いに見えるため。
+            要素ごとに速度が不揃いに見えるため。ここを戻さないこと
      ------------------------------------------------------------ */
   (function initReveal() {
     var html = document.documentElement;
@@ -315,8 +304,9 @@
          親は .rv-hold を足して「.on を受け取るだけの器」に変える。
          §20-7（アイコン描画）や §20-9（接続線）が親の .on を
          参照しているため、親からクラスを外してはいけない。
-         ※ .v-scroll 配下の子は §19-4 が transform を打ち消すため、
-           横スクロール時はフェードのみになる（縦ラッチ防止） */
+         ※ .v-scroll / .rail-track 配下の子は §19-4 / §20-20 が
+           transform を打ち消すため、横スクロール時はフェードのみになる
+           （縦ラッチ防止のため overflow-y:hidden が必要なことによる） */
     function expandStagger() {
       var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, TEMPLATE: 1, NOSCRIPT: 1 };
       Array.prototype.forEach.call(
@@ -335,7 +325,8 @@
           kids.forEach(function (el, i) {
             el.classList.add("rv");
             if (v) el.classList.add("rv-" + v);
-            /* 6で折り返す。項目数が多い列で遅延が伸び続けるのを防ぐ */
+            /* 6で折り返す。項目数が多い列で遅延が伸び続けるのを防ぐ。
+               レール（§8）は §20-20 側でさらに2枚ぶんへ頭打ちにしている */
             el.style.setProperty("--i", i % 6);
           });
           observe(kids);
@@ -376,6 +367,8 @@
 
   /* ------------------------------------------------------------
      5. カウントアップ
+        ※ NUMBERS セクションは掲載保留中だが、再挿入時にそのまま
+          機能させるため残置している。削除しないこと
      ------------------------------------------------------------ */
   (function initCounter() {
     const targets = document.querySelectorAll("[data-count]");
@@ -428,7 +421,7 @@
   })();
 
   /* ------------------------------------------------------------
-     6. FAQ：開閉の高さアニメーション（rev:2026-09-10 新設）
+     6. FAQ：開閉の高さアニメーション
         ・details/summary の意味論は保持（open 属性を自分で操作する）
         ・height:auto の補間は Safari／Firefox 未対応（interpolate-size）
           のため、実測値をJSから与える方式を採る
@@ -496,17 +489,13 @@
 
   /* ------------------------------------------------------------
      7. ヒーロー背景：ノードネットワーク＋アパーチャー
-        rev:2026-09-10
-        ・ポインタ追従を追加。座標本体(x,y)は書き換えず、描画用の
-          オフセット(dx,dy)だけを動かす。静止画（animate=false）の
-          再現性を保つため
-        ・近接ノード間を渡る信号パルスを追加（1.5秒間隔で1本）
-        ・アパーチャーに呼吸（±3.5%）とスクロールドリフトを追加
-        rev:2026-09-11 モバイルのスクロール負荷対策
-        ・リンク判定の距離比較を二乗化（Math.hypot / sqrt の削減）。
-          総当たり最大 72*71/2 = 2,556 組ぶんの平方根が毎フレーム
-          走っていたため
-        ・狭い画面では DPR 上限とノード数を引き下げる
+        ※ 下層ページで #heroFx（SILK）を使う場合、この処理は
+          #heroCv が見つからず冒頭で return する。両者は排他
+        ▼ スクロール負荷対策。以下2点を戻さないこと
+          ・リンク判定の距離比較は二乗のまま行う。総当たり最大
+            72*71/2 = 2,556 組ぶんの平方根が毎フレーム走るため、
+            Math.hypot を内側ループで呼ばない
+          ・狭い画面では DPR 上限とノード数を引き下げる
      ------------------------------------------------------------ */
   (function initHeroCanvas() {
     const cv = document.getElementById("heroCv");
@@ -538,7 +527,7 @@
       hero.addEventListener("pointerleave", function () { pt.on = false; });
     }
 
-    /* 再現性のある擬似乱数（線形合同法） */
+    /* 再現性のある擬似乱数（線形合同法）。静止画を毎回同じ絵にするため */
     function seeded(seed) {
       let v = seed % 2147483647;
       if (v <= 0) v += 2147483646;
@@ -633,7 +622,7 @@
       }
 
       /* ▼ カーソルへの引き寄せ。表示位置(dx,dy)だけを補間で動かし、
-           離脱時は 0 へ緩やかに戻す */
+           離脱時は 0 へ緩やかに戻す。座標本体(x,y)は書き換えない */
       const PR = 190, PR2 = PR * PR;
       for (const p of nodes) {
         let tx = 0, ty = 0;
@@ -752,8 +741,8 @@
       aperture(cx, cy + sy, R * 1.42, -rot * 0.55, 0.16);
       aperture(cx, cy + sy, R, rot, 0.5);
 
-      /* ▼ 旧版はここが無条件だったため、動きを減らす設定でも
-           アニメーションが止まらなかった（2026-08 改訂の主眼） */
+      /* ▼ この分岐を無条件にしないこと。
+           動きを減らす設定でもアニメーションが止まらなくなる */
       if (animate === false || rm.matches) {
         raf = null;
         return;
@@ -820,235 +809,81 @@
     render();
   })();
 
-     /* ------------------------------------------------------------
-     8. CASES カルーセル（rev:2026-09-14 新設／common.css §21 と対）
-        ・[data-cfi-loop] が無いページ（contact 等）では何もしない
-        ・ループは「前後に1セットずつ複製」＋「端の直前で scrollLeft を
-          setW だけ即時加減算」で作る。複製は同一内容なので瞬間移動は
-          視認されない。スムーススクロールの最中には絶対に動かさず、
-          必ず「移動を始める前」に行うこと（途中で動かすと跳ねる）
-        ・自動送りは WCAG 2.2.2 に従い停止手段を必ず用意する。
-          ホバー／フォーカス／タブ非表示／画面外／手動操作でも止める
-        ・動きを減らす設定では複製も自動送りもしない（素の横スクロール）
+  /* ------------------------------------------------------------
+     8. 横スクロールレール（common.css §10-2 / §20-20 と対）
+        ・[data-rail] 配下の [data-rail-track] をカード1枚ずつ送る
+        ・属性名（data-rail / -track / -prev / -next / -count）は
+          CSS・HTMLと共有している。変更する場合は3箇所を揃えること
+        ・.rail-ready はJSが動いた場合のみ付与する。付かなければ
+          ボタンはCSS側で非表示のまま＝素の横スクロールに戻る
+        ・送り幅（カード幅＋gap）はブレークポイントで変わるため
+          毎回実測する。定数で持たないこと
+        ・scroll の購読はトラック内部のみ。§2 の window スクロールとは別
      ------------------------------------------------------------ */
-  (function initCasesLoop() {
-    var wrap = document.querySelector("[data-cfi-loop]");
-    if (!wrap) return;
-    var track = wrap.querySelector(".cs-loop");
-    if (!track) return;
+  (function initRail() {
+    var rails = document.querySelectorAll("[data-rail]");
+    if (!rails.length) return;
 
-    var cards = Array.prototype.filter.call(track.children, function (el) {
-      return el.classList.contains("case");
-    });
-    var N = cards.length;
-    if (N < 2) return;
+    var SMOOTH = "scrollBehavior" in document.documentElement.style;
 
-    /* ▼▼ 調整ダイヤル ▼▼
-       INTERVAL … 自動送りの間隔(ms)。3枚表示なので 4000〜6000 が自然
-       RESUME   … 手動操作のあと自動再生へ戻るまでの猶予(ms)
-       ▲▲ ここだけ触れば挙動が変わる ▲▲ */
-    var INTERVAL = 4800;
-    var RESUME = 6000;
+    Array.prototype.forEach.call(rails, function (rail) {
+      var track = rail.querySelector("[data-rail-track]");
+      var prev = rail.querySelector("[data-rail-prev]");
+      var next = rail.querySelector("[data-rail-next]");
+      var count = rail.querySelector("[data-rail-count]");
+      if (!track || !prev || !next) return;
 
-    var LOOP = !rm.matches;
+      var ticking = false;
 
-    var ui = wrap.querySelector(".cs-ui");
-    var dotsEl = wrap.querySelector(".cs-dots");
-    var btnPrev = wrap.querySelector('[data-cs="prev"]');
-    var btnNext = wrap.querySelector('[data-cs="next"]');
-    var btnTgl = wrap.querySelector('[data-cs="toggle"]');
+      function step() {
+        var first = track.firstElementChild;
+        if (!first) return track.clientWidth;
+        var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        return Math.max(1, Math.round(first.getBoundingClientRect().width + gap));
+      }
 
-    var step = 0, setW = 0;
-    var timer = null, resumeT = null, idleT = null, rzT = null;
-    var stopped = false;   /* 利用者が明示的に止めた */
-    var visible = false, hovered = false, focused = false;
-
-    /* --- 複製（前1セット／後1セット。合計3セット） --- */
-    if (LOOP) {
-      var before = document.createDocumentFragment();
-      var after = document.createDocumentFragment();
-      cards.forEach(function (c) {
-        [before, after].forEach(function (frag) {
-          var cl = c.cloneNode(true);
-          cl.setAttribute("aria-hidden", "true");
-          cl.dataset.csClone = "1";
-          cl.removeAttribute("id");
-          Array.prototype.forEach.call(cl.querySelectorAll("[id]"), function (n) {
-            n.removeAttribute("id");
-          });
-          /* 複製は支援技術・タブ順から外す */
-          Array.prototype.forEach.call(
-            cl.querySelectorAll('a,button,input,select,textarea,summary,[tabindex]'),
-            function (n) { n.setAttribute("tabindex", "-1"); }
-          );
-          frag.appendChild(cl);
-        });
-      });
-      track.insertBefore(before, track.firstChild);
-      track.appendChild(after);
-    }
-
-    /* --- 計測。レイアウトを伴う読み取りはここに隔離する --- */
-    function measure() {
-      var list = track.querySelectorAll(".case");
-      if (list.length < 2) return;
-      step = list[1].offsetLeft - list[0].offsetLeft;
-      setW = step * N;
-    }
-    function anchor(i) {
-      if (!step) return;
-      track.scrollLeft = (LOOP ? setW : 0) + i * step;
-    }
-    function index() {
-      if (!step) return 0;
-      return ((Math.round(track.scrollLeft / step) % N) + N) % N;
-    }
-
-    /* --- 移動。端の直前でだけ1セットぶん瞬間移動させる --- */
-    function moveBy(d, smooth) {
-      if (!step) return;
-      var x = track.scrollLeft;
-      var nx = x + d * step;
-      if (LOOP) {
-        if (nx >= setW * 2) { x -= setW; nx -= setW; track.scrollLeft = x; }
-        else if (nx <= 0)   { x += setW; nx += setW; track.scrollLeft = x; }
-      } else {
+      function sync() {
+        ticking = false;
         var max = track.scrollWidth - track.clientWidth;
-        if (nx > max) nx = 0;
-        if (nx < 0) nx = max;
-      }
-      track.scrollTo({ left: nx, behavior: smooth && !rm.matches ? "smooth" : "auto" });
-    }
-    function goTo(i) {
-      var d = ((i - index()) % N + N) % N;
-      if (d > N / 2) d -= N;            /* 近い方向へ回る */
-      moveBy(d, true);
-    }
-
-    /* --- 自動再生 --- */
-    function canPlay() {
-      return LOOP && !stopped && visible && !hovered && !focused && !document.hidden;
-    }
-    function play() {
-      if (timer || !canPlay()) return;
-      timer = setInterval(function () {
-        if (!canPlay()) { pause(); return; }
-        moveBy(1, true);
-      }, INTERVAL);
-    }
-    function pause() { if (timer) { clearInterval(timer); timer = null; } }
-    function update() { canPlay() ? play() : pause(); }
-    function hold() {                    /* 手動操作：一定時間だけ止める */
-      pause();
-      clearTimeout(resumeT);
-      resumeT = setTimeout(update, RESUME);
-    }
-    function syncToggle() {
-      if (!btnTgl) return;
-      btnTgl.classList.toggle("is-paused", stopped);
-      btnTgl.setAttribute("aria-label", stopped ? "自動再生を再開" : "自動再生を停止");
-    }
-
-    /* --- ドット --- */
-    function syncDots() {
-      if (!dotsEl) return;
-      var cur = index();
-      Array.prototype.forEach.call(dotsEl.querySelectorAll("button"), function (b, i) {
-        b.setAttribute("aria-current", i === cur ? "true" : "false");
-      });
-    }
-    if (dotsEl) {
-      var frag = document.createDocumentFragment();
-      for (var i = 0; i < N; i++) {
-        var li = document.createElement("li");
-        var b = document.createElement("button");
-        b.type = "button";
-        b.dataset.i = i;
-        b.setAttribute("aria-label", i + 1 + "件目の事例へ");
-        li.appendChild(b);
-        frag.appendChild(li);
-      }
-      dotsEl.appendChild(frag);
-      dotsEl.addEventListener("click", function (e) {
-        var b = e.target && e.target.closest ? e.target.closest("button") : null;
-        if (!b) return;
-        hold();
-        goTo(+b.dataset.i);
-      });
-    }
-
-    /* --- スクロール監視。正規化は「止まってから」だけ行う --- */
-    track.addEventListener("scroll", function () {
-      syncDots();
-      clearTimeout(idleT);
-      idleT = setTimeout(function () {
-        if (!LOOP) return;
         var x = track.scrollLeft;
-        if (x < setW * 0.5) track.scrollLeft = x + setW;
-        else if (x > setW * 1.5) track.scrollLeft = x - setW;
-      }, 140);
-    }, { passive: true });
+        /* 端の判定に1pxの遊びを持たせる。
+           小数の scrollLeft で disabled が解除されないのを防ぐ */
+        prev.disabled = x <= 1;
+        next.disabled = x >= max - 1;
+        /* 枚数が収まりきる幅ではUIごと隠す（CSS .rail-static） */
+        rail.classList.toggle("rail-static", max <= 1);
 
-    ["pointerdown", "wheel", "touchstart"].forEach(function (t) {
-      track.addEventListener(t, hold, { passive: true });
+        if (!count) return;
+        var s = step();
+        var total = track.children.length;
+        var per = Math.max(1, Math.round(track.clientWidth / s));
+        var first = x >= max - 1
+          ? Math.max(1, total - per + 1)
+          : Math.min(Math.max(1, total - per + 1), Math.round(x / s) + 1);
+        var last = Math.min(total, first + per - 1);
+        count.textContent = (first === last ? first : first + "–" + last) + " / " + total;
+      }
+
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(sync);
+      }
+
+      function go(dir) {
+        var d = step() * dir;
+        if (SMOOTH) track.scrollBy({ left: d, behavior: rm.matches ? "auto" : "smooth" });
+        else track.scrollLeft += d;
+      }
+
+      prev.addEventListener("click", function () { go(-1); });
+      next.addEventListener("click", function () { go(1); });
+      track.addEventListener("scroll", onScroll, { passive: true });
+      addEventListener("resize", onScroll, { passive: true });
+      if (typeof ResizeObserver === "function") new ResizeObserver(onScroll).observe(track);
+
+      rail.classList.add("rail-ready");
+      sync();
     });
-    track.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowRight") { e.preventDefault(); hold(); moveBy(1, true); }
-      else if (e.key === "ArrowLeft") { e.preventDefault(); hold(); moveBy(-1, true); }
-    });
-
-    wrap.addEventListener("pointerenter", function () { hovered = true; update(); });
-    wrap.addEventListener("pointerleave", function () { hovered = false; update(); });
-    wrap.addEventListener("focusin", function () { focused = true; update(); });
-    wrap.addEventListener("focusout", function () { focused = false; update(); });
-    document.addEventListener("visibilitychange", update);
-
-    if (btnPrev) btnPrev.addEventListener("click", function () { hold(); moveBy(-1, true); });
-    if (btnNext) btnNext.addEventListener("click", function () { hold(); moveBy(1, true); });
-    if (btnTgl) {
-      if (!LOOP) btnTgl.hidden = true;   /* 動きを減らす設定では停止対象が無い */
-      btnTgl.addEventListener("click", function () {
-        stopped = !stopped;
-        clearTimeout(resumeT);
-        stopped ? pause() : update();
-        syncToggle();
-      });
-    }
-
-    addEventListener("resize", function () {
-      clearTimeout(rzT);
-      rzT = setTimeout(function () {
-        var i = index();
-        measure();
-        anchor(i);
-        syncDots();
-      }, 180);
-    }, { passive: true });
-
-    addEventListener("load", function () {
-      measure();
-      anchor(index());
-      syncDots();
-    });
-
-    onMQ(rm, function () {               /* 実行中に切り替わった場合 */
-      if (rm.matches) { stopped = true; pause(); syncToggle(); }
-    });
-
-    measure();
-    anchor(0);
-    syncDots();
-    syncToggle();
-    wrap.classList.add("cs-ready");
-
-    if (HAS_IO) {
-      new IntersectionObserver(function (es) {
-        visible = es[0].isIntersecting;
-        update();
-      }, { threshold: 0.25 }).observe(track);
-    } else {
-      visible = true;
-      update();
-    }
   })();
 })();
