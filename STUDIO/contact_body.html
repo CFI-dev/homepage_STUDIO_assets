@@ -1,16 +1,35 @@
 <!-- ============================================================
-     contact_body.html   rev:2026-09-10 MOTION対応
-     変更点（原本比・全4箇所。いずれも ◆MOTION で明示）
-       ① header 内に .hd-prog（読了進捗バー）を追加      … common.css §20-5 / common.js initScroll
-       ② hero の .wrap に data-mo-stagger を追加          … common.css §20-1 / common.js expandStagger
-       ③ footer の .ft-nav に data-mo-stagger を追加      … 同上
-       ④ SCRIPT 3 で STUDIOフォームの各ブロックに --i を付与（段差表示）
-     ※ common.css / common.js を先に反映してから本HTMLを反映すること
+     contact_body.html   rev:2026-09-14（common.css / common.js 分離版）
+     ────────────────────────────────────────────────────────────
+     ■ 触る前に必ず読むこと
+     ・このファイルの役割は「構造」だけ。見た目は common.css、
+       挙動は common.js が唯一の正。ここに <style> / <script> を戻さないこと
+     ・サイト設定（home / contact のパス）は HEAD の window.CFI_CONFIG に集約。
+       ここでパスを書き分けないこと（data-cfi-nav が common.js §2 で解決される）
+     ・ヒーロー背景は #heroFx（SILK＝common.js §11）のみ。
+       #heroCv（§10）を併記しないこと。置くと rAF と pointermove が二重に走る
+     ・common.js は DOM（#cfi-top / #cfi-bottom）より後に読み込むこと。
+       ファイル末尾の <script src> の位置を上へ動かさないこと
+     ・#cfi-top は common.js §3 が #__nuxt（STUDIOフォーム）の直前へ移動する。
+       #cfi-bottom はフォームの後ろに残す
+     ・STUDIOラッパーの縦余白打ち消しは common.js §12 が担当。
+       間隔の調整は common.css §22 の --cfi-gap-top / --cfi-gap-bottom だけで行う
+     ・#form の見出しオフセットは common.css §2 の scroll-padding-top が担当。
+       負の top を与えないこと（二重にかかる）
+
+     ■ 旧版からの削除箇所（機能は移設済み。復活させないこと）
+       ・<canvas id="heroCv">                → #heroFx と排他のため削除
+       ・<style>（.hfx-cv のマスク）          → common.css §5
+       ・SILK 本体の <script>（約300行）      → common.js §11
+       ・SCRIPT 1（リンク解決/配置/クローク） → common.js §2〜§4
+       ・SCRIPT 2（黒帯対策 trim）            → common.js §12
+       ・SCRIPT 3（フォームのリビール）       → common.js §13
+       ・class="mono"（アイブロウ）            → .eyebrow が f-mono を内包
      ============================================================ -->
 <div id="cfi-top">
 
-  <!-- HEADER / ナビはトップと同一項目に揃える。data-cfi-nav の 'home#xxx' は
-       下部スクリプトで CFI_HOME + '#xxx' に解決される -->
+  <!-- HEADER / ナビはトップと同一項目に揃える。
+       data-cfi-nav の 'home#xxx' は common.js §2 が CFI_CONFIG.home + '#xxx' に解決する -->
   <header id="hd">
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
@@ -38,321 +57,34 @@
       </nav>
     </div>
 
-    <!-- ◆MOTION ① 読了進捗バー。JS(initScroll)が --p を供給する。
-         JSが落ちた場合は幅0のままで見た目に影響しない -->
+    <!-- 読了進捗バー。common.js §6 が --p を供給する。
+         JSが落ちた場合は scaleX(0) のままで見た目に影響しない -->
     <i class="hd-prog" aria-hidden="true"></i>
   </header>
 
-  <!-- HERO（トップと同じ背景＋canvas） -->
+  <!-- HERO（下層ページ用。高さと見出し組みは common.css §22 が担当） -->
   <section class="hero hero-sub" id="top">
-    <canvas id="heroCv" aria-hidden="true"></canvas>
-<!-- ============================================================
-     HERO BACKGROUND ／ SILK  rev:2026-09-11
-     ・<canvas id="heroCv"> を丸ごとこのブロックに置き換える
-     ・id を heroFx にしているため、common.js §7（initHeroCanvas）は
-       #heroCv が見つからず冒頭で early return する。
-       両者が同じ canvas を奪い合う事故は起きない（JS側の変更は不要）
-     ・common.css §20-15 のヒーローパララックス（.hero .wrap への
-       直接書込）とは独立。そのまま併存する
-     ・配色は5点の階調ランプから帯ごとに別位置をサンプリングする。
-       ブランド2色を直接置くと色相差40度の段差が加算合成で濁るため
-     ・canvas は透明のまま。.hero の背景グラデ（§3）が常に透ける
-     ============================================================ -->
-<canvas id="heroFx" class="hfx-cv" aria-hidden="true"></canvas>
 
-<style>
-/* 上下端で帯を溶かす。矩形の切り口を見せないための仕上げ。
-   上端 10% はヘッダー（--hd:72px）の背後に隠れる領域に相当する */
-.hfx-cv{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%);
-          mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%)}
-</style>
+    <!-- ヒーロー背景：SILK。描画は common.js §11、マスクは common.css §5（.hfx-cv）。
+         canvas は透明のまま＝.hero の背景グラデ（§5）が常に透ける -->
+    <canvas id="heroFx" class="hfx-cv" aria-hidden="true"></canvas>
 
-<script>
-(function(){
-  if (window.__cfiHeroFx) return;                 /* 二重初期化ガード */
-  window.__cfiHeroFx = 1;
-
-  var cv = document.getElementById('heroFx');
-  if (!cv || typeof cv.getContext !== 'function') return;
-  var hero = (cv.closest && cv.closest('.hero')) || cv.parentNode;
-  var g = cv.getContext('2d', { alpha:true });
-  if (!g || !hero) return;
-
-  var rm    = matchMedia('(prefers-reduced-motion: reduce)');
-  var HOVER = matchMedia('(hover:hover) and (pointer:fine)');
-
-  /* ============================================================
-     調整ダイヤル
-     ============================================================ */
-  /* PALETTE  'deep'（既定・重厚）/ 'brand'（ブランド2色に忠実）
-              / 'aurora'（淡アクア強め・明るい） */
-  var PALETTE = 'deep';
-
-  var AMP   = 0.18;   /* 振幅（画面高比）。0.24 まで上げると相当に暴れる   */
-  var RATE  = 1.0;    /* 時間の進み。1.6 あたりから「速い」と感じ始める     */
-  var BANDS = 6;      /* 帯の本数（PC）。塗り面積は本数にほぼ比例する       */
-  var ALPHA = 0.115;  /* 帯の基準濃度。上げすぎると重なりが白飛びする       */
-  var SHEEN = 0.09;   /* 上縁の艶。0 で無効                                 */
-  var GLOW  = 0.10;   /* 交差部を底上げするベール。0 で無効                 */
-
-  /* ------------------------------------------------------------
-     配色ランプ
-     ・端から端まで色相が単調に進むよう並べること。
-       順序を入れ替えると帯の途中で色が折り返し、段差になる
-     ・中間シアン（3点目）が blue→teal の継ぎ目を埋める要。
-       これを抜くと従来版の濁りが再発する
-     ------------------------------------------------------------ */
-  var PALETTES = {
-    deep: [                /* 深藍 → accent → 中間シアン → accent-2 → 淡アクア */
-      [ 16,  58, 132],
-      [ 15, 107, 224],
-      [  0, 160, 220],
-      [  0, 194, 168],
-      [126, 236, 216]
-    ],
-    brand: [               /* ブランド2色に忠実。中間色は最小限 */
-      [ 12,  74, 170],
-      [ 15, 107, 224],
-      [  6, 156, 200],
-      [  0, 194, 168],
-      [ 92, 216, 198]
-    ],
-    aurora: [              /* 明るめ。濃色ヒーロー以外へ流用する場合向け */
-      [ 34,  92, 190],
-      [ 28, 132, 236],
-      [  0, 182, 226],
-      [ 26, 214, 186],
-      [162, 246, 228]
-    ]
-  };
-  var RAMP = PALETTES[PALETTE] || PALETTES.deep;
-
-  /* ランプ上の位置 p(0..1) から色を線形補間で取り出す */
-  function ramp(p){
-    p = p < 0 ? 0 : (p > 1 ? 1 : p);
-    var x = p * (RAMP.length - 1);
-    var i = Math.min(Math.floor(x), RAMP.length - 2);
-    var f = x - i, a = RAMP[i], b = RAMP[i+1];
-    return [ (a[0] + (b[0]-a[0])*f) | 0,
-             (a[1] + (b[1]-a[1])*f) | 0,
-             (a[2] + (b[2]-a[2])*f) | 0 ];
-  }
-  function rgba(c, a){
-    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')';
-  }
-
-  var SEG = 18;                                   /* 帯1本あたりの頂点数 */
-  var W=0, H=0, DPR=1, rb=[], raf=null, vis=true, rzT=null;
-  var pt = { x:.5, y:.5, tx:.5, ty:.5, on:false };
-
-  if (HOVER.matches){
-    hero.addEventListener('pointermove', function(e){
-      var r = cv.getBoundingClientRect();
-      pt.tx = (e.clientX - r.left) / (r.width  || 1);
-      pt.ty = (e.clientY - r.top ) / (r.height || 1);
-      pt.on = true;
-    }, { passive:true });
-    hero.addEventListener('pointerleave', function(){ pt.on = false; });
-  }
-
-  /* ------------------------------------------------------------
-     帯の生成。グラデーションと頂点バッファはここで一度だけ作る。
-     毎フレーム createLinearGradient を呼ぶとGCが跳ねる
-     ------------------------------------------------------------ */
-  function build(){
-    var narrow = W < 768;
-    var n = narrow ? 4 : BANDS;
-    var N = SEG + 1;
-    rb = [];
-
-    for (var i=0;i<n;i++){
-      var u = n > 1 ? i/(n-1) : .5;               /* 0=上 1=下 */
-
-      /* ▼ 帯ごとにランプ上の位置をずらす。
-           上の帯＝深藍寄り、下の帯＝ティール寄りになり、
-           ヒーロー全体に縦方向の色相グラデーションが生まれる */
-      var h  = 0.06 + u * 0.70;
-      var cL = ramp(h - 0.14);                    /* 左端 */
-      var cM = ramp(h + 0.04);                    /* 中央 */
-      var cR = ramp(h + 0.22);                    /* 右端 */
-      var a  = ALPHA * (0.80 + u * 0.35);
-
-      /* 横方向にも色相を進める。左右で表情が変わり、平板にならない */
-      var grd = g.createLinearGradient(-W*0.12, 0, W*1.12, 0);
-      grd.addColorStop(0.00, rgba(cL, 0));
-      grd.addColorStop(0.18, rgba(cL, a * 0.72));
-      grd.addColorStop(0.50, rgba(cM, a));
-      grd.addColorStop(0.82, rgba(cR, a * 0.58));
-      grd.addColorStop(1.00, rgba(cR, 0));
-
-      rb.push({
-        base: H * (0.16 + u * 0.62),              /* 定位置 */
-        a1: H * AMP * (0.55 + 0.45 * ((i * 0.37) % 1)),  /* 乱数を使わず再現性を持たせる */
-        a2: H * AMP * 0.34,
-        k1: 1.1 + u * 0.9,                        /* 横方向の波数 */
-        k2: 2.4 + u * 1.6,
-        s1: (0.06 + u * 0.05) * RATE,             /* 位相速度。小さいほど優雅 */
-        s2: (0.09 - u * 0.03) * RATE,
-        ph: u * 4.1,
-        th: H * (0.05 + 0.055 * (1 - u)),         /* 帯の厚み */
-        tilt: (u - 0.5) * H * 0.22,               /* 傾き。平行を避けて動きを出す */
-        grad: grd,
-        sheen: rgba(ramp(Math.min(h + 0.30, 1)), SHEEN * (0.55 + u * 0.45)),
-        top: new Float32Array(N * 2),             /* 頂点バッファ（使い回す） */
-        bot: new Float32Array(N * 2)
-      });
-    }
-  }
-
-  function resize(){
-    DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
-    var r = cv.getBoundingClientRect();
-    W = r.width; H = r.height;
-    if (!W || !H) return;                         /* 非表示時の 0 サイズを回避 */
-    cv.width  = Math.round(W * DPR);
-    cv.height = Math.round(H * DPR);
-    g.setTransform(DPR, 0, 0, DPR, 0, 0);
-    build();
-  }
-
-  /* ------------------------------------------------------------
-     点列を二次ベジェで結ぶ（中点をアンカーにする定番手法）。
-     rev:2026-09-11 上辺と下辺を必ず1本の連続パスとして繋ぐ。
-       下辺の描き始めに moveTo を使うと新しいサブパスが立ち、
-       closePath が上下を閉じないまま塗りに回ってしまう
-     rev  … true で配列を逆順に辿る（下辺の復路用）
-     first… true なら moveTo、false なら lineTo で開始する
-     ------------------------------------------------------------ */
-  function curveArr(arr, n, first, rev){
-    var s = rev ? n - 1 : 0, d = rev ? -1 : 1, k, i0, i1, mx, my;
-    i0 = s * 2;
-    if (first) g.moveTo(arr[i0], arr[i0+1]);
-    else       g.lineTo(arr[i0], arr[i0+1]);
-    for (k=1;k<n-1;k++){
-      i0 = (s + d*k) * 2;
-      i1 = (s + d*(k+1)) * 2;
-      mx = (arr[i0] + arr[i1]) * 0.5;
-      my = (arr[i0+1] + arr[i1+1]) * 0.5;
-      g.quadraticCurveTo(arr[i0], arr[i0+1], mx, my);
-    }
-    i0 = (s + d*(n-1)) * 2;
-    g.lineTo(arr[i0], arr[i0+1]);
-  }
-
-  function band(r, T, warp){
-    var N = SEG + 1, x0 = -W*0.12, span = W*1.24, i;
-    for (i=0;i<N;i++){
-      var u = i / SEG;
-      var x = x0 + span * u;
-      var y = r.base
-            + r.tilt * (u - 0.5) * 2
-            + r.a1 * Math.sin(u * 6.28318 * r.k1 + T * r.s1 + r.ph)
-            + r.a2 * Math.sin(u * 6.28318 * r.k2 - T * r.s2)
-            + warp * Math.sin(u * 6.28318 + r.ph);          /* ポインタによる歪み */
-      var th = r.th * (0.55 + 0.45 * Math.sin(u * 6.28318 * 1.7 + T * r.s2 * 1.3 + r.ph));
-      r.top[i*2] = x; r.top[i*2+1] = y;
-      r.bot[i*2] = x; r.bot[i*2+1] = y + th;
-    }
-
-    /* 本体（上辺 → 下辺の復路 → 閉じる。単一サブパス） */
-    g.beginPath();
-    curveArr(r.top, N, true,  false);
-    curveArr(r.bot, N, false, true);
-    g.closePath();
-    g.fillStyle = r.grad;
-    g.fill();
-
-    /* 上縁の艶。光が布の稜線を走る表現 */
-    if (SHEEN > 0){
-      g.beginPath();
-      curveArr(r.top, N, true, false);
-      g.strokeStyle = r.sheen;
-      g.lineWidth = 1;
-      g.stroke();
-    }
-  }
-
-  function draw(t){
-    var live = !rm.matches;
-    var T = live ? t / 1000 : 0;
-
-    /* ポインタ追従は慣性付き。値を直に入れると帯が痙攣する */
-    pt.x += ((pt.on ? pt.tx : .5) - pt.x) * 0.045;
-    pt.y += ((pt.on ? pt.ty : .5) - pt.y) * 0.045;
-    var warp = live ? (pt.y - 0.5) * H * 0.20 : 0;
-
-    g.clearRect(0, 0, W, H);
-
-    /* 加算合成。帯が重なった部分だけが光る＝交差が主役になる */
-    g.globalCompositeOperation = 'lighter';
-    g.lineCap  = 'round';
-    g.lineJoin = 'round';
-    for (var i=0;i<rb.length;i++) band(rb[i], T, warp);
-
-    /* 交差の輝きを底上げする薄いベール。色はランプ中央から取り、
-       帯と同じ色系に収める（別色を置くと途端に安っぽくなる） */
-    if (GLOW > 0){
-      var cx = W * (0.30 + pt.x * 0.40);
-      var cy = H * (0.30 + pt.y * 0.30);
-      var v  = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.62);
-      v.addColorStop(0.0, rgba(ramp(0.64), GLOW));
-      v.addColorStop(0.55, rgba(ramp(0.30), GLOW * 0.38));
-      v.addColorStop(1.0, rgba(ramp(0.10), 0));
-      g.fillStyle = v;
-      g.fillRect(0, 0, W, H);
-    }
-    g.globalCompositeOperation = 'source-over';
-
-    if (!live){ raf = null; return; }             /* 動きを減らす設定＝静止1枚 */
-    raf = requestAnimationFrame(draw);
-  }
-
-  function stop(){ if (raf){ cancelAnimationFrame(raf); raf = null; } }
-  function start(){ if (!raf && vis) raf = requestAnimationFrame(draw); }
-  function render(){ if (rm.matches){ stop(); draw(0); } else start(); }
-
-  resize(); render();
-
-  /* モバイルのアドレスバー開閉による微小リサイズを間引く */
-  addEventListener('resize', function(){
-    clearTimeout(rzT);
-    rzT = setTimeout(function(){ stop(); resize(); render(); }, 180);
-  }, { passive:true });
-
-  addEventListener('orientationchange', function(){ stop(); resize(); render(); });
-
-  document.addEventListener('visibilitychange', function(){
-    document.hidden ? stop() : render();
-  });
-
-  /* ヒーローが画面外なら停止（省電力。common.js §7 と同じ方針） */
-  if (typeof IntersectionObserver === 'function'){
-    new IntersectionObserver(function(es){
-      vis = es[0].isIntersecting; vis ? render() : stop();
-    }, { threshold:0 }).observe(hero);
-  }
-
-  /* 設定が実行中に切り替わった場合も追従 */
-  if (typeof rm.addEventListener === 'function') rm.addEventListener('change', render);
-  else if (typeof rm.addListener === 'function') rm.addListener(render);
-})();
-</script>
-
-    <!-- ◆MOTION ② 見出し・リードを順番に立ち上げる（値なし＝下から上へ） -->
+    <!-- data-mo-stagger：直下要素を順送りで立ち上げる（値なし＝下から上へ）。
+         遅延は common.css §19 の --i が担当。JSで setTimeout を足さないこと -->
     <div class="wrap" data-mo-stagger>
-      <p class="eyebrow mono rv">GET IN TOUCH</p>
+      <p class="eyebrow rv">GET IN TOUCH</p>
       <h1 class="rv">CONTACT<span>お問い合わせ</span></h1>
       <p class="lead rv">ご相談・お見積り・資料請求はこちらから。<br class="brpc">
         検討段階のご相談でも構いません。内容を確認のうえ、通常2営業日以内に担当者よりご連絡いたします。</p>
     </div>
   </section>
 
-  <!-- ヘッダーCTA「お問い合わせ」のスクロール先アンカー -->
+  <!-- ヘッダーCTA「お問い合わせ」のスクロール先アンカー。
+       オフセットは common.css §2 の scroll-padding-top が担当 -->
   <span id="form" aria-hidden="true"></span>
 
 </div>
-<!-- ↑ ここまでが STUDIO フォームの「上」 -->
+<!-- ↑ ここまでが STUDIO フォームの「上」（common.js §3 が #__nuxt の直前へ移す） -->
 
 
 <div id="cfi-bottom">
@@ -373,8 +105,8 @@
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
         </div>
 
-        <!-- ◆MOTION ③ 4カラムを左から順に。既に .rv が付いているので
-             expandStagger は --i の付与のみを行う -->
+        <!-- 4カラムを左から順に。子に .rv が付いているため
+             common.js の expandStagger は --i の付与のみを行う -->
         <div class="ft-nav" data-mo-stagger>
           <div class="rv">
             <h4>SERVICE</h4>
@@ -400,6 +132,8 @@
             <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
           </div>
           <div class="rv">
+            <!-- data-cfi-todo：href が未設定のものだけを common.js §2 が無効化する。
+                 URLが決まったら data-cfi-todo を外し、href を入れるだけで通常表示に戻る -->
             <h4>LEGAL</h4>
             <a href="#" data-cfi-todo="プライバシーポリシーURL">プライバシーポリシー</a>
             <a href="#" data-cfi-todo="情報セキュリティ方針URL">情報セキュリティ方針</a>
@@ -418,174 +152,10 @@
 </div>
 
 
-<!-- SCRIPT 1：リンク解決 ＋ DOM配置 ＋ クローク解除 -->
-<script>
-(function(){
-  /* ▼ サイト設定：home_body.html と同じ値にすること */
-  var CFI_HOME    = '/';          /* トップページのパス（例: '/test_page'） */
-  var CFI_CONTACT = '/contact';   /* このページ自身のパス */
-
-  var html   = document.documentElement;
-  var top    = document.getElementById('cfi-top');
-  var bottom = document.getElementById('cfi-bottom');
-  var nuxt   = document.getElementById('__nuxt');
-
-  /* 'home#cases' → CFI_HOME + '#cases' に解決する */
-  function applyNav(scope){
-    if (!scope) return;
-    Array.prototype.forEach.call(scope.querySelectorAll('[data-cfi-nav]'), function(a){
-      var v = a.getAttribute('data-cfi-nav');
-      var href;
-      if (v === 'contact')              href = CFI_CONTACT;
-      else if (v.indexOf('home') === 0) href = CFI_HOME + v.slice(4);
-      if (href) a.setAttribute('href', href.replace('//', '/'));
-    });
-  }
-  applyNav(top); applyNav(bottom);
-
-  function applyTodo(scope){
-    if (!scope) return;
-    Array.prototype.forEach.call(scope.querySelectorAll('a[data-cfi-todo]'), function(a){
-      var h = a.getAttribute('href');
-      if (h && h !== '#') return;
-      a.classList.add('is-todo');
-      a.setAttribute('aria-disabled','true');
-      a.setAttribute('tabindex','-1');
-      a.removeAttribute('href');
-      a.addEventListener('click', function(e){ e.preventDefault(); });
-    });
-  }
-  applyTodo(top); applyTodo(bottom);
-
-  /* ヘッダー＋ヒーローを __nuxt の直前へ移動 */
-  if (top) {
-    if (nuxt && nuxt.parentNode) nuxt.parentNode.insertBefore(top, nuxt);
-    else document.body.insertBefore(top, document.body.firstChild);
-  }
-
-  /* クローク解除（STUDIOのキャンバス描画＋配色注入が終わってから） */
-  function reveal(){
-    if (!html.classList.contains('cfi-boot')) return;
-    html.classList.add('cfi-boot-out');
-    setTimeout(function(){ html.classList.remove('cfi-boot','cfi-boot-out'); }, 300);
-  }
-
-  var waited = 0;
-  var poll = setInterval(function(){
-    waited += 50;
-    var canvas = document.querySelector('#__nuxt .StudioCanvas, #__nuxt .sd');
-    if (canvas || waited >= 2000) {
-      clearInterval(poll);
-      /* STUDIO側の .3s〜.4s transition が終わり切るまで待つ */
-      setTimeout(reveal, 480);
-    }
-  }, 50);
-
-  window.addEventListener('load', function(){ setTimeout(reveal, 480); });
-  setTimeout(reveal, 3000);   /* 最終保険（HEAD側3.5秒より先に発火） */
-
-  /* リビール演出のフォールバック。クローク中は判定しない */
-  (function fallbackGuard(){
-    var tries = 0;
-    (function check(){
-      if (html.classList.contains('cfi-boot') && ++tries < 12) {
-        setTimeout(check, 500);
-        return;
-      }
-      setTimeout(function(){
-        var rv = document.querySelector('#cfi-top .rv, #cfi-bottom .rv');
-        if (rv && !rv.classList.contains('on')) html.classList.add('cfi-fallback');
-      }, 1200);
-    })();
-  })();
-})();
-</script>
-
-
-<!-- SCRIPT 2：黒帯対策（STUDIO側ラッパーの縦余白を打ち消す） -->
-<script>
-(function(){
-  function trim(){
-    var nuxt = document.getElementById('__nuxt');
-    if (!nuxt) return;
-    var kids = nuxt.children;
-    for (var i = 0; i < kids.length; i++) {
-      var el = kids[i];
-      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
-      var cs = getComputedStyle(el);
-      if (parseFloat(cs.paddingTop)    > 0) el.style.paddingTop    = '0px';
-      if (parseFloat(cs.paddingBottom) > 0) el.style.paddingBottom = '0px';
-      if (parseFloat(cs.marginTop)     > 0) el.style.marginTop     = '0px';
-      if (parseFloat(cs.marginBottom)  > 0) el.style.marginBottom  = '0px';
-      if (cs.minHeight !== '0px' && cs.minHeight !== 'auto') el.style.minHeight = '0px';
-    }
-  }
-  var n = 0, t = setInterval(function(){ trim(); if (++n > 20) clearInterval(t); }, 300);
-  document.addEventListener('DOMContentLoaded', trim);
-  window.addEventListener('load', trim);
-})();
-</script>
-
+<!-- ============================================================
+     共通スクリプト（唯一の <script>）
+     ・必ずこの位置＝#cfi-top / #cfi-bottom より後に置くこと
+     ・キャッシュバスターのクエリは付けないこと
+     ・ページ側で必要な入力は HEAD の window.CFI_CONFIG だけ
+     ============================================================ -->
 <script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
-
-
-<!-- SCRIPT 3：STUDIOフォームにリビール演出を付与。必ず common.js の「後」に置くこと -->
-<script>
-(function(){
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (typeof IntersectionObserver !== 'function') return;
-
-  var SKIP = { SCRIPT:1, STYLE:1, LINK:1, NOSCRIPT:1, TEMPLATE:1 };
-  var MAX_UNITS = 8;   /* これを超える分割はまとめて1枚として出す */
-
-  /* STUDIOはラッパーを一枚ずつ入れ子にするため、
-     「子が2つ以上に分岐した最初の階層」をリビール単位とみなす */
-  function pickTargets(root){
-    var node = root, guard = 0;
-    while (node && guard++ < 10) {
-      var kids = Array.prototype.filter.call(node.children, function(el){
-        return !SKIP[el.tagName] && el.getBoundingClientRect().height > 0;
-      });
-      if (!kids.length)            return node === root ? [] : [node];
-      if (kids.length === 1)       { node = kids[0]; continue; }
-      if (kids.length > MAX_UNITS) return [node];
-      return kids;
-    }
-    return [node];
-  }
-
-  function apply(){
-    var nuxt = document.getElementById('__nuxt');
-    if (!nuxt || nuxt.dataset.cfiRv === '1') return false;
-    var targets = pickTargets(nuxt);
-    if (!targets.length) return false;
-
-    nuxt.dataset.cfiRv = '1';
-
-    /* ◆MOTION ④ 入力欄ブロックを上から順に立ち上げる。
-       遅延はCSS(§20-1)が --i から算出するため、ここでは番号だけ渡す */
-    targets.forEach(function(el, i){
-      el.classList.add('rv');
-      el.style.setProperty('--i', i);
-    });
-
-    if (window.CFI && typeof CFI.reveal === 'function') CFI.reveal(targets);
-    else targets.forEach(function(el){ el.classList.add('on'); });
-    return true;
-  }
-
-  /* フォームは非同期マウントのため最長2秒ポーリング */
-  var n = 0, t = setInterval(function(){
-    if (apply() || ++n > 40) clearInterval(t);
-  }, 50);
-
-  /* 最終保険：5秒経っても .on が付かない要素は強制表示 */
-  setTimeout(function(){
-    var nuxt = document.getElementById('__nuxt');
-    if (!nuxt) return;
-    Array.prototype.forEach.call(nuxt.querySelectorAll('.rv'), function(el){
-      el.classList.add('on');
-    });
-  }, 5000);
-})();
-</script>
