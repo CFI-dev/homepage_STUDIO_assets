@@ -819,4 +819,236 @@
     /* 初期描画（動きを減らす設定では静止画1枚） */
     render();
   })();
+
+     /* ------------------------------------------------------------
+     8. CASES カルーセル（rev:2026-09-14 新設／common.css §21 と対）
+        ・[data-cfi-loop] が無いページ（contact 等）では何もしない
+        ・ループは「前後に1セットずつ複製」＋「端の直前で scrollLeft を
+          setW だけ即時加減算」で作る。複製は同一内容なので瞬間移動は
+          視認されない。スムーススクロールの最中には絶対に動かさず、
+          必ず「移動を始める前」に行うこと（途中で動かすと跳ねる）
+        ・自動送りは WCAG 2.2.2 に従い停止手段を必ず用意する。
+          ホバー／フォーカス／タブ非表示／画面外／手動操作でも止める
+        ・動きを減らす設定では複製も自動送りもしない（素の横スクロール）
+     ------------------------------------------------------------ */
+  (function initCasesLoop() {
+    var wrap = document.querySelector("[data-cfi-loop]");
+    if (!wrap) return;
+    var track = wrap.querySelector(".cs-loop");
+    if (!track) return;
+
+    var cards = Array.prototype.filter.call(track.children, function (el) {
+      return el.classList.contains("case");
+    });
+    var N = cards.length;
+    if (N < 2) return;
+
+    /* ▼▼ 調整ダイヤル ▼▼
+       INTERVAL … 自動送りの間隔(ms)。3枚表示なので 4000〜6000 が自然
+       RESUME   … 手動操作のあと自動再生へ戻るまでの猶予(ms)
+       ▲▲ ここだけ触れば挙動が変わる ▲▲ */
+    var INTERVAL = 4800;
+    var RESUME = 6000;
+
+    var LOOP = !rm.matches;
+
+    var ui = wrap.querySelector(".cs-ui");
+    var dotsEl = wrap.querySelector(".cs-dots");
+    var btnPrev = wrap.querySelector('[data-cs="prev"]');
+    var btnNext = wrap.querySelector('[data-cs="next"]');
+    var btnTgl = wrap.querySelector('[data-cs="toggle"]');
+
+    var step = 0, setW = 0;
+    var timer = null, resumeT = null, idleT = null, rzT = null;
+    var stopped = false;   /* 利用者が明示的に止めた */
+    var visible = false, hovered = false, focused = false;
+
+    /* --- 複製（前1セット／後1セット。合計3セット） --- */
+    if (LOOP) {
+      var before = document.createDocumentFragment();
+      var after = document.createDocumentFragment();
+      cards.forEach(function (c) {
+        [before, after].forEach(function (frag) {
+          var cl = c.cloneNode(true);
+          cl.setAttribute("aria-hidden", "true");
+          cl.dataset.csClone = "1";
+          cl.removeAttribute("id");
+          Array.prototype.forEach.call(cl.querySelectorAll("[id]"), function (n) {
+            n.removeAttribute("id");
+          });
+          /* 複製は支援技術・タブ順から外す */
+          Array.prototype.forEach.call(
+            cl.querySelectorAll('a,button,input,select,textarea,summary,[tabindex]'),
+            function (n) { n.setAttribute("tabindex", "-1"); }
+          );
+          frag.appendChild(cl);
+        });
+      });
+      track.insertBefore(before, track.firstChild);
+      track.appendChild(after);
+    }
+
+    /* --- 計測。レイアウトを伴う読み取りはここに隔離する --- */
+    function measure() {
+      var list = track.querySelectorAll(".case");
+      if (list.length < 2) return;
+      step = list[1].offsetLeft - list[0].offsetLeft;
+      setW = step * N;
+    }
+    function anchor(i) {
+      if (!step) return;
+      track.scrollLeft = (LOOP ? setW : 0) + i * step;
+    }
+    function index() {
+      if (!step) return 0;
+      return ((Math.round(track.scrollLeft / step) % N) + N) % N;
+    }
+
+    /* --- 移動。端の直前でだけ1セットぶん瞬間移動させる --- */
+    function moveBy(d, smooth) {
+      if (!step) return;
+      var x = track.scrollLeft;
+      var nx = x + d * step;
+      if (LOOP) {
+        if (nx >= setW * 2) { x -= setW; nx -= setW; track.scrollLeft = x; }
+        else if (nx <= 0)   { x += setW; nx += setW; track.scrollLeft = x; }
+      } else {
+        var max = track.scrollWidth - track.clientWidth;
+        if (nx > max) nx = 0;
+        if (nx < 0) nx = max;
+      }
+      track.scrollTo({ left: nx, behavior: smooth && !rm.matches ? "smooth" : "auto" });
+    }
+    function goTo(i) {
+      var d = ((i - index()) % N + N) % N;
+      if (d > N / 2) d -= N;            /* 近い方向へ回る */
+      moveBy(d, true);
+    }
+
+    /* --- 自動再生 --- */
+    function canPlay() {
+      return LOOP && !stopped && visible && !hovered && !focused && !document.hidden;
+    }
+    function play() {
+      if (timer || !canPlay()) return;
+      timer = setInterval(function () {
+        if (!canPlay()) { pause(); return; }
+        moveBy(1, true);
+      }, INTERVAL);
+    }
+    function pause() { if (timer) { clearInterval(timer); timer = null; } }
+    function update() { canPlay() ? play() : pause(); }
+    function hold() {                    /* 手動操作：一定時間だけ止める */
+      pause();
+      clearTimeout(resumeT);
+      resumeT = setTimeout(update, RESUME);
+    }
+    function syncToggle() {
+      if (!btnTgl) return;
+      btnTgl.classList.toggle("is-paused", stopped);
+      btnTgl.setAttribute("aria-label", stopped ? "自動再生を再開" : "自動再生を停止");
+    }
+
+    /* --- ドット --- */
+    function syncDots() {
+      if (!dotsEl) return;
+      var cur = index();
+      Array.prototype.forEach.call(dotsEl.querySelectorAll("button"), function (b, i) {
+        b.setAttribute("aria-current", i === cur ? "true" : "false");
+      });
+    }
+    if (dotsEl) {
+      var frag = document.createDocumentFragment();
+      for (var i = 0; i < N; i++) {
+        var li = document.createElement("li");
+        var b = document.createElement("button");
+        b.type = "button";
+        b.dataset.i = i;
+        b.setAttribute("aria-label", i + 1 + "件目の事例へ");
+        li.appendChild(b);
+        frag.appendChild(li);
+      }
+      dotsEl.appendChild(frag);
+      dotsEl.addEventListener("click", function (e) {
+        var b = e.target && e.target.closest ? e.target.closest("button") : null;
+        if (!b) return;
+        hold();
+        goTo(+b.dataset.i);
+      });
+    }
+
+    /* --- スクロール監視。正規化は「止まってから」だけ行う --- */
+    track.addEventListener("scroll", function () {
+      syncDots();
+      clearTimeout(idleT);
+      idleT = setTimeout(function () {
+        if (!LOOP) return;
+        var x = track.scrollLeft;
+        if (x < setW * 0.5) track.scrollLeft = x + setW;
+        else if (x > setW * 1.5) track.scrollLeft = x - setW;
+      }, 140);
+    }, { passive: true });
+
+    ["pointerdown", "wheel", "touchstart"].forEach(function (t) {
+      track.addEventListener(t, hold, { passive: true });
+    });
+    track.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { e.preventDefault(); hold(); moveBy(1, true); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); hold(); moveBy(-1, true); }
+    });
+
+    wrap.addEventListener("pointerenter", function () { hovered = true; update(); });
+    wrap.addEventListener("pointerleave", function () { hovered = false; update(); });
+    wrap.addEventListener("focusin", function () { focused = true; update(); });
+    wrap.addEventListener("focusout", function () { focused = false; update(); });
+    document.addEventListener("visibilitychange", update);
+
+    if (btnPrev) btnPrev.addEventListener("click", function () { hold(); moveBy(-1, true); });
+    if (btnNext) btnNext.addEventListener("click", function () { hold(); moveBy(1, true); });
+    if (btnTgl) {
+      if (!LOOP) btnTgl.hidden = true;   /* 動きを減らす設定では停止対象が無い */
+      btnTgl.addEventListener("click", function () {
+        stopped = !stopped;
+        clearTimeout(resumeT);
+        stopped ? pause() : update();
+        syncToggle();
+      });
+    }
+
+    addEventListener("resize", function () {
+      clearTimeout(rzT);
+      rzT = setTimeout(function () {
+        var i = index();
+        measure();
+        anchor(i);
+        syncDots();
+      }, 180);
+    }, { passive: true });
+
+    addEventListener("load", function () {
+      measure();
+      anchor(index());
+      syncDots();
+    });
+
+    onMQ(rm, function () {               /* 実行中に切り替わった場合 */
+      if (rm.matches) { stopped = true; pause(); syncToggle(); }
+    });
+
+    measure();
+    anchor(0);
+    syncDots();
+    syncToggle();
+    wrap.classList.add("cs-ready");
+
+    if (HAS_IO) {
+      new IntersectionObserver(function (es) {
+        visible = es[0].isIntersecting;
+        update();
+      }, { threshold: 0.25 }).observe(track);
+    } else {
+      visible = true;
+      update();
+    }
+  })();
 })();
