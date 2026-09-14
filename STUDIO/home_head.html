@@ -1,17 +1,51 @@
-<!-- ① 最速で html にクラス付与（インライン＝パース時に即実行） -->
+<!-- ============================================================
+     CFI home HEAD
+     ────────────────────────────────────────────────────────────
+     ■ 触る前に必ず読むこと
+     ・このHEADの役割は4つだけ。見た目の指定は一切持たない
+       (1) preconnect
+       (2) window.CFI_CONFIG の宣言（サイト設定の唯一の正）
+       (3) html へのクラス付与（.cfi-on / .cfi-boot）と3.5秒の保険解除
+       (4) common.css / フォントの読み込み
+     ・土台・起動クローク・a.is-todo・.rv・scroll-padding-top は
+       common.css §2〜§4 / §19 / §20 を唯一の正とする。
+       ここで <style> を書いて再定義しないこと
+     ・クローク文言は common.css の --cfi-boot-label が正（既定
+       "CREATE FROM IDEAS"／contact は §22 で "CONTACT" に上書き）。
+       下の bootLabel は戻る／進む用オーバーレイ専用。値を揃えること
+     ・3.5秒の保険は common.js §4 の最終保険（3秒）より必ず後にすること
+     ============================================================ -->
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
 
+<!-- ① サイト設定＋最速クローク（インライン＝パース時に即実行） -->
 <script>
 (function(){
+  /* ▼▼ サイト設定（このページの唯一の正。BODY側では宣言しない） ▼▼
+       page      … 'home' | 'contact'（common.js の分岐に使う）
+       home      … トップページのパス（公開先が /test_page なら '/test_page'）
+       contact   … お問い合わせページのパス
+       bootLabel … 戻る／進む用オーバーレイの文言
+                   （common.css の --cfi-boot-label と揃えること） */
+  window.CFI_CONFIG = {
+    page:      'home',
+    home:      '/',
+    contact:   '/contact',
+    bootLabel: 'CREATE FROM IDEAS'
+  };
+  /* ▲▲ 設定はここまで ▲▲ */
+
   var h = document.documentElement;
 
-  /* 通常読み込み用クローク：初回ペイント前に確定させる */
+  /* 通常読み込み用クローク：初回ペイント前に確定させる。
+     見た目は common.css §3 が描く（ここでは色も文字も持たない） */
   h.classList.add('cfi-on');
   h.classList.add('cfi-boot');
 
-  /* 保険：BODY側が動かなくても3.5秒で必ず解除（contact と同値） */
+  /* 保険：common.js が動かなくても3.5秒で必ず解除（contact と同値）。
+     解除の .28s は common.css §3 の transition と対 */
   setTimeout(function(){
     h.classList.add('cfi-boot-out');
     setTimeout(function(){
@@ -23,10 +57,13 @@
 
   /* 戻る／進む用クローク：
      擬似要素はbfcache復元フレームでの再現が不確実なため、
-     実DOM要素＋インラインスタイルで構成する */
+     実DOM要素＋インラインスタイルで構成する。
+     ※ここだけは common.css のカスタムプロパティに依存させないこと。
+       復元フレームで変数が未解決だと幕が透明になる */
   function cloak(){
     var el = document.getElementById(OV_ID);
     if (!el){
+      var label = (window.CFI_CONFIG && window.CFI_CONFIG.bootLabel) || 'CREATE FROM IDEAS';
       el = document.createElement('div');
       el.id = OV_ID;
       el.setAttribute('aria-hidden','true');
@@ -40,7 +77,8 @@
         '<div style="position:absolute;left:0;right:0;top:44%;text-align:center;' +
         'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
         'font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;' +
-        'color:#a5b7c9;opacity:.9">CREATE FROM IDEAS</div>';
+        'color:#a5b7c9;opacity:.9"></div>';
+      el.firstChild.textContent = label;
       (document.body || h).appendChild(el);
     }
     el.style.display = 'block';
@@ -58,7 +96,7 @@
       cloak();          /* 復元直後に念のため再適用 */
       location.reload();
     } else {
-      /* 通常読み込み：DOMオーバーレイは使わない（CSS側が担当） */
+      /* 通常読み込み：DOMオーバーレイは使わない（common.css §3 が担当） */
       var el = document.getElementById(OV_ID);
       if (el) el.style.display = 'none';
       h.style.overflow = '';
@@ -67,57 +105,11 @@
 })();
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- ② フォント。Barlow の 400 は未使用（500/600/700 のみ使用）
+        ※ 増減させる場合は common.css の --f-en / .flow .dot /
+          .hero-sub h1 の font-weight を確認すること -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- ③ 共通スタイル。土台・クローク・全コンポーネントの唯一の正。
+        これより後に <style> を置かないこと（後勝ちで二重管理になる） -->
 <link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
-
-<style>
-/* ============================================================
-   1. 土台（クラス付与前でも白フラッシュしないよう html に直指定）
-      ※ scroll-behavior / scroll-padding-top / a.is-todo /
-        html.cfi-fallback .rv は common.css を唯一の正とし、
-        ここでは再定義しない
-   ============================================================ */
-html{background:#071019}
-html.cfi-on{
-  /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す） */
-  --rebranding-loading-bg:#071019;
-  --rebranding-loading-bar:#00c2a8;
-}
-html.cfi-on body{margin:0;padding:0;background:#071019;height:auto;
-  overflow-x:hidden;overflow-y:visible;position:static;display:block}
-
-/* トップはSTUDIOキャンバスを使わないため、確実に伏せる */
-html.cfi-on #__nuxt{display:none !important}
-
-/* ============================================================
-   2. 起動クローク（通常読み込み時／FOUC・白フラッシュ防止）
-      ※ contact 側と数値・演出を必ず一致させること
-   ============================================================ */
-html.cfi-boot{overflow:hidden}
-html.cfi-boot #__nuxt,
-html.cfi-boot #teleports,
-html.cfi-boot #cfi-root{visibility:hidden !important}
-
-html.cfi-boot body::before{
-  content:"";
-  position:fixed;inset:0;z-index:2147483600;pointer-events:none;
-  background:
-    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
-    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
-    #071019;
-  opacity:1;transition:opacity .28s ease
-}
-html.cfi-boot body::after{
-  content:"CREATE FROM IDEAS";
-  position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
-  text-align:center;
-  font-family:"Barlow",system-ui,-apple-system,sans-serif;font-weight:700;
-  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
-  color:#a5b7c9;opacity:.9;transition:opacity .28s ease
-}
-html.cfi-boot.cfi-boot-out body::before,
-html.cfi-boot.cfi-boot-out body::after{opacity:0}
-@media (prefers-reduced-motion:reduce){
-  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
-}
-</style>
