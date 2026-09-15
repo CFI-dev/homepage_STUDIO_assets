@@ -133,7 +133,7 @@
        CAP      … 準備完了までの上限（100%で足踏みさせないため）
        FAST_NAV … true にすると再読込／戻る進むのときだけ MIN_MS を短縮する
                   （HEADのbfcache経路は毎回 reload するため体感が重い場合に） */
-    var MIN_MS   = 2000;
+    var MIN_MS   = 1000;
     var HOLD_MS  = 220;
     var HARD_MS  = 4000;
     var OUT_MS   = 300;
