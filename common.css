@@ -670,27 +670,29 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 /* ============================================================
    15-2. CASES スライダー（.cs-slider / .cs-rail）
    ────────────────────────────────────────────────────────────
-   ・カード枠は §12 の .case を流用し、ここは「並べ方」と「送り」だけを持つ
+   ・カード枠は §12 の .case を流用し、ここは「並べ方」「強調」「送り」だけを持つ
    ・ENGAGEMENT は従来どおり .works / .v-scroll。このブロックのセレクタは
-     必ず .cs-rail 配下に限定すること（.works を巻き込むと3枚側が壊れる）
-   ・§12 / §15 より後に置くこと（.case の hover 影を上書きしている）
+     必ず .cs-slider / .cs-rail 配下に限定すること（.works を巻き込むと3枚側が壊れる）
+   ・§12 / §15 より後に置くこと（.case の hover 影と transition を上書きしている）
    ・同時表示枚数は --cs-view が唯一の正。JS(common.js §14)は1枚目の実測幅から
-     送り幅を取るだけで枚数を知らないため、ここを変えるだけで追従する
+     送り幅と中央位置を求めるだけで枚数を知らないため、ここを変えるだけで追従する
+   ・逃げ量 --cs-lift / --cs-shadow は .cs-slider に置く（PCの左右ボタンが
+     縦中央の補正に同じ値を参照するため）。参照側には必ず既定値を併記する
    ・rail は横スクローラ。縦は overflow-y:hidden で必ず閉じる（§19-3 と同じ理由。
      縦スクロール範囲が 1px でも生じるとタッチがここにラッチする）
    ・そのため上下の逃げは padding で作る。margin では hover の持ち上がりと
      影が scrollport 境界で切れる
    ・子カードに translateY 系の初期位置を与えないこと（HTML側は .rv .rv-f）
    ============================================================ */
-.cs-slider{position:relative}
+.cs-slider{position:relative;
+  --cs-lift:8px;      /* hover の持ち上がりの逃げ（上） */
+  --cs-shadow:20px}   /* hover 影の逃げ（下） */
 
 .cs-rail{
   --cs-view:3;        /* 同時表示枚数。端数可（端数＝次カードの覗かせ量） */
-  --cs-lift:8px;      /* hover の持ち上がりの逃げ（上） */
-  --cs-shadow:20px;   /* hover 影の逃げ（下） */
   display:flex;
   gap:var(--gap);
-  padding:var(--cs-lift) 0 var(--cs-shadow);
+  padding:var(--cs-lift,8px) 0 var(--cs-shadow,20px);
   overflow-x:auto;
   overflow-y:hidden;
   overscroll-behavior-x:contain;
@@ -708,19 +710,41 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 /* 横スクローラ内は逃げ量に合わせて持ち上がり／影を控えめにする */
 .cs-rail .case:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.34)}
 /* ▼ カード内部は上揃え。§15 の「最終子を下端へ寄せる」を rail 内だけ打ち消す。
-     CASES は本文量の差が大きく、下端揃えだと見出し直下に空白が開くため。
      ENGAGEMENT（.works）は下端揃えのままにするので、必ず .cs-rail 配下に
-     限定すること（詳細度 0-3-0 で §15 の 0-2-0 に後勝ちする）。
-     §15 の .case > :nth-last-child(2){margin-bottom:22px} は残す
-     ＝見出しと区切り線の間隔はこの 22px が唯一の正 */
+     限定すること。§15 の :nth-last-child(2){margin-bottom:22px} は残す */
 .cs-rail > .case > :last-child{margin-top:0}
 
-/* ▼ §21 のパララックスを rail 内だけ無効化。
-     view() は「最も近いスクロールポート」を基準に取るが、この rail は
-     縦を閉じているため進捗が取れず、写真が中途半端な位置で固定される */
+/* ▼ §21 のパララックスを rail 内だけ無効化（縦の進捗が取れないため） */
 .cs-rail .case .ph-fig img{animation:none;scale:1;translate:none}
 
-/* ---- 操作行（左：スワイプ表示／右：送りボタン） ---- */
+/* ------------------------------------------------------------
+   中央カードの強調（.is-cs-active は common.js §14 が付与）
+   ・条件に .on を含めるのは §19 のリビール（opacity:0）を殺さないため。
+     .cs-ready はJSが中央判定に成功したときだけ立つ＝JSが落ちた環境では
+     条件が揃わず、全カードが通常表示になる（フェイルセーフ）
+   ・非強調側の opacity は .7 が下限。本文色 --muted(#a5b7c9) が --ink 上で
+     約4.6:1、.65 まで落とすと約4.4:1 で AA(4.5:1) を割る（概算値）
+   ・縮小は独立プロパティ scale で行う。transform は hover の
+     translateY(-3px) 用に空けておくこと（同じプロパティに寄せると打ち消す）
+   ・強調側を 1 より大きくしないこと。端の位置で scrollport にクリップされる
+   ------------------------------------------------------------ */
+.cs-rail > .case{position:relative;
+  /* §19 の .rv が transition-* を持つため、ここで明示上書きする
+     （0-2-0 で .rv の 0-1-0 に勝つ）。リビールのフェードもこの値で走る */
+  transition:opacity .45s ease,scale .45s var(--mo-ease),
+             transform .4s var(--mo-ease),border-color .3s ease,box-shadow .4s ease}
+.cs-rail.cs-ready > .case.on:not(.is-cs-active){opacity:.7;scale:.97}
+.cs-rail.cs-ready > .case.on:not(.is-cs-active):hover{opacity:.9;scale:.985}
+.cs-rail.cs-ready > .case.is-cs-active{
+  border-color:rgba(0,194,168,.45);box-shadow:0 16px 38px rgba(0,0,0,.38)}
+.cs-rail.cs-ready > .case.is-cs-active:hover{box-shadow:0 20px 44px rgba(0,0,0,.42)}
+/* 上端アクセント（写真の上辺に重ねる。::after は .case 内で未使用） */
+.cs-rail > .case::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  z-index:2;pointer-events:none;background:var(--grad);
+  opacity:0;transition:opacity .45s ease}
+.cs-rail.cs-ready > .case.is-cs-active::after{opacity:1}
+
+/* ---- 操作行（≤768px でのみ見える。左：スワイプ表示／右：送りボタン） ---- */
 .cs-foot{display:flex;align-items:center;justify-content:space-between;
   gap:16px;margin-top:20px}
 .cs-foot .v-hint{margin:0}                 /* §19-3 の margin-top:10px を打ち消す */
@@ -728,13 +752,44 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 .cs-btn{width:44px;height:44px;border-radius:50%;
   border:1px solid var(--line);background:transparent;color:var(--txt);
   display:grid;place-items:center;cursor:pointer;
-  transition:border-color .3s,color .3s,transform .3s var(--mo-ease),opacity .3s}
+  transition:border-color .3s,color .3s,background-color .3s,
+             transform .3s var(--mo-ease),scale .3s var(--mo-ease),opacity .3s}
 .cs-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
 .cs-btn:hover{border-color:var(--accent-2);color:var(--accent-2);transform:translateY(-2px)}
 .cs-btn:active{transform:translateY(0) scale(.96)}
 /* 循環送り（既定）では付かない。data-cs-loop="0" 運用時のみ有効 */
 .cs-btn[disabled]{opacity:.35;pointer-events:none}
+
+/* ------------------------------------------------------------
+   ≥769px：送りボタンをカード枠の左右端へ重ねる
+   ・containing block は .cs-slider（position:relative）。
+     .cs-foot / .cs-nav に transform・filter・opacity を与えないこと。
+     与えると基準がそちらへ移りボタンが枠外へ飛ぶ
+     （HTML側の .cs-foot に .rv を付けないのも同じ理由）
+   ・縦中央は rail の padding 差（--cs-shadow − --cs-lift）の半分だけ戻す。
+     var() には必ず既定値を書くこと（解決不能だと top:auto に落ちる）
+   ・中央寄せは独立プロパティ translate、hover は scale。
+     同じ transform に寄せると中央寄せが消える
+   ・rail に左右 padding を足して「ボタンのぶんを空ける」ことはしない。
+     スナップ位置とカード幅計算（--cs-view）が両方ずれる
+   ------------------------------------------------------------ */
+@media (min-width:769px){
+  .cs-foot{margin-top:0}     /* 中身が空になる（v-hint は §19-3 で非表示） */
+  .cs-btn{position:absolute;z-index:3;
+    top:calc(50% - (var(--cs-shadow,20px) - var(--cs-lift,8px)) / 2);
+    translate:0 -50%;
+    width:48px;height:48px;
+    background:rgba(7,16,25,.72);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border-color:rgba(255,255,255,.3);
+    box-shadow:0 8px 24px rgba(0,0,0,.38)}
+  .cs-btn[data-cs-prev]{left:12px}
+  .cs-btn[data-cs-next]{right:12px}
+  .cs-btn:hover{transform:none;scale:1.08;
+    background:rgba(7,16,25,.92);border-color:var(--accent-2);color:var(--accent-2)}
+  .cs-btn:active{transform:none;scale:.96}
+}
 
 @media (max-width:1024px){.cs-rail{--cs-view:2}}
 @media (max-width:768px){.cs-rail{--cs-view:1.15}}
@@ -1200,7 +1255,10 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 
   /* CASESスライダー：自動送りの停止は common.js §14 が担当。ここは残る動きを消す */
   .cs-rail{scroll-behavior:auto}
-  .cs-btn:hover{transform:none!important}
+  .cs-btn:hover,.cs-btn:active{transform:none!important;scale:1!important}
+  /* 中央強調：縮小は切り、濃淡だけ残す（§19 の .rv{opacity:1!important} に勝たせる） */
+  .cs-rail > .case{scale:1!important}
+  .cs-rail.cs-ready > .case.on:not(.is-cs-active){opacity:.7!important}
 
   /* JSはこの設定下では書き込まないが、実行中に切り替わった場合の保険 */
   .hero .wrap{translate:none!important;opacity:1!important}
