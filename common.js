@@ -6,14 +6,17 @@
    ■ 触る前に必ず読むこと
    ・ハンバーガー切替点 960px（MQ_DESK）は common.css §23 と必ず一致させること
    ・common.css と対になっている。片方だけ更新しないこと
-     §5  → .hd-prog の --p / header.hd-up / .hero .wrap の translate
-     §7  → .rv に .on ／ nav.mo-ready ／ 各要素の --i
-     §8  → .faq .mo-a の実測 height
+     §4  → html.cfi-boot / #cfi-boot-ui（common.css §3）
+     §6  → .hd-prog の --p / header.hd-up / .hero .wrap の translate
+     §8  → .rv に .on ／ nav.mo-ready ／ 各要素の --i
+     §9  → .faq .mo-a の実測 height
      §14 → .cs-rail の .cs-ready ／ .case の .is-cs-active（common.css §15-2）
-   ・window スクロールの購読は §5 の1本のみ。他所で
+   ・window スクロールの購読は §6 の1本のみ。他所で
      addEventListener('scroll') を増やさないこと（rAF の間引きが効かなくなる）
    ・ページ側HTMLに必要なのは window.CFI_CONFIG の宣言のみ。
      リンク解決・DOM配置・クローク解除はすべてここが担う
+   ・起動クロークのタイマー序列は §4 冒頭の一覧が唯一の正。
+     数値を変える場合はページHEADの保険（4000）まで含めて同時に見直すこと
    ・未使用化した initRail / initCounter は parking.js へ退避してある。
      本番では読み込まないこと
    ・このファイルは DOM（#cfi-root / #cfi-top）より後に読み込むこと
@@ -82,6 +85,8 @@
                     ここでの display 指定はその他の兄弟要素向け）
         contact … ヘッダー＋ヒーロー(#cfi-top)を #__nuxt の直前へ移す。
                   フッター(#cfi-bottom)はフォームの後ろに残す
+        ※ #cfi-boot-ui（§4 が生成する進捗UI）は body 直下に居るため、
+          伏せる対象から必ず除外すること。外すと幕の上のバーが消える
      ------------------------------------------------------------ */
   (function initPlacement() {
     var SKIP = { SCRIPT: 1, STYLE: 1, LINK: 1, NOSCRIPT: 1, TEMPLATE: 1 };
@@ -103,27 +108,29 @@
     }
     if (root.parentNode !== document.body) document.body.appendChild(root);
     Array.prototype.slice.call(document.body.children).forEach(function (el) {
-      /* #cfi-boot-ui（§4 が生成する進捗UI）は伏せない */
-      if (el !== root && el.id !== "cfi-boot-ui" && !SKIP[el.tagName]) el.style.display = "none";
+      if (el !== root && el.id !== "cfi-boot-ui" && !SKIP[el.tagName]) {
+        el.style.display = "none";
+      }
     });
   })();
 
- /* ------------------------------------------------------------
-  4. 起動クローク（最低表示2秒＋進捗バー／％）／リビールのフォールバック
-     ■ 触る前に必ず読むこと
-     ・幕・バー・％の見た目は common.css §3 が唯一の正。ここは値と解除だけ
-     ・MIN_MS の起点は navigation start（performance.now() の 0 点）。
-       CSSの幕が出る初回ペイントとのずれは数十msに収まるため無視する
-     ・進捗は「実測シグナルの加重和」と「経過時間による下限」の大きい方。
-       単調増加（値を戻さない）／準備完了までは CAP を超えさせない
-     ・ループは setInterval。requestAnimationFrame は背面タブで停止するため
-       戻さないこと（タブを離れている間に幕が上がらなくなる）
-     ・タイマーの序列を崩さないこと。数値を変える場合は全部を同時に見直す
-         HARD_MS 4000 → 完全解除 約4520
-         ページHEADの保険 5000（home_head / contact_head）
-         §8 リビール保険 5200 ／ §14 複製オープン保険 5600
-         §13 フォーム強制表示 6000
-  ------------------------------------------------------------ */
+  /* ------------------------------------------------------------
+     4. 起動クローク（最低表示1秒＋進捗バー／％）／リビールのフォールバック
+        ■ 触る前に必ず読むこと
+        ・幕・バー・％の見た目は common.css §3 が唯一の正。ここは値と解除だけ
+        ・MIN_MS の起点は navigation start（performance.now() の 0 点）。
+          CSSの幕が出る初回ペイントとのずれは数十msに収まるため無視する
+        ・進捗は「実測（サブリソースの完了件数ほか）」と「経過時間による
+          下限」の大きい方。単調増加（値を戻さない）／準備完了までは
+          CAP を超えさせない
+        ・ループは setInterval。requestAnimationFrame は背面タブで停止するため
+          戻さないこと（タブを離れている間に幕が上がらなくなる）
+        ・タイマーの序列を崩さないこと。数値を変える場合は全部を同時に見直す
+            HARD_MS 3000 → 完全解除 約3520
+            ページHEADの保険 4000（home_head / contact_head）
+            §8 リビール保険 4700 ／ §14 複製オープン保険 5100
+            §13 フォーム強制表示 5500
+     ------------------------------------------------------------ */
   (function initBoot() {
     /* ▼▼ 調整ダイヤル ▼▼
        MIN_MS   … 幕の最低表示時間
@@ -132,13 +139,13 @@
        OUT_MS   … 幕のフェード。common.css §3 の .28s と対
        CAP      … 準備完了までの上限（100%で足踏みさせないため）
        FAST_NAV … true にすると再読込／戻る進むのときだけ MIN_MS を短縮する
-                  （HEADのbfcache経路は毎回 reload するため体感が重い場合に） */
+                  （MIN_MS=1000 では差が出ないため既定 false） */
     var MIN_MS   = 1000;
     var HOLD_MS  = 220;
-    var HARD_MS  = 4000;
+    var HARD_MS  = 3000;
     var OUT_MS   = 300;
     var CAP      = 0.92;
-    var FAST_NAV = true;
+    var FAST_NAV = false;
     /* ▲▲ 調整はここまで ▲▲ */
 
     var T0 = Date.now();
@@ -176,8 +183,49 @@
       box = fill = pctEl = null;
     }
 
-    /* 遅延読込（loading="lazy"）は画面外＝完了しないため数えない。
-       ここを外すと %が中盤で止まったまま HARD_MS まで進まなくなる */
+    /* ---- 実測：サブリソースの完了件数で進捗を作る ----
+       ■ 触る前に必ず読むこと
+       ・バイト数では数えない。transferSize / encodedBodySize は
+         cross-origin では 0 を返す（Timing-Allow-Origin が必要）。
+         assets は cfi-dev.github.io 配信で、GitHub Pages は
+         レスポンスヘッダを追加できないため恒久的に 0 になる
+       ・Resource Timing に載るのは「完了した分」だけ。未完了は列挙されない
+         ため、分母は expected() がDOMから推定する
+       ・分母にフォントを入れないこと。Google Fonts の Noto Sans JP は
+         unicode-range で数十個の @font-face に分割されており、
+         document.fonts.size を足すと分母が跳ねて％が張り付く。
+         フォントは fonts.ready の重み（score() の add(15,…)）だけで見る
+       ・遅延読込（loading="lazy"）は画面外＝完了しないため両側で数えない */
+    var resN = 0, po = null;
+
+    if (typeof PerformanceObserver === "function") {
+      try {
+        po = new PerformanceObserver(function (list) {
+          resN += list.getEntries().length;
+        });
+        /* buffered:true で監視開始より前に完了した分も拾う */
+        po.observe({ type: "resource", buffered: true });
+      } catch (err) { po = null; }
+    }
+    function unhook() {
+      if (po) { po.disconnect(); po = null; }
+    }
+    function resDone() {
+      if (po) return resN;
+      /* 非対応環境の代替。バッファ上限で頭打ちになるが単調増加は保たれる */
+      if (!window.performance || !performance.getEntriesByType) return 0;
+      return performance.getEntriesByType("resource").length;
+    }
+
+    /* 分母。DOMに現れた分だけを数えるので、パース進行に伴って増える。
+       増加時に％が戻らないのは paint() の単調増加ガードが担保する */
+    function expected() {
+      var n = document.querySelectorAll('link[rel="stylesheet"],script[src]').length;
+      var list = document.images, i;
+      for (i = 0; i < list.length; i++) if (list[i].loading !== "lazy") n++;
+      return n < 1 ? 1 : n;
+    }
+
     function imgRatio() {
       var list = document.images, n = 0, ok = 0, i;
       for (i = 0; i < list.length; i++) {
@@ -188,14 +236,20 @@
       return n ? ok / n : 1;
     }
 
-    /* 加重和。重みは体感の調整値であり、実際の転送量とは一致しない */
+    /* 加重和。重みは体感の調整値であり、実際の転送量とは一致しない。
+       ・res は「把握できている件数のうち何件終わったか」。
+         完了数が分母を超える場合（STUDIOのXHR等）は 1 で飽和させる
+       ・load と studio の重み（計35〜40）は最後まで 0 のままなので、
+         取りこぼしがあっても score が先に 1 へ到達することはない */
     function score() {
       var s = 0, t = 0;
       function add(w, v) { t += w; s += w * (v < 0 ? 0 : (v > 1 ? 1 : v)); }
-      add(20, document.readyState === "loading" ? 0
+      var d = resDone();
+      add(35, d / Math.max(expected(), d || 1));
+      add(10, document.readyState === "loading" ? 0
             : (document.readyState === "interactive" ? 0.6 : 1));
       add(15, fontsDone ? 1 : 0);
-      add(30, imgRatio());
+      add(20, imgRatio());
       add(20, loaded ? 1 : 0);
       if (PAGE === "contact") add(15, studioOK ? 1 : 0);
       return t ? s / t : 0;
@@ -222,6 +276,7 @@
       if (done) return;
       done = true;
       if (loop) { clearInterval(loop); loop = null; }
+      unhook();
       paint(1);
       setTimeout(function () {
         html.classList.add("cfi-boot-out");
@@ -238,11 +293,21 @@
       if (!html.classList.contains("cfi-boot")) {
         done = true;
         if (loop) { clearInterval(loop); loop = null; }
+        unhook();
         drop();
         return;
       }
       var e = now();
-      var floor = (e / MIN_MS) * 0.9;   /* MIN_MS で 90% に届く下限 */
+      /* ▼ 下限は「止まらないための保険」であって主役ではない。
+           score() が実測値を出すので、ここを高く設定すると実測が下限に
+           埋もれて「読み込み状況に応じた％」に見えなくなる。
+           MIN_MS で 55%、HARD_MS で CAP へ這わせる二段構成。
+           一段（MIN_MSで90%）にすると、読み込みが遅い環境で MIN_MS 直後から
+           HARD_MS まで CAP のまま静止し「固まった」ように見える。
+           MIN_MS / HARD_MS を変えたらこの式も必ず見直すこと */
+      var floor = e <= MIN_MS
+        ? (e / MIN_MS) * 0.55
+        : 0.55 + ((e - MIN_MS) / Math.max(1, HARD_MS - MIN_MS)) * (CAP - 0.55);
       paint(Math.min(Math.max(score(), floor), CAP));
       if (!readyAt && ready()) readyAt = e;
       if (readyAt && e >= MIN_MS) close();
@@ -284,7 +349,7 @@
        クローク中は判定しない（幕の裏では監視が始まらないため） */
     var tries = 0;
     (function check() {
-      if (html.classList.contains("cfi-boot") && ++tries < 14) {
+      if (html.classList.contains("cfi-boot") && ++tries < 12) {
         setTimeout(check, 500);
         return;
       }
@@ -477,6 +542,8 @@
         (d) 段差の遅延は setTimeout ではなく CSS の --i（§19）が担う。
             JSでずらすと transition の途中で class が付き、
             要素ごとに速度が不揃いに見えるため。ここを戻さないこと
+        ※ 末尾の保険（4700ms）は §4 のタイマー序列の一部。
+          HEADの保険（4000）より後であることが条件。単独で変えないこと
         ※ CASES の複製カード（§14 が生成）はこの監視の対象外。
           §14 が自前で .on を付ける
      ------------------------------------------------------------ */
@@ -594,8 +661,8 @@
         setTimeout(start, LEAD);
       });
       mo.observe(html, { attributes: true, attributeFilter: ["class"] });
-      /* 保険：HEAD側の3.5秒解除より後に必ず開始 */
-      setTimeout(function () { mo.disconnect(); start(); }, 4200);
+      /* 保険：HEAD側の4秒解除より後に必ず開始（§4 のタイマー序列） */
+      setTimeout(function () { mo.disconnect(); start(); }, 4700);
     } else {
       setTimeout(start, 800);
     }
@@ -1278,6 +1345,8 @@
            「子が2つ以上に分岐した最初の階層」をリビール単位とみなす
          ・遅延はCSS(§19)が --i から算出するため、ここでは番号だけ渡す
          ・STUDIOの生成クラスには依存しない。構造が変わっても壊れない
+         ※ 末尾の強制表示（5500ms）は §4 のタイマー序列の最後尾。
+           §14 の複製オープン保険（5100）より後であること
      ------------------------------------------------------------ */
   (function initFormReveal() {
     if (PAGE !== "contact") return;
@@ -1322,12 +1391,12 @@
       if (apply() || ++n > 40) clearInterval(t);
     }, 50);
 
-    /* 最終保険：5秒経っても .on が付かない要素は強制表示 */
+    /* 最終保険：5.5秒経っても .on が付かない要素は強制表示 */
     setTimeout(function () {
       var nuxt = document.getElementById("__nuxt");
       if (!nuxt) return;
       each(nuxt.querySelectorAll(".rv"), function (el) { el.classList.add("on"); });
-    }, 5000);
+    }, 5500);
   })();
 
   /* ------------------------------------------------------------
@@ -1361,6 +1430,7 @@
       ・data-cs-loop="0" の場合は複製せず、従来どおりの端止めになる
       ・複製は §8 の監視外。実カードと同時に出すため、セクションが画面に
         入った時点で .on を付ける（生成時に付けると減光側だけが先に出る）
+      ・末尾の保険（5100ms）は §4 のタイマー序列の一部。§8 の 4700 より後
 
       ■ 左右カードのクリック送り
       ・送り量は「クリックされたDOM番号 − いま中央のDOM番号」。coff を
@@ -1753,8 +1823,8 @@
         var cur = sets ? real0() : START_AT;
         if (mount()) anchor(cur);
       });
-      /* 保険：§8 のフォールバック（4.2秒）より後に必ず複製を開く */
-      setTimeout(openClones, 4600);
+      /* 保険：§8 のフォールバック（4.7秒）より後に必ず複製を開く */
+      setTimeout(openClones, 5100);
     });
   })();
 })();
