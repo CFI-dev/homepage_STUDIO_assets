@@ -103,25 +103,162 @@
     }
     if (root.parentNode !== document.body) document.body.appendChild(root);
     Array.prototype.slice.call(document.body.children).forEach(function (el) {
-      if (el !== root && !SKIP[el.tagName]) el.style.display = "none";
+      /* #cfi-boot-ui（§4 が生成する進捗UI）は伏せない */
+      if (el !== root && el.id !== "cfi-boot-ui" && !SKIP[el.tagName]) el.style.display = "none";
     });
   })();
 
-  /* ------------------------------------------------------------
-     4. 起動クローク解除 / リビールのフォールバック
-        ・解除の演出（.28s / .3s）は common.css §3 と対。数値を変える場合は
-          両方を揃えること
-        ・contact はSTUDIOのキャンバス描画＋配色注入を待つ。
-          home は待つ対象が無いので DOMContentLoaded 直後に上げる
-        ・最終保険の3秒は、各ページHEADの3.5秒より必ず先に発火させること
-     ------------------------------------------------------------ */
+ /* ------------------------------------------------------------
+  4. 起動クローク（最低表示2秒＋進捗バー／％）／リビールのフォールバック
+     ■ 触る前に必ず読むこと
+     ・幕・バー・％の見た目は common.css §3 が唯一の正。ここは値と解除だけ
+     ・MIN_MS の起点は navigation start（performance.now() の 0 点）。
+       CSSの幕が出る初回ペイントとのずれは数十msに収まるため無視する
+     ・進捗は「実測シグナルの加重和」と「経過時間による下限」の大きい方。
+       単調増加（値を戻さない）／準備完了までは CAP を超えさせない
+     ・ループは setInterval。requestAnimationFrame は背面タブで停止するため
+       戻さないこと（タブを離れている間に幕が上がらなくなる）
+     ・タイマーの序列を崩さないこと。数値を変える場合は全部を同時に見直す
+         HARD_MS 4000 → 完全解除 約4520
+         ページHEADの保険 5000（home_head / contact_head）
+         §8 リビール保険 5200 ／ §14 複製オープン保険 5600
+         §13 フォーム強制表示 6000
+  ------------------------------------------------------------ */
   (function initBoot() {
-    function reveal() {
-      if (!html.classList.contains("cfi-boot")) return;
-      html.classList.add("cfi-boot-out");
+    /* ▼▼ 調整ダイヤル ▼▼
+       MIN_MS   … 幕の最低表示時間
+       HOLD_MS  … 100%を見せてから幕を引き始めるまで
+       HARD_MS  … 最終保険（強制的に100%→解除）
+       OUT_MS   … 幕のフェード。common.css §3 の .28s と対
+       CAP      … 準備完了までの上限（100%で足踏みさせないため）
+       FAST_NAV … true にすると再読込／戻る進むのときだけ MIN_MS を短縮する
+                  （HEADのbfcache経路は毎回 reload するため体感が重い場合に） */
+    var MIN_MS   = 2000;
+    var HOLD_MS  = 220;
+    var HARD_MS  = 4000;
+    var OUT_MS   = 300;
+    var CAP      = 0.92;
+    var FAST_NAV = false;
+    /* ▲▲ 調整はここまで ▲▲ */
+
+    var T0 = Date.now();
+    function now() {
+      return (window.performance && performance.now) ? performance.now() : Date.now() - T0;
+    }
+
+    if (FAST_NAV && window.performance && performance.getEntriesByType) {
+      var e0 = performance.getEntriesByType("navigation")[0];
+      if (e0 && (e0.type === "reload" || e0.type === "back_forward")) MIN_MS = 900;
+    }
+
+    var box = null, fill = null, pctEl = null;
+    var p = 0, shown = -1, aria = -1;
+    var fontsDone = false, loaded = false;
+    var studioOK = (PAGE !== "contact");   /* contact はSTUDIOマウントを待つ */
+    var readyAt = 0, done = false, loop = null;
+
+    function build() {
+      if (box || !document.body) return;
+      box = document.createElement("div");
+      box.id = "cfi-boot-ui";
+      box.setAttribute("role", "progressbar");
+      box.setAttribute("aria-label", "読み込み中");
+      box.setAttribute("aria-valuemin", "0");
+      box.setAttribute("aria-valuemax", "100");
+      box.setAttribute("aria-valuenow", "0");
+      box.innerHTML = '<span class="bar"><i></i></span><span class="pct">0%</span>';
+      document.body.appendChild(box);
+      fill = box.querySelector("i");
+      pctEl = box.querySelector(".pct");
+    }
+    function drop() {
+      if (box && box.parentNode) box.parentNode.removeChild(box);
+      box = fill = pctEl = null;
+    }
+
+    /* 遅延読込（loading="lazy"）は画面外＝完了しないため数えない。
+       ここを外すと %が中盤で止まったまま HARD_MS まで進まなくなる */
+    function imgRatio() {
+      var list = document.images, n = 0, ok = 0, i;
+      for (i = 0; i < list.length; i++) {
+        if (list[i].loading === "lazy") continue;
+        n++;
+        if (list[i].complete) ok++;
+      }
+      return n ? ok / n : 1;
+    }
+
+    /* 加重和。重みは体感の調整値であり、実際の転送量とは一致しない */
+    function score() {
+      var s = 0, t = 0;
+      function add(w, v) { t += w; s += w * (v < 0 ? 0 : (v > 1 ? 1 : v)); }
+      add(20, document.readyState === "loading" ? 0
+            : (document.readyState === "interactive" ? 0.6 : 1));
+      add(15, fontsDone ? 1 : 0);
+      add(30, imgRatio());
+      add(20, loaded ? 1 : 0);
+      if (PAGE === "contact") add(15, studioOK ? 1 : 0);
+      return t ? s / t : 0;
+    }
+    function ready() { return loaded && studioOK; }
+
+    function paint(v) {
+      if (v > 1) v = 1;
+      if (v < p) v = p;                 /* 単調増加。戻さないこと */
+      p = v;
+      if (!box) build();
+      if (!box) return;
+      var n = Math.round(p * 100);
+      if (n === shown) return;
+      shown = n;
+      fill.style.setProperty("--cfi-boot-p", p.toFixed(4));
+      pctEl.textContent = n + "%";
+      /* 読み上げの過剰通知を避けて5%刻みで更新する */
+      var a = Math.round(n / 5) * 5;
+      if (a !== aria) { aria = a; box.setAttribute("aria-valuenow", String(a)); }
+    }
+
+    function close() {
+      if (done) return;
+      done = true;
+      if (loop) { clearInterval(loop); loop = null; }
+      paint(1);
       setTimeout(function () {
-        html.classList.remove("cfi-boot", "cfi-boot-out");
-      }, 300);
+        html.classList.add("cfi-boot-out");
+        setTimeout(function () {
+          html.classList.remove("cfi-boot", "cfi-boot-out");
+          drop();
+        }, OUT_MS);
+      }, HOLD_MS);
+    }
+
+    function tick() {
+      if (done) return;
+      /* 幕が外（HEADの保険など）から外された場合はUIだけ片付けて降りる */
+      if (!html.classList.contains("cfi-boot")) {
+        done = true;
+        if (loop) { clearInterval(loop); loop = null; }
+        drop();
+        return;
+      }
+      var e = now();
+      var floor = (e / MIN_MS) * 0.9;   /* MIN_MS で 90% に届く下限 */
+      paint(Math.min(Math.max(score(), floor), CAP));
+      if (!readyAt && ready()) readyAt = e;
+      if (readyAt && e >= MIN_MS) close();
+    }
+
+    /* ---- シグナルの配線 ---- */
+    if (document.readyState === "complete") loaded = true;
+    addEventListener("load", function () { loaded = true; });
+
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(
+        function () { fontsDone = true; },
+        function () { fontsDone = true; }
+      );
+    } else {
+      fontsDone = true;                 /* 非対応環境では待たない */
     }
 
     if (PAGE === "contact") {
@@ -132,27 +269,22 @@
         if (canvas || waited >= 2000) {
           clearInterval(poll);
           /* STUDIO側の .3s〜.4s transition が終わり切るまで待つ */
-          setTimeout(reveal, 480);
+          setTimeout(function () { studioOK = true; }, 480);
         }
       }, 50);
-      addEventListener("load", function () { setTimeout(reveal, 480); });
-    } else if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () {
-        setTimeout(reveal, 120);
-      });
-      addEventListener("load", reveal);
-    } else {
-      setTimeout(reveal, 120);
-      addEventListener("load", reveal);
     }
 
-    setTimeout(reveal, 3000);   /* 最終保険 */
+    build();
+    if (!box) document.addEventListener("DOMContentLoaded", build);
+    paint(0.03);                        /* 0%で固まって見えないよう少しだけ進める */
+    loop = setInterval(tick, 50);
+    setTimeout(close, HARD_MS);         /* 最終保険 */
 
     /* リビールが発火しなかった場合の保険。
        クローク中は判定しない（幕の裏では監視が始まらないため） */
     var tries = 0;
     (function check() {
-      if (html.classList.contains("cfi-boot") && ++tries < 12) {
+      if (html.classList.contains("cfi-boot") && ++tries < 14) {
         setTimeout(check, 500);
         return;
       }
