@@ -1222,17 +1222,25 @@
         使った装飾を .cs-rail > .case に足さないこと（巻き戻しの瞬間に絵が飛ぶ）
       ・巻き戻しはスムーススクロール中と指が触れている間は行わない。
         scrollLeft への代入はスムーススクロールを打ち切るため、
-        アニメーション中に走らせるとカードが中途半端な位置で止まる
+        アニメーション中に走らせるとカードが中途半端な位置で止まる。
+        この門（700ms）は scroll ハンドラと idle() の両方に必要。
+        片方だけに置くと、もう一方の経路から巻き戻しが漏れて同じ症状が出る
       ・ホイール／キー操作は慣性が無いため、区間を越えた時点で即時に巻き戻す
       ・data-cs-loop="0" の場合は複製せず、従来どおりの端止めになる
       ・複製は §8 の監視外。実カードと同時に出すため、セクションが画面に
         入った時点で .on を付ける（生成時に付けると減光側だけが先に出る）
 
       ■ 左右カードのクリック送り
-      ・送り量は「クリックされたDOM番号 − いま中央のDOM番号」。idx や coff を
+      ・送り量は「クリックされたDOM番号 − いま中央のDOM番号」。coff を
         再計算しないため、複製カードを押しても正しい向きに動く
-      ・押下時の scrollLeft と比較し、動いていたらクリックとして扱わない。
-        ドラッグ直後に click が飛ぶ環境があるためこの判定を外さないこと
+      ・操作要素の除外判定は必ず「カード内（card.contains）」に限定すること。
+        .cs-rail 自身が tabindex="0"（キーボード送りの入口）を持つため、
+        card を特定する前に [tabindex] を祖先方向へ遡って判定すると
+        すべてのクリックが除外され、クリック送りが一切作動しない
+      ・押下時の scrollLeft と比較し、動いていたらクリックとして扱わない
+        （ドラッグ直後に click が飛ぶ環境があるためこの判定を外さないこと）。
+        ただし押下時にスムーススクロールが走っていた場合は位置差で判定できない
+        ため、座標移動（dragged）だけを見る
       ・カードは tabindex を持たない。キーボード経路は rail の
         ArrowLeft / ArrowRight が担う（二重フォーカスを作らない）
   ------------------------------------------------------------ */
@@ -1253,7 +1261,9 @@
                              false : START_AT を左端に置く（3枚表示では
                                      中央に来る2枚目が主役になる）
          CLICK_TO_CENTER  … 左右のカードをクリックして中央へ送る
-         DRAG_PX          … この距離を越えて動いたらドラッグと判定(px) */
+         DRAG_PX          … この距離を越えて動いたらドラッグと判定(px)
+         ANIM_MS          … スムーススクロールの想定所要時間(ms)。
+                             巻き戻しの抑止とクリック判定の両方が参照する */
       var INTERVAL = Math.max(2500, parseInt(box.getAttribute("data-cs-interval"), 10) || 5000);
       var LOOP = box.getAttribute("data-cs-loop") !== "0";
       var STOP_ON_INTERACT = true;
@@ -1261,6 +1271,7 @@
       var START_CENTERED = true;
       var CLICK_TO_CENTER = true;
       var DRAG_PX = 8;
+      var ANIM_MS = 700;
       /* ▲▲ 調整はここまで ▲▲ */
 
       var ACTIVE = "is-cs-active";
@@ -1278,6 +1289,10 @@
       var downX = 0;           /* クリック／ドラッグ判定用の押下座標 */
       var downSL = 0;          /* 同：押下時の scrollLeft */
       var dragged = false;     /* 押下後に動いた＝クリックとして扱わない */
+      var downAnim = false;    /* 押下時にスムーススクロールが走っていた */
+
+      /* スムーススクロール進行中かどうか（巻き戻し抑止とクリック判定で共用） */
+      function animating() { return !!animAt && Date.now() - animAt < ANIM_MS; }
 
       /* ---- 実測。送り幅は2枚目との左端差から取るため gap を参照しない ---- */
       function geo() {
@@ -1409,6 +1424,11 @@
         clearTimeout(idleT);
         idleT = setTimeout(function () {
           if (down) return;                     /* 指が乗っている間は触らない */
+          /* ▼ スムーススクロール中は巻き戻さない。scrollLeft への代入は
+               スムーススクロールを打ち切るため、ここで走らせると
+               クリック送り／ボタン送りのカードが中途半端な位置で止まる。
+               終了を待って再試行する（scroll ハンドラ側と同じ門） */
+          if (animating()) { idle(); return; }
           touched = false;
           normalize();
         }, 160);
@@ -1471,11 +1491,21 @@
         down = true; touched = true; dragged = false;
         downX = e.clientX;
         downSL = rail.scrollLeft;
+        downAnim = animating();
         if (STOP_ON_INTERACT) kill();
       }, { passive: true });
 
-      rail.addEventListener("touchstart", function () {
+      /* Pointer Events 非対応環境（旧iOS Safari等）でもクリック送りを成立させる。
+         対応環境では pointerdown が正なので、ここで値を上書きしないこと */
+      rail.addEventListener("touchstart", function (e) {
         down = true; touched = true;
+        if (!window.PointerEvent) {
+          var t0 = e.touches && e.touches[0];
+          dragged = false;
+          downX = t0 ? t0.clientX : 0;
+          downSL = rail.scrollLeft;
+          downAnim = animating();
+        }
         if (STOP_ON_INTERACT) kill();
       }, { passive: true });
 
@@ -1487,6 +1517,13 @@
       }, { passive: true });
       rail.addEventListener("pointercancel", function () { dragged = true; });
 
+      /* 同環境向けのドラッグ判定（pointermove と同じしきい値を使う） */
+      rail.addEventListener("touchmove", function (e) {
+        if (!down || dragged || window.PointerEvent) return;
+        var t0 = e.touches && e.touches[0];
+        if (t0 && Math.abs(t0.clientX - downX) > DRAG_PX) dragged = true;
+      }, { passive: true });
+
       each(["pointerup", "touchend", "touchcancel"], function (ev) {
         addEventListener(ev, function () { down = false; idle(); }, { passive: true });
       });
@@ -1496,22 +1533,32 @@
 
       /* ▼ 左右のカードをクリックして中央へ送る
            ・カード内の操作要素（将来リンクを足した場合）は対象外。
-             除外リストは common.css §15-2 のコメントと揃えること */
+             除外リストは common.css §15-2 のコメントと揃えること
+           ・除外は card.contains で「カード内」に限定する。rail 自身が
+             tabindex="0" を持つため、先に祖先方向へ [tabindex] を探すと
+             全クリックが除外されてこの機能が死ぬ（冒頭の注意書き参照） */
       if (CLICK_TO_CENTER) {
         rail.addEventListener("click", function (e) {
           if (dragged) return;
-          if (Math.abs(rail.scrollLeft - downSL) > 4) return;
+          /* 押下時にアニメーション中だった場合、位置差ではドラッグを判定できない */
+          if (!downAnim && Math.abs(rail.scrollLeft - downSL) > 4) return;
+
           var t = e.target;
           if (!t || typeof t.closest !== "function") return;
-          if (t.closest("a,button,input,select,textarea,summary,[tabindex]")) return;
 
           var card = t.closest(".case");
           if (!card || card.parentNode !== rail) return;
+
+          var intr = t.closest("a,button,input,select,textarea,summary,[tabindex]");
+          if (intr && card.contains(intr)) return;
 
           var g = geo();
           var c = center(g);
           var i = Array.prototype.indexOf.call(rail.children, card);
           if (i < 0 || i === c) return;         /* 中央のカードは動かさない */
+
+          /* idx はスクロール中に1フレーム遅れることがあるため実測値へ揃える */
+          idx = Math.round(rail.scrollLeft / g.st);
 
           if (STOP_ON_INTERACT) kill();
           go(idx + (i - c));
@@ -1532,7 +1579,7 @@
           ticking = false;
           update();
           /* 慣性もアニメーションも無い操作（ホイール／キー）だけ即時巻き戻す */
-          if (sets && !touched && Date.now() - animAt > 700) normalize();
+          if (sets && !touched && !animating()) normalize();
           idle();
         });
       }, { passive: true });
