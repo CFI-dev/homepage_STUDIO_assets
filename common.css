@@ -5,9 +5,10 @@
    ────────────────────────────────────────────────────────────
    ■ 触る前に必ず読むこと
    ・ハンバーガー切替点 960px は common.js の MQ_DESK と必ず一致させること
-   ・§12 → §13 → §14 → §15 の順序は必須。
+   ・§12 → §13 → §14 → §15 → §15-2 の順序は必須。
      §15（.case の高さ揃え）が §13/§14 の margin-top を同詳細度で
-     後勝ちで打ち消している。並べ替えると区切り線の位置がずれる
+     後勝ちで打ち消している。並べ替えると区切り線の位置がずれる。
+     §15-2（CASESスライダー）は §12/§15 の .case を上書きするため最後尾
    ・§24（動きを減らす設定）は必ずファイル末尾。§19 の初期状態
      （opacity:0 / dashoffset 等）を最終状態へ固定している
    ・ページ側HEADで再定義しないこと：
@@ -585,6 +586,7 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
        ・padding は --cpy / --cpx が唯一の正。§18 のサムネイルが
          同じ変数で負マージンを作るため、padding を直接書かないこと
        ・.works は grid（PC）。≤768px は .v-scroll で flex 化される
+       ・CASES は §15-2 の .cs-rail 配下に置き、並べ方だけを上書きしている
    ============================================================ */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .case{--cpx:28px;--cpy:32px;
@@ -664,6 +666,72 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 .case > *{flex:0 0 auto}
 .case > :last-child{margin-top:auto}
 .case > :nth-last-child(2){margin-bottom:22px}
+
+/* ============================================================
+   15-2. CASES スライダー（.cs-slider / .cs-rail）
+   ────────────────────────────────────────────────────────────
+   ・カード枠は §12 の .case を流用し、ここは「並べ方」と「送り」だけを持つ
+   ・ENGAGEMENT は従来どおり .works / .v-scroll。このブロックのセレクタは
+     必ず .cs-rail 配下に限定すること（.works を巻き込むと3枚側が壊れる）
+   ・§12 / §15 より後に置くこと（.case の hover 影を上書きしている）
+   ・同時表示枚数は --cs-view が唯一の正。JS(common.js §14)は1枚目の実測幅から
+     送り幅を取るだけで枚数を知らないため、ここを変えるだけで追従する
+   ・rail は横スクローラ。縦は overflow-y:hidden で必ず閉じる（§19-3 と同じ理由。
+     縦スクロール範囲が 1px でも生じるとタッチがここにラッチする）
+   ・そのため上下の逃げは padding で作る。margin では hover の持ち上がりと
+     影が scrollport 境界で切れる
+   ・子カードに translateY 系の初期位置を与えないこと（HTML側は .rv .rv-f）
+   ============================================================ */
+.cs-slider{position:relative}
+
+.cs-rail{
+  --cs-view:3;        /* 同時表示枚数。端数可（端数＝次カードの覗かせ量） */
+  --cs-lift:8px;      /* hover の持ち上がりの逃げ（上） */
+  --cs-shadow:20px;   /* hover 影の逃げ（下） */
+  display:flex;
+  gap:var(--gap);
+  padding:var(--cs-lift) 0 var(--cs-shadow);
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  /* mandatory は斜めスワイプで縦スクロールを奪うため proximity（§19-3 と同方針） */
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch}
+.cs-rail::-webkit-scrollbar{display:none}
+
+/* 幅は --cs-view と --gap から算出。PC3枚時は旧グリッドと同一寸法になる */
+.cs-rail > .case{
+  flex:0 0 calc((100% - (var(--cs-view) - 1) * var(--gap)) / var(--cs-view));
+  scroll-snap-align:start}
+
+/* 横スクローラ内は逃げ量に合わせて持ち上がり／影を控えめにする */
+.cs-rail .case:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.34)}
+
+/* ▼ §21 のパララックスを rail 内だけ無効化。
+     view() は「最も近いスクロールポート」を基準に取るが、この rail は
+     縦を閉じているため進捗が取れず、写真が中途半端な位置で固定される */
+.cs-rail .case .ph-fig img{animation:none;scale:1;translate:none}
+
+/* ---- 操作行（左：スワイプ表示／右：送りボタン） ---- */
+.cs-foot{display:flex;align-items:center;justify-content:space-between;
+  gap:16px;margin-top:20px}
+.cs-foot .v-hint{margin:0}                 /* §19-3 の margin-top:10px を打ち消す */
+.cs-nav{display:flex;gap:10px;margin-left:auto}
+.cs-btn{width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:transparent;color:var(--txt);
+  display:grid;place-items:center;cursor:pointer;
+  transition:border-color .3s,color .3s,transform .3s var(--mo-ease),opacity .3s}
+.cs-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.cs-btn:hover{border-color:var(--accent-2);color:var(--accent-2);transform:translateY(-2px)}
+.cs-btn:active{transform:translateY(0) scale(.96)}
+/* 循環送り（既定）では付かない。data-cs-loop="0" 運用時のみ有効 */
+.cs-btn[disabled]{opacity:.35;pointer-events:none}
+
+@media (max-width:1024px){.cs-rail{--cs-view:2}}
+@media (max-width:768px){.cs-rail{--cs-view:1.15}}
+@media (max-width:480px){.cs-rail{--cs-view:1.06}}
 
 /* ============================================================
    16. FAQ
@@ -813,7 +881,8 @@ html.cfi-fallback .rv{opacity:1;transform:none}
 }
 
 /* ------------------------------------------------------------
-   19-3 モバイル横スクロール（APPROACH / CASES / ENGAGEMENT が使用）
+   19-3 モバイル横スクロール（APPROACH / ENGAGEMENT が使用）
+        ※ CASES は §15-2 の .cs-rail に移行済み。ここには含まれない
    ------------------------------------------------------------ */
 @media (max-width:768px){
   .v-scroll{display:flex;gap:16px;overflow-x:auto;
@@ -872,6 +941,7 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
          非対応環境では静止表示に落ちる
        ・§18 の hover transform:scale を殺さないよう、
          独立プロパティ（scale / translate）側で実装している
+       ・§15-2 の .cs-rail 内は縦の進捗が取れないため個別に無効化している
    ============================================================ */
 @supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference) and (min-width:769px){
@@ -980,6 +1050,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
       1280 / 1180 / 1024 / 960 / 768 / 600 / 480 / 360 を検証基準に設計
       ※ 960px はハンバーガー切替点。JSの MQ_DESK と必ず一致させること
       ※ コンポーネント固有のブレークポイントは各節の末尾にある
+        （CASESスライダーの --cs-view は §15-2 の末尾）
    ============================================================ */
 
 /* ---- ~1280px：小型デスクトップ ---- */
@@ -1001,7 +1072,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 @media (max-width:1024px){
   :root{--sec:88px}
   .svc{grid-template-columns:repeat(2,1fr)}
-  /* ENGAGEMENT / CASES は3枚目も1カラム幅に揃える（全幅化すると間延びする） */
+  /* ENGAGEMENT は3枚目も1カラム幅に揃える（全幅化すると間延びする） */
   .works{grid-template-columns:repeat(2,1fr)}
   .flow{grid-template-columns:repeat(2,1fr);row-gap:44px}
   .flow::before{display:none}
@@ -1119,6 +1190,10 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .faq summary::after{transform:none!important}
   .btn::after{display:none}
   .ticker ul,.v-hint{animation:none!important}
+
+  /* CASESスライダー：自動送りの停止は common.js §14 が担当。ここは残る動きを消す */
+  .cs-rail{scroll-behavior:auto}
+  .cs-btn:hover{transform:none!important}
 
   /* JSはこの設定下では書き込まないが、実行中に切り替わった場合の保険 */
   .hero .wrap{translate:none!important;opacity:1!important}
