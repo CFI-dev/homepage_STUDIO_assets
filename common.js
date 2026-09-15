@@ -1194,20 +1194,29 @@
       each(nuxt.querySelectorAll(".rv"), function (el) { el.classList.add("on"); });
     }, 5000);
   })();
+   
   /* ------------------------------------------------------------
   14. CASES スライダー（.cs-slider / .cs-rail）
-      ・器・幅・強調の見た目は common.css §15-2 が唯一の正。JSは「送り幅」と
-        「中央のカード」を実測から求めるだけで、同時表示枚数（--cs-view）を知らない
+      ・器・幅・強調の見た目は common.css §15-2 が唯一の正。JSは「送り幅」
+        「中央のカード」「必要な複製数」を実測から求めるだけで、同時表示枚数
+        （--cs-view）を知らない
       ・window スクロールは購読しない（§6 の1本のみという原則を守る）
-      ・位置は「idx × 送り幅」を毎回指定する。scrollBy の相対加算にしないこと
-      ・rail の scroll ハンドラでは「読み取り → 書き込み」の順を崩さないこと。
-        disabled やクラスを書いた後に rect を読むと強制同期レイアウトが毎フレーム走る
-      ・中央強調は .cs-ready を立ててから .is-cs-active を付ける。ここが動かない
-        環境では CSS側の条件が揃わず、全カードが通常表示になる
-      ・自動送りは 画面内 かつ 非ホバー／非フォーカス かつ タブ表示中 のときだけ動く。
-        ユーザー操作時点で恒久停止（STOP_ON_INTERACT）
-      ・動きを減らす設定では最初から動かさない（common.css §24 と対）
-      ・カードの出現は §8 の監視がそのまま担う。ここにリビール処理を足さないこと
+
+      ■ 無限ループの仕組み（触る前に必ず読むこと）
+      ・実カードの前後に同じ並びを複製し、1周期（実カード枚数ぶん）進んだら
+        scrollLeft を瞬間的に巻き戻す。内容が周期的なので見た目は変化しない
+      ・したがって複製カードは実カードと「完全に同一の見た目」でなければ
+        ならない。common.css 側で :first-child / :last-child / :nth-child を
+        使った装飾を .cs-rail > .case に足さないこと（巻き戻しの瞬間に絵が飛ぶ）
+      ・巻き戻しはスムーススクロール中と指が触れている間は行わない。
+        scrollLeft への代入はスムーススクロールを打ち切るため、
+        アニメーション中に走らせるとカードが中途半端な位置で止まる
+      ・ホイール／キー操作は指の慣性が無いため、区間を越えた時点で即時に
+        巻き戻す（そうしないと連続ホイールでレールの端に到達してしまう）
+      ・data-cs-loop="0" の場合は複製せず、従来どおりの端止め（ボタン
+        disabled 付き）になる
+      ・カードの出現は §8 の監視がそのまま担う。複製分は監視対象外なので
+        生成時に .on を付けている。ここにリビール処理を足さないこと
   ------------------------------------------------------------ */
   (function initCarousel() {
     each(document.querySelectorAll(".cs-slider"), function (box) {
@@ -1219,19 +1228,30 @@
 
       /* ▼▼ 調整ダイヤル ▼▼
          INTERVAL         … 自動送り間隔(ms)。HTMLの data-cs-interval が優先
-         LOOP             … 末尾の次で先頭へ戻す。data-cs-loop="0" で端止め
-         STOP_ON_INTERACT … 操作後に自動送りを恒久停止する（既定 true） */
+         LOOP             … 無限ループ。data-cs-loop="0" で端止め
+         STOP_ON_INTERACT … 操作後に自動送りを恒久停止する（既定 true）
+         START_CENTERED   … 初期表示で1枚目を「中央」に置く。
+                             false にすると1枚目が左端＝2枚目が強調される */
       var INTERVAL = Math.max(2500, parseInt(box.getAttribute("data-cs-interval"), 10) || 5000);
       var LOOP = box.getAttribute("data-cs-loop") !== "0";
       var STOP_ON_INTERACT = true;
+      var START_CENTERED = true;
       /* ▲▲ 調整はここまで ▲▲ */
 
       var ACTIVE = "is-cs-active";
-      var idx = 0, act = -1, timer = null, hold = false, vis = false;
-      var dead = rm.matches, ticking = false, rzT = null;
+      var real = Array.prototype.slice.call(rail.children);  /* 実カード（複製前） */
+      var N = real.length;
 
-      /* 実測。送り幅は2枚目との左端差から取るため gap を参照しない。
-         中央判定と共用するのでカード幅も同時に返す（rect の読み取りを集約） */
+      var sets = 0;            /* 片側の複製セット数（0＝複製なし＝端止め動作） */
+      var idx = 0;             /* 左端に来る予定のカード番号（送りの意図） */
+      var act = -1;            /* 現在強調しているカード番号 */
+      var timer = null, hold = false, vis = false;
+      var dead = rm.matches, ticking = false, rzT = null, idleT = null;
+      var down = false;        /* 指が触れている */
+      var touched = false;     /* 触って以降＝慣性が残る可能性がある */
+      var animAt = 0;          /* スムーススクロール開始時刻 */
+
+      /* ---- 実測。送り幅は2枚目との左端差から取るため gap を参照しない ---- */
       function geo() {
         var a = rail.children[0], b = rail.children[1];
         if (!a) return { w: 1, st: 1 };
@@ -1247,8 +1267,12 @@
       function span() { return Math.max(0, rail.scrollWidth - rail.clientWidth); }
       function last(g) { return Math.max(0, Math.round(span() / (g || geo()).st)); }
 
-      /* 表示領域の中心にいちばん近いカード番号（同距離なら左を選ぶ）。
-         --cs-view を見ないため、枚数変更・端数表示にそのまま追従する */
+      /* 左端カードから中央カードまでの枚数差。2枚表示など割り切れる配置では
+         端数 .5 になるため、必ず center() と同じ ε を使って左側へ倒す */
+      function coff(g) {
+        return Math.floor((rail.clientWidth - g.w) / 2 / g.st + 0.5 - 1e-6);
+      }
+      /* 表示領域の中心にいちばん近いカード番号（--cs-view を見ない） */
       function center(g) {
         var n = rail.children.length;
         var c = rail.scrollLeft + rail.clientWidth / 2;
@@ -1256,44 +1280,112 @@
         return i < 0 ? 0 : (i > n - 1 ? n - 1 : i);
       }
 
-      /* 書き込み。付け替えは変化したときだけ（毎フレームの再計算を避ける） */
+      /* ---- 複製（前後同数）。必要数は実測から出すので枚数変更に追従する ---- */
+      function dup(el) {
+        var c = el.cloneNode(true);
+        c.classList.add("on");                  /* §8 の監視外なので自前で開く */
+        c.classList.remove(ACTIVE);
+        c.removeAttribute("id");
+        c.setAttribute("aria-hidden", "true");  /* 読み上げに二重で載せない */
+        /* 将来カード内にリンク等を足した場合の保険（複製側を焦点から外す） */
+        each(c.querySelectorAll("a,button,input,select,textarea,[tabindex]"),
+          function (f) { f.setAttribute("tabindex", "-1"); });
+        return c;
+      }
+      function mount() {
+        if (!LOOP || N < 2) return false;
+        var g = geo();
+        if (g.st <= 1) return false;            /* 幅が測れない（非表示中など） */
+        /* 片側に「1画面＋1枚」以上を確保する。これがレール端に当たらない条件 */
+        var need = Math.max(1, Math.ceil((rail.clientWidth + g.st) / (N * g.st)));
+        if (need <= sets) return false;
+        var head = document.createDocumentFragment();
+        var tail = document.createDocumentFragment();
+        for (var s = sets; s < need; s++) {
+          real.forEach(function (el) {
+            head.appendChild(dup(el));
+            tail.appendChild(dup(el));
+          });
+        }
+        rail.insertBefore(head, rail.firstChild);
+        rail.appendChild(tail);
+        sets = need;
+        return true;
+      }
+
+      /* ---- 書き込み。付け替えは変化したときだけ ---- */
       function paint(i) {
         if (!rail.classList.contains("cs-ready")) rail.classList.add("cs-ready");
         if (i === act) return;
         act = i;
         each(rail.children, function (el, k) { el.classList.toggle(ACTIVE, k === i); });
       }
-
-      function sync(mx) {
-        if (LOOP || !prev || !next) return;
+      function sync(g) {
+        if (LOOP || !prev || !next) return;     /* ループ中は常に押せる */
+        var mx = last(g);
         prev.disabled = idx <= 0;
-        next.disabled = idx >= (mx === undefined ? last() : mx);
+        next.disabled = idx >= mx;
       }
 
-      /* 手動スワイプ・スムーススクロール中の同期。読み取りを先に済ませる */
+      /* ---- 中央セットへの巻き戻し（1周期ぶん＝見た目は完全に同じ） ---- */
+      function normalize() {
+        if (!sets) return;
+        var g = geo();
+        var unit = N * g.st;
+        var k = Math.floor((rail.scrollLeft - sets * unit) / unit + 1e-4);
+        if (!k) return;
+        idx -= k * N;
+        rail.scrollLeft = rail.scrollLeft - k * unit;
+      }
+      /* 実カード番号を保ったまま即時アンカー（初期化・リサイズ・複製追加後） */
+      function anchor() {
+        var g = geo();
+        var r = ((idx - (START_CENTERED ? coff(g) : 0)) % N + N) % N;
+        idx = sets * N + r + (START_CENTERED ? coff(g) : 0);
+        var left = Math.min(Math.max(idx * g.st, 0), span());
+        try { rail.scrollTo({ left: left, behavior: "auto" }); }
+        catch (e) { rail.scrollLeft = left; }
+        paint(center(geo()));
+      }
+
+      /* 読み取り → 書き込みの順を崩さないこと（強制同期レイアウト対策） */
       function update() {
         var g = geo();
-        var mx = last(g);
-        idx = Math.min(Math.round(rail.scrollLeft / g.st), mx);
+        idx = Math.round(rail.scrollLeft / g.st);
         var i = center(g);
-        sync(mx);
+        sync(g);
         paint(i);
+      }
+      function idle() {
+        clearTimeout(idleT);
+        idleT = setTimeout(function () {
+          if (down) return;                     /* 指が乗っている間は触らない */
+          touched = false;
+          normalize();
+        }, 160);
       }
 
       function go(i, smooth) {
         var g = geo();
-        var mx = last(g);
-        if (LOOP) i = i < 0 ? mx : (i > mx ? 0 : i);
-        else i = i < 0 ? 0 : (i > mx ? mx : i);
+        if (sets) {
+          var d = i - idx;                      /* 送り量を保ったまま中央へ戻す */
+          normalize();
+          i = idx + d;
+        } else if (LOOP) {
+          var mw = last(g);                     /* 複製に失敗した場合の保険 */
+          i = i < 0 ? mw : (i > mw ? 0 : i);
+        } else {
+          var mx = last(g);
+          i = i < 0 ? 0 : (i > mx ? mx : i);
+        }
         idx = i;
-        var left = Math.min(i * g.st, span());
+        var left = Math.min(Math.max(i * g.st, 0), span());
         var mode = (smooth === false || rm.matches) ? "auto" : "smooth";
+        animAt = mode === "smooth" ? Date.now() : 0;
         try { rail.scrollTo({ left: left, behavior: mode }); }
         catch (e) { rail.scrollLeft = left; }   /* 古いSafari等の保険 */
-        sync(mx);
-        /* behavior:auto の経路（動きを減らす設定・古いSafari）では scroll が
-           1回しか出ないため、ここでも強調を反映しておく */
-        paint(center(geo()));
+        sync(g);
+        if (mode === "auto") paint(center(geo()));  /* scroll が1回しか出ない経路 */
       }
 
       function play() {
@@ -1322,10 +1414,18 @@
         go(idx + (e.key === "ArrowRight" ? 1 : -1));
       });
 
-      each(["pointerdown", "wheel", "touchstart"], function (ev) {
-        rail.addEventListener(ev, function () { if (STOP_ON_INTERACT) kill(); },
-          { passive: true });
+      each(["pointerdown", "touchstart"], function (ev) {
+        rail.addEventListener(ev, function () {
+          down = true; touched = true;
+          if (STOP_ON_INTERACT) kill();
+        }, { passive: true });
       });
+      each(["pointerup", "pointercancel", "touchend", "touchcancel"], function (ev) {
+        addEventListener(ev, function () { down = false; idle(); }, { passive: true });
+      });
+      rail.addEventListener("wheel", function () {
+        if (STOP_ON_INTERACT) kill();
+      }, { passive: true });
 
       /* 読んでいる間は送らない */
       box.addEventListener("mouseenter", function () { hold = true; });
@@ -1337,13 +1437,22 @@
       rail.addEventListener("scroll", function () {
         if (ticking) return;
         ticking = true;
-        requestAnimationFrame(function () { ticking = false; update(); });
+        requestAnimationFrame(function () {
+          ticking = false;
+          update();
+          /* 慣性もアニメーションも無い操作（ホイール／キー）だけ即時巻き戻す */
+          if (sets && !touched && Date.now() - animAt > 700) normalize();
+          idle();
+        });
       }, { passive: true });
 
-      /* 幅が変われば --cs-view も変わる。現在位置へ即時で再整列する */
+      /* 幅が変われば --cs-view も変わる。必要なら複製を足して再アンカー */
       addEventListener("resize", function () {
         clearTimeout(rzT);
-        rzT = setTimeout(function () { go(Math.min(idx, last()), false); }, 180);
+        rzT = setTimeout(function () {
+          if (sets) { mount(); anchor(); }
+          else go(Math.min(idx, last()), false);
+        }, 180);
       }, { passive: true });
 
       document.addEventListener("visibilitychange", function () {
@@ -1363,7 +1472,10 @@
         play();
       }
 
-      update();
+      mount();
+      if (sets) anchor(); else update();
+      /* 初期化時に幅が測れなかった場合の再試行 */
+      addEventListener("load", function () { if (mount()) anchor(); });
     });
   })();
 })();
