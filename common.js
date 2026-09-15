@@ -1196,18 +1196,18 @@
   })();
   /* ------------------------------------------------------------
   14. CASES スライダー（.cs-slider / .cs-rail）
-      ・器と幅は common.css §15-2 が唯一の正。JSは1枚目の実測幅から
-        送り幅を取るだけで、同時表示枚数を知らない
-      ・window スクロールは購読しない（§6 の1本のみという原則を守る）。
-        購読するのは rail 自身の scroll（手動スワイプ後の位置同期）だけ
-      ・位置は「idx × 送り幅」を毎回指定する。scrollBy の相対加算に
-        しないこと（snap:proximity 下でズレが累積する）
-      ・自動送りは 画面内 かつ 非ホバー／非フォーカス かつ タブ表示中 の
-        ときだけ動く。ユーザーが操作した時点で恒久停止（STOP_ON_INTERACT）
+      ・器・幅・強調の見た目は common.css §15-2 が唯一の正。JSは「送り幅」と
+        「中央のカード」を実測から求めるだけで、同時表示枚数（--cs-view）を知らない
+      ・window スクロールは購読しない（§6 の1本のみという原則を守る）
+      ・位置は「idx × 送り幅」を毎回指定する。scrollBy の相対加算にしないこと
+      ・rail の scroll ハンドラでは「読み取り → 書き込み」の順を崩さないこと。
+        disabled やクラスを書いた後に rect を読むと強制同期レイアウトが毎フレーム走る
+      ・中央強調は .cs-ready を立ててから .is-cs-active を付ける。ここが動かない
+        環境では CSS側の条件が揃わず、全カードが通常表示になる
+      ・自動送りは 画面内 かつ 非ホバー／非フォーカス かつ タブ表示中 のときだけ動く。
+        ユーザー操作時点で恒久停止（STOP_ON_INTERACT）
       ・動きを減らす設定では最初から動かさない（common.css §24 と対）
-      ・カードの出現は §8 の監視がそのまま担う。横にはみ出したカードは
-        祖先のクリップにより交差しないため発火せず、送られて見えた
-        時点で .on が付く。ここにリビール処理を足さないこと
+      ・カードの出現は §8 の監視がそのまま担う。ここにリビール処理を足さないこと
   ------------------------------------------------------------ */
   (function initCarousel() {
     each(document.querySelectorAll(".cs-slider"), function (box) {
@@ -1226,39 +1226,74 @@
       var STOP_ON_INTERACT = true;
       /* ▲▲ 調整はここまで ▲▲ */
 
-      var idx = 0, timer = null, hold = false, vis = false;
+      var ACTIVE = "is-cs-active";
+      var idx = 0, act = -1, timer = null, hold = false, vis = false;
       var dead = rm.matches, ticking = false, rzT = null;
 
-      /* 送り幅＝カード幅＋gap。2枚目との左端差から取るため gap を参照しない */
-      function step() {
+      /* 実測。送り幅は2枚目との左端差から取るため gap を参照しない。
+         中央判定と共用するのでカード幅も同時に返す（rect の読み取りを集約） */
+      function geo() {
         var a = rail.children[0], b = rail.children[1];
-        if (!a) return 1;
-        var w = a.getBoundingClientRect().width;
+        if (!a) return { w: 1, st: 1 };
+        var ra = a.getBoundingClientRect();
+        var w = ra.width > 1 ? ra.width : 1;
+        var st = w;
         if (b) {
-          var d = b.getBoundingClientRect().left - a.getBoundingClientRect().left;
-          if (d > 1) return d;
+          var d = b.getBoundingClientRect().left - ra.left;
+          if (d > 1) st = d;
         }
-        return w > 1 ? w : 1;
+        return { w: w, st: st };
       }
       function span() { return Math.max(0, rail.scrollWidth - rail.clientWidth); }
-      function last() { return Math.max(0, Math.round(span() / step())); }
+      function last(g) { return Math.max(0, Math.round(span() / (g || geo()).st)); }
 
-      function sync() {
+      /* 表示領域の中心にいちばん近いカード番号（同距離なら左を選ぶ）。
+         --cs-view を見ないため、枚数変更・端数表示にそのまま追従する */
+      function center(g) {
+        var n = rail.children.length;
+        var c = rail.scrollLeft + rail.clientWidth / 2;
+        var i = Math.floor((c - g.w / 2) / g.st + 0.5 - 1e-6);
+        return i < 0 ? 0 : (i > n - 1 ? n - 1 : i);
+      }
+
+      /* 書き込み。付け替えは変化したときだけ（毎フレームの再計算を避ける） */
+      function paint(i) {
+        if (!rail.classList.contains("cs-ready")) rail.classList.add("cs-ready");
+        if (i === act) return;
+        act = i;
+        each(rail.children, function (el, k) { el.classList.toggle(ACTIVE, k === i); });
+      }
+
+      function sync(mx) {
         if (LOOP || !prev || !next) return;
         prev.disabled = idx <= 0;
-        next.disabled = idx >= last();
+        next.disabled = idx >= (mx === undefined ? last() : mx);
+      }
+
+      /* 手動スワイプ・スムーススクロール中の同期。読み取りを先に済ませる */
+      function update() {
+        var g = geo();
+        var mx = last(g);
+        idx = Math.min(Math.round(rail.scrollLeft / g.st), mx);
+        var i = center(g);
+        sync(mx);
+        paint(i);
       }
 
       function go(i, smooth) {
-        var mx = last();
+        var g = geo();
+        var mx = last(g);
         if (LOOP) i = i < 0 ? mx : (i > mx ? 0 : i);
         else i = i < 0 ? 0 : (i > mx ? mx : i);
         idx = i;
-        var left = Math.min(i * step(), span());
+        var left = Math.min(i * g.st, span());
         var mode = (smooth === false || rm.matches) ? "auto" : "smooth";
         try { rail.scrollTo({ left: left, behavior: mode }); }
         catch (e) { rail.scrollLeft = left; }   /* 古いSafari等の保険 */
-        sync();
+        sync(mx);
+        /* behavior:auto の経路（動きを減らす設定・古いSafari）では scroll が
+           1回しか出ないため、ここでも強調を反映しておく */
+        paint(center(geo()));
       }
 
       function play() {
@@ -1298,15 +1333,11 @@
       box.addEventListener("focusin",  function () { hold = true; });
       box.addEventListener("focusout", function () { hold = false; });
 
-      /* 手動スワイプ後の位置を idx へ取り込む（rAF で1フレーム1回に間引く） */
+      /* 手動スワイプ後の位置と強調を取り込む（rAF で1フレーム1回に間引く） */
       rail.addEventListener("scroll", function () {
         if (ticking) return;
         ticking = true;
-        requestAnimationFrame(function () {
-          ticking = false;
-          idx = Math.min(Math.round(rail.scrollLeft / step()), last());
-          sync();
-        });
+        requestAnimationFrame(function () { ticking = false; update(); });
       }, { passive: true });
 
       /* 幅が変われば --cs-view も変わる。現在位置へ即時で再整列する */
@@ -1332,7 +1363,7 @@
         play();
       }
 
-      sync();
+      update();
     });
   })();
 })();
