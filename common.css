@@ -122,15 +122,18 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 /* ============================================================
    3. 起動クローク / 土台（home = .cfi-on ／ contact = .cfi-sub）
       ・幕・バー・％の見た目はここが唯一の正。ページHEADで <style> を書かないこと
-      ・最低表示時間（2秒）と進捗値の供給は common.js §4 が担当。
-        CSSは「与えられた値を描く」だけに留める
+      ・最低表示時間（MIN_MS）・上限打ち切り（HARD_MS）・進捗値の算出は
+        すべて common.js §4 が担当。CSSは「与えられた値を描く」だけに留め、
+        タイマーの実数値をCSS側へ二重に持たせないこと
       ・進捗バーは transform:scaleX（--cfi-boot-p:0〜1）で動かす。
         width / background-size の連続変化は使わないこと
       ・#cfi-boot-ui は common.js §4 が body 直下へ生成する。JSが落ちた場合は
         この要素が存在せず、幕＋文言だけが出る（＝従来どおりの見た目）
       ・文言の実寸は --cfi-boot-fs が唯一の正。#cfi-boot-ui の縦位置が
         この値を参照しているため、body::after 側だけ変えないこと
-      ・演出値（.28s / top:44%）は両ページで必ず同一に保つこと
+      ・演出値（フェード .28s / top:44%）は両ページで必ず同一に保つこと。
+        .28s は common.js の OUT_MS（=300ms）より必ず短く保つ。
+        長くすると幕の除去がフェード完了より先に来て最後にカクつく
    ============================================================ */
 html:is(.cfi-on,.cfi-sub){
   /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す）。
@@ -172,9 +175,13 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
    ・縦位置は文言（body::after）の直下。1.02 は文言の line-height と対。
      どちらか一方だけを変えると重なる
    ・fill は transform:scaleX。--cfi-boot-p は 0〜1（JSが i 要素へ直接書く）
-   ・transition は .28s linear。バーの更新は 50ms 間隔なので、
-     ここを 0 にすると値の刻みがそのまま段差として見える
-   ・tabular-nums は必須。桁が変わるたびに％の幅が跳ねるのを防ぐ */
+   ・transition は .18s linear。進捗は「完了リソース件数 ÷ 想定件数」を
+     主軸に刻むため、1件完了ごとに値が階段状に跳ぶ。
+     長くすると跳ねの反映が遅れて実際の読み込みとずれ、
+     0 にすると刻みがそのまま段差として見える。50ms 更新との兼ね合いで .18s
+   ・tabular-nums は必須。桁が変わるたびに％の幅が跳ねるのを防ぐ
+   ・％の数値は下限カーブ（floor）と実測スコアの大きい方。
+     100% には到達させず CAP（0.92）で止め、幕のフェードで着地させる */
 #cfi-boot-ui{
   position:fixed;left:0;right:0;top:44%;z-index:2147483602;pointer-events:none;
   padding-top:calc(var(--cfi-boot-fs,64px) * 1.02 + 30px);
@@ -186,7 +193,7 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 #cfi-boot-ui .bar i{position:absolute;inset:0;display:block;border-radius:inherit;
   background:var(--grad);
   transform:scaleX(var(--cfi-boot-p,0));transform-origin:0 50%;
-  will-change:transform;transition:transform .28s linear}
+  will-change:transform;transition:transform .18s linear}
 #cfi-boot-ui .pct{font-family:var(--f-mono);font-size:11px;font-weight:500;
   letter-spacing:.18em;line-height:1;color:var(--muted);
   font-variant-numeric:tabular-nums}
@@ -1275,8 +1282,10 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
     animation-iteration-count:1!important;transition-duration:.001ms!important}
   html{scroll-behavior:auto}
 
-  /* 起動クローク */
+  /* 起動クローク（幕のフェード／進捗バーの補間を止める。
+     最低表示時間と％表示そのものは common.js §4 側で維持する） */
   html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
+  #cfi-boot-ui,#cfi-boot-ui .bar i{transition:none!important}
 
   /* ロゴ */
   .logo .mark{transition:none!important;transform:none!important}
@@ -1297,10 +1306,6 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .ph-fig img{transition:none!important;transform:none!important}
   .faq summary::after{transform:none!important}
   .btn::after{display:none}
-  /* 起動クローク */
-  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
-  /* 進捗バーはスナップ更新にする（最低表示2秒と％表示自体は維持する） */
-  #cfi-boot-ui,#cfi-boot-ui .bar i{transition:none!important}
 
   .ticker ul,.v-hint{animation:none!important}
 
