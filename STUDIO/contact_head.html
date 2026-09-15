@@ -31,14 +31,16 @@
   };
   /* ▲▲ 設定はここまで ▲▲ */
 
-  /* 保険：BODY側（common.js）が読み込まれなくても3.5秒で必ず幕を上げる。
-     解除の 280ms は common.css §3 の transition .28s と対。片方だけ変えないこと */
+  /* 保険：BODY側（common.js §4）が読み込まれなくても5秒で必ず幕を上げる。
+     common.js の完全解除（約4.52秒＝HARD_MS 4000＋HOLD 220＋OUT 300）より
+     後であることが条件。片方だけ数値を変えないこと。
+     解除の 280ms は common.css §3 の transition .28s と対 */
   setTimeout(function(){
     h.classList.add('cfi-boot-out');
     setTimeout(function(){
       h.classList.remove('cfi-boot','cfi-boot-out');
     }, 280);
-  }, 3500);
+  }, 5000);
 })();
 </script>
 
