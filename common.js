@@ -138,7 +138,7 @@
     var HARD_MS  = 4000;
     var OUT_MS   = 300;
     var CAP      = 0.92;
-    var FAST_NAV = false;
+    var FAST_NAV = true;
     /* ▲▲ 調整はここまで ▲▲ */
 
     var T0 = Date.now();
