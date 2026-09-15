@@ -1,44 +1,73 @@
 <div id="cfi-root">
 
   <!-- ============================================================
-       ■ このファイルを触る前に必ず読むこと
-       ・フォント・字間・色は common.css が唯一の正。ここで見た目を変えない
-       ・アイブロウは <p class="eyebrow"> のみ。等幅フォントは .eyebrow 自身が
-         持つため、補助クラス（旧 .mono 等）は付けないこと
-       ・data-mo-stagger は「直下の子を順送りで出す」指定。付けた要素自身は
-         .rv-hold（動かない器）になる（common.js §8 initReveal）
-       ・data-cfi-nav / data-cfi-todo の解決は common.js §2 が行う。
-         href をここで確定させないこと（HEAD の CFI_CONFIG が唯一の正）
-       ・.stack / #technology / [data-rail] / [data-count] を使う場合は
-         parking.css / parking.js の読み込みが必要（本番では読み込まない）
-       ・common.js はこの器より後（</body> 直前）に置くこと
+       ■ 触る前に必ず読むこと
+       ・見た目は common.css、挙動は common.js が唯一の正。ここで再定義しない
+       ・アイブロウは <p class="eyebrow"> のみ（等幅は .eyebrow 自身が持つ）
+       ・data-mo-stagger は「直下の子を順送り」。付けた要素自身は動かない器になる
+       ・href は data-cfi-nav / data-cfi-todo で指定。確定値を書かないこと
+         （HEAD の window.CFI_CONFIG が唯一の正）
+       ・.stack / #technology / [data-rail] / [data-count] は parking.css /
+         parking.js が必要（本番では読み込まない）
+       ・common.js はこの器より後（ファイル末尾）に置くこと
        ============================================================ -->
 
-  <!-- SVG SPRITE / #gBrand は userSpaceOnUse 必須（垂直・水平線のみのpathで解決不能になるため）。SERVICE の .svc .ico が参照 -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
-    <linearGradient id="gBrand" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
-      <stop offset="0%" stop-color="#0f6be0"/><stop offset="100%" stop-color="#00c2a8"/>
-    </linearGradient>
-    <symbol id="i-strategy" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V11"/><path d="M11 20V6"/><path d="M16 20v-6"/><path d="M21 20V4"/></symbol>
-    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-2.9 8.2-7 9.5-4.1-1.3-7-5.1-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></symbol>
-    <symbol id="i-process" viewBox="0 0 24 24"><rect x="3" y="4" width="7.5" height="5.2" rx="1.2"/><rect x="13.5" y="14.8" width="7.5" height="5.2" rx="1.2"/><path d="M6.75 9.2v6.2a2 2 0 0 0 2 2h4.75"/><path d="M17.25 4v6.4"/><path d="M15.1 8.4l2.15 2.2 2.15-2.2"/></symbol>
-    <symbol id="i-service" viewBox="0 0 24 24"><rect x="3" y="3.4" width="18" height="17.2" rx="2.6"/><path d="M3 7.8h18"/><circle cx="12" cy="14.2" r="3"/></symbol>
-    <symbol id="i-platform" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><path d="M10.5 6.9 6.4 15.9"/><path d="M13.5 6.9l4.1 9"/><path d="M7.3 18h9.4"/></symbol>
-    <symbol id="i-dev" viewBox="0 0 24 24"><path d="M8.6 8.4 4.6 12l4 3.6"/><path d="M15.4 8.4 19.4 12l-4 3.6"/><path d="M13.7 5.4l-3.4 13.2"/></symbol>
-  </defs></svg>
+  <!-- SVG SPRITE：#gBrand は gradientUnits="userSpaceOnUse" 必須
+       （垂直・水平線のみの path で解決不能になる）。SERVICE の .svc .ico が参照 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="gBrand" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
+        <stop offset="0%" stop-color="#0f6be0" />
+        <stop offset="100%" stop-color="#00c2a8" />
+      </linearGradient>
+      <symbol id="i-strategy" viewBox="0 0 24 24">
+        <path d="M3 20h18" />
+        <path d="M6 20V11" />
+        <path d="M11 20V6" />
+        <path d="M16 20v-6" />
+        <path d="M21 20V4" />
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 3l7 3v5.5c0 4.4-2.9 8.2-7 9.5-4.1-1.3-7-5.1-7-9.5V6z" />
+        <path d="M9 12l2 2 4-4" />
+      </symbol>
+      <symbol id="i-process" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="7.5" height="5.2" rx="1.2" />
+        <rect x="13.5" y="14.8" width="7.5" height="5.2" rx="1.2" />
+        <path d="M6.75 9.2v6.2a2 2 0 0 0 2 2h4.75" />
+        <path d="M17.25 4v6.4" />
+        <path d="M15.1 8.4l2.15 2.2 2.15-2.2" />
+      </symbol>
+      <symbol id="i-service" viewBox="0 0 24 24">
+        <rect x="3" y="3.4" width="18" height="17.2" rx="2.6" />
+        <path d="M3 7.8h18" />
+        <circle cx="12" cy="14.2" r="3" />
+      </symbol>
+      <symbol id="i-platform" viewBox="0 0 24 24">
+        <circle cx="12" cy="5" r="2.3" />
+        <circle cx="5" cy="18" r="2.3" />
+        <circle cx="19" cy="18" r="2.3" />
+        <path d="M10.5 6.9 6.4 15.9" />
+        <path d="M13.5 6.9l4.1 9" />
+        <path d="M7.3 18h9.4" />
+      </symbol>
+      <symbol id="i-dev" viewBox="0 0 24 24">
+        <path d="M8.6 8.4 4.6 12l4 3.6" />
+        <path d="M15.4 8.4 19.4 12l-4 3.6" />
+        <path d="M13.7 5.4l-3.4 13.2" />
+      </symbol>
+    </defs>
+  </svg>
 
-  <!-- HEADER
-       ▼ .hd-prog は読了進捗バー。common.js §6 initScroll が --p を供給し、
-         common.css §4 が描く。header が position:fixed なので位置の基準になる -->
+  <!-- HEADER / .hd-prog は読了進捗バー（--p は common.js §6 が供給） -->
   <header id="hd">
     <div class="hd-in">
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
-        <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
-             width="36" height="32" decoding="async" alt="">
+        <img class="mark" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
+          width="36" height="32" decoding="async" alt="">
         <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
-             width="64" height="34" decoding="async" alt="">
+          src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
+          width="64" height="34" decoding="async" alt="">
       </a>
 
       <button class="burger" id="burger" type="button" aria-controls="nav" aria-expanded="false" aria-label="メニューを開く">
@@ -59,10 +88,8 @@
     <i class="hd-prog" aria-hidden="true"></i>
   </header>
 
-  <!-- HERO
-       ▼ #heroCv はノードネットワーク背景（common.js §10）。
-         contact は SILK（#heroFx／common.js §11）を使うため、
-         同一ページに両方の canvas を置かないこと。rAF が二重に走る -->
+  <!-- HERO / #heroCv（common.js §10）と #heroFx（§11）は排他。
+       同一ページに両方の canvas を置かないこと（rAF が二重に走る） -->
   <section class="hero" id="top" aria-label="ビジョンとミッション">
     <canvas id="heroCv" aria-hidden="true"></canvas>
     <div class="wrap" data-mo-stagger>
@@ -86,12 +113,19 @@
     <p class="scroll-hint" aria-hidden="true">SCROLL<i></i></p>
   </section>
 
-  <!-- TICKER / 複製は common.js §7 initTicker が行う。手動で複製しないこと -->
+  <!-- TICKER / 複製は common.js §7 が行う。手動で複製しないこと -->
   <div class="ticker" aria-hidden="true">
     <ul id="tk">
-      <li>STRATEGY CONSULTING</li><li>IT &amp; SECURITY</li><li>BUSINESS PROCESS</li>
-      <li>OWN SERVICES</li><li>BP PLATFORM</li><li>WEB DEVELOPMENT</li>
-      <li>DX</li><li>GENERATIVE AI</li><li>SYSTEM INTEGRATION</li><li>PARTNER NETWORK</li>
+      <li>STRATEGY CONSULTING</li>
+      <li>IT &amp; SECURITY</li>
+      <li>BUSINESS PROCESS</li>
+      <li>OWN SERVICES</li>
+      <li>BP PLATFORM</li>
+      <li>WEB DEVELOPMENT</li>
+      <li>DX</li>
+      <li>GENERATIVE AI</li>
+      <li>SYSTEM INTEGRATION</li>
+      <li>PARTNER NETWORK</li>
     </ul>
   </div>
 
@@ -104,10 +138,9 @@
         <p>ご相談の入口となる実際のケースです。一つでも当てはまる場合、当社がお役に立てるかもしれません。</p>
       </div>
 
-            <!-- ▼ カードを1枚ずつ。li に .on が付くとチェックマークが描かれる（common.css §9）。
-             枠とチェックは「.chl > li」（子結合子）で限定しているため、
-             本文の .chl-pts（入れ子リスト）には描かれない。
-             本文は「1文＝1 li」。文を足す／割る場合も <br> は使わないこと -->
+      <!-- ▼ 枠とチェックは「.chl > li」（子結合子）で限定されているため、
+             入れ子の .chl-pts には描かれない。子孫セレクタへ戻さないこと。
+             本文は「1文＝1 li」。文を足す／割る場合も <br> は使わない -->
       <ul class="chl rv" data-mo-stagger data-cfi-todo="6項目の内容を実際の相談傾向に合わせて精査">
         <li>
           <h3>自社のやりたいことに伴走してくれる委託先が少ない</h3>
@@ -167,57 +200,92 @@
         <p>コンサルティング・自社サービス展開・システム開発の三位一体で、課題の発見から価値の実装までを一気通貫で担います。</p>
       </div>
 
-      <!-- ▼ .svc には data-mo-stagger を付けないこと。
-             カード間の隙間（gap:1px）の地色が --line のため、カード単位で
-             動かすと隙間から明るい線色が透ける。コンテナ単位で出現させ、
-             動きは内部のアイコン描画（common.css §8）とホバーに持たせている -->
+      <!-- ▼ .svc に data-mo-stagger を付けないこと。カード間の隙間（gap:1px）の
+             地色が --line のため、カード単位で動かすと隙間から線色が透ける。
+             動きはアイコン描画（common.css §8）とホバーに持たせている -->
       <div class="svc rv" data-cfi-todo="各サービスの説明文・タグを正式文言へ差し替え">
         <article>
           <p class="no">01</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-strategy"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-strategy"></use>
+          </svg>
           <h3>事業・DX戦略コンサルティング<span>STRATEGY CONSULTING</span></h3>
           <p>貴社の事業環境、リソース、強みや事業への想いを整理し、投資判断まで踏み込んだ実行可能な成長戦略を描きます。</p>
-          <ul class="tags"><li>CEO補佐</li><li>成長戦略策定</li><li>推進マネジメント</li></ul>
+          <ul class="tags">
+            <li>CEO補佐</li>
+            <li>成長戦略策定</li>
+            <li>推進マネジメント</li>
+          </ul>
         </article>
 
         <article>
           <p class="no">02</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-shield"></use>
+          </svg>
           <h3>IT・セキュリティコンサルティング<span>IT &amp; SECURITY</span></h3>
           <p>IT基盤の全体最適とセキュリティ強化を同時に設計。リスクを抑えながら攻めのIT投資を支えます。</p>
-          <ul class="tags"><li>CIO機能</li><li>IT DD</li><li>DX推進</li></ul>
+          <ul class="tags">
+            <li>CIO機能</li>
+            <li>IT DD</li>
+            <li>DX推進</li>
+          </ul>
         </article>
 
         <article>
           <p class="no">03</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-process"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-process"></use>
+          </svg>
           <h3>業務コンサルティング<span>BUSINESS PROCESS</span></h3>
           <p>現場の業務を可視化し、標準化と自動化で再設計。属人化を解消し、成果の出る運用の定着まで実行。</p>
-          <ul class="tags"><li>COO機能</li><li>BPR</li><li>BPO</li></ul>
+          <ul class="tags">
+            <li>COO機能</li>
+            <li>BPR</li>
+            <li>BPO</li>
+          </ul>
         </article>
 
         <article>
           <p class="no">04</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-service"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-service"></use>
+          </svg>
           <h3>自社サービス運営<span>OWN SERVICES</span></h3>
           <p>自ら企画・PR・開発・運営・保守するプロダクトやサービスで得た知見を、そのまま貴社の支援に還元。</p>
-          <ul class="tags"><li>プロダクト設計</li><li>マーケティング戦略策定</li><li>SOC体制</li></ul>
+          <ul class="tags">
+            <li>プロダクト設計</li>
+            <li>マーケティング戦略策定</li>
+            <li>SOC体制</li>
+          </ul>
         </article>
 
         <article>
           <p class="no">05</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-platform"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-platform"></use>
+          </svg>
           <h3>BPプラットフォーム<span>BP PLATFORM</span></h3>
           <p>パートナー企業やフリーランスとのネットワークを基盤化し、案件と人材を最適にマッチング。柔軟な体制構築を実現します。</p>
-          <ul class="tags"><li>パートナー連携</li><li>案件マッチング</li><li>人材紹介</li></ul>
+          <ul class="tags">
+            <li>パートナー連携</li>
+            <li>案件マッチング</li>
+            <li>人材紹介</li>
+          </ul>
         </article>
 
         <article>
           <p class="no">06</p>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-dev"></use></svg>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#i-dev"></use>
+          </svg>
           <h3>Webシステム開発<span>WEB DEVELOPMENT</span></h3>
           <p>要件定義から設計・開発・保守・運用まで内製で対応。事業の変化に追従できるシステムをスピーディに構築します。</p>
-          <ul class="tags"><li>業務・システム要件定義</li><li>AIエンジニア</li><li>保守・運用</li></ul>
+          <ul class="tags">
+            <li>業務・システム要件定義</li>
+            <li>AIエンジニア</li>
+            <li>保守・運用</li>
+          </ul>
         </article>
       </div>
     </div>
@@ -233,29 +301,28 @@
         <h2>CFIを利用すると、<br class="brsp">何が起きなくなるのか。</h2>
       </div>
       <!-- ▼ .v-why にも data-mo-stagger を付けないこと（隙間 gap:2px の地色が --line）。
-             背景写真の寄り引きと本文の押し上げは common.css §10 が担当する。
              写真の brightness と ::after のカラーストップはコントラスト計算済みの
-             「対」。差し替え時は §10 の注意書きを必ず読むこと -->
+             「対」。差し替え時は common.css §10 の注意書きを必ず読むこと -->
       <div class="v-why rv" data-cfi-todo="根拠となる実績・体制の裏付けを確認／背景写真3点の差し替え">
         <div>
-          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-01.webp"
-               alt="" loading="lazy" decoding="async" width="800" height="600">
+          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-01.webp" alt=""
+            loading="lazy" decoding="async" width="800" height="600">
           <div class="vw-body">
             <h3><span>NEUTRAL</span>「手段ありき」の提案を受けずに済む</h3>
             <p>戦略・IT・業務の3領域と開発を自社で担うため、特定の打ち手へ誘導する理由がありません。<br>例えば、システムを作らず業務設計だけで解決可能な場合は、業務設計のみを提案します。</p>
           </div>
         </div>
         <div>
-          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-02.webp"
-               alt="" loading="lazy" decoding="async" width="800" height="600">
+          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-02.webp" alt=""
+            loading="lazy" decoding="async" width="800" height="600">
           <div class="vw-body">
             <h3><span>REALITY</span>納品後に「使われない」が起きにくい</h3>
             <p>私たち自身がサービスを運営し、その日々の運用に責任を負っています。<br>現場が回らない、運用コストが見合わない戦略や設計を、初期段階で避けられます。</p>
           </div>
         </div>
         <div>
-          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-03.webp"
-               alt="" loading="lazy" decoding="async" width="800" height="600">
+          <img class="vw-bg" src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/why-03.webp" alt=""
+            loading="lazy" decoding="async" width="800" height="600">
           <div class="vw-body">
             <h3><span>SPEED</span>プロジェクトが止まらない</h3>
             <p>多角的な支援を実施できる私たちだからこそ、不足ポジションのカバーやステークホルダー調整を行うことで、ボトルネック化を避けられます。</p>
@@ -272,63 +339,62 @@
         <p class="eyebrow">APPROACH</p>
         <h2>想いを確実に運用まで届ける。</h2>
       </div>
-      <!-- ▼ .flow に .on が付くと接続線が左から引かれ、.st に .on が付くと
-             番号ドットが2回だけ脈打つ（common.css §11）。
-             ※ .flow / .v-scroll に align-items を後から指定しないこと。
-               §11 の高さ揃え（.dur の margin-top:auto）が等高前提で成立している -->
+      <!-- ▼ .flow / .v-scroll に align-items を後から指定しないこと。
+             common.css §11 の高さ揃え（.dur の margin-top:auto）が
+             等高（stretch）前提で成立している -->
       <div class="flow v-scroll rv" data-mo-stagger>
         <div class="st">
           <p class="dot">01</p>
           <h3><span>ASSESS</span>現状評価</h3>
           <p>事業戦略実現・業務改善など、経営者や現場の想いを受け止め、現状とのギャップを明確化します。</p>
           <p class="dur">2–4 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp" alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-01.webp"
+              alt="現状評価のワークショップ風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot">02</p>
           <h3><span>DESIGN</span>計画策定</h3>
           <p>To-Be像とアーキテクチャを設計し、段階的な計画に落とし込みます。</p>
           <p class="dur">3–6 WEEKS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp" alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-02.webp"
+              alt="設計ドキュメントを検討する様子" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot">03</p>
           <h3><span>BUILD</span>実行・実装</h3>
           <p>全体マネジメントからステークホルダーとの調整など、プロジェクトを推進します。</p>
           <p class="dur">2–6 MONTHS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp" alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-03.webp"
+              alt="開発チームの実装風景" loading="lazy" decoding="async" width="800" height="600"></figure>
         </div>
         <div class="st">
           <p class="dot">04</p>
           <h3><span>RUN</span>運用・定着</h3>
           <p>運用設計と内製化支援まで行い、御社チームだけで回る状態を目指します。</p>
           <p class="dur">CONTINUOUS</p>
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp" alt="運用ミーティングの様子" loading="lazy" decoding="async" width="800" height="600"></figure>
+          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/step-04.webp"
+              alt="運用ミーティングの様子" loading="lazy" decoding="async" width="800" height="600">
+          </figure>
         </div>
       </div>
       <p class="v-hint">← SWIPE →</p>
     </div>
   </section>
 
-  <!-- TECHNOLOGY（掲載保留中）を復帰させる場合はここへ独立セクションとして挿入する。
-       <section class="sec sec-grid" id="technology"><div class="wrap">
-         <div class="sec-head sec-head-tech rv" data-mo-stagger>
-           <p class="eyebrow">TECHNOLOGY</p><h2>主な採用技術</h2></div>
-         <ul class="stack rv"> … </ul>
-       </div></section>
-       ※ .stack / .sec-head-tech のCSSは parking.css に退避してある。
-         復帰時は parking.css の該当ブロックを common.css へ戻すこと
-         （parking.css を本番で読み込む運用にはしない） -->
+  <!-- TECHNOLOGY（掲載保留）を復帰させる場合はここへ独立セクションを挿入する。
+       .stack / .sec-head-tech のCSSは parking.css に退避してあるため、
+       該当ブロックを common.css へ戻すこと（parking.css は本番で読み込まない） -->
 
   <!-- BAND -->
   <div class="band" aria-hidden="true">
-    <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp" alt="" loading="lazy" decoding="async" width="1600" height="600">
+    <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp" alt="" loading="lazy"
+      decoding="async" width="1600" height="600">
   </div>
 
   <!-- 旧アンカー #works の互換用。削除しないこと -->
   <span id="works" aria-hidden="true"></span>
 
-  <!-- CASES / 掲載3件は仮置き。実案件へ差し替え＋守秘確認を必ず行うこと -->
+  <!-- CASES -->
   <section class="sec sec-ink" id="cases">
     <div class="wrap">
       <div class="sec-head rv" data-mo-stagger>
@@ -337,50 +403,174 @@
         <p>成果の大きさよりも、課題の切り分け方と打ち手の選び方を残しています。同じ状況に心当たりがあれば、進め方の参考にしてください。</p>
       </div>
 
-      <!-- ▼ data-mo-stagger="s"：わずかに縮んだ状態から起き上がる。
-             カードに .on が付くと内部3段（課題→打ち手→変化）が順送りで出る
-             （common.css §12）。
-             ※ dl はカードの最終子であることが §15 の高さ揃えの前提。
-               カード末尾にボタン等を足す場合は §15 の2行を必ず見直すこと -->
-      <div class="works v-scroll rv" data-mo-stagger="s" data-cfi-todo="掲載事例3件の内容確定・守秘確認・写真差し替え">
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp" alt="製造業のデータ活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat">MANUFACTURING / DATA</p>
-          <h3>月次の実績把握では、判断が一手遅れる</h3>
-          <dl class="cs-steps">
-            <div><dt>課題</dt><dd>生産・在庫・原価が別々のシステムに入り、集計は月次の手作業。会議では過去の確認に時間が費われていた。</dd></div>
-            <div><dt>打ち手</dt><dd>何を日次で見るかをKPIから先に決め、必要な範囲だけを集約。BIは既存ツールを流用し、新規導入を避けた。</dd></div>
-            <div><dt>変化</dt><dd>会議の議題が「数字の確認」から「打ち手の決定」へ移った。</dd></div>
-          </dl>
-        </article>
+      <!-- ▼ CASES だけ横送りスライダー（6枚／自動送り／ボタン送り）。
+             ENGAGEMENT は従来の .works / .v-scroll のまま。クラスを流用しないこと
+             ・器と幅は common.css §15-2、挙動は common.js §14 が唯一の正
+             ・同時表示枚数は §15-2 の --cs-view が唯一の正（JSは枚数を知らない）
+             ・カードは .rv .rv-f（フェードのみ）。translateY を持つ .rv 単体を
+               付けないこと。rail は縦 overflow を閉じているため下端が切れ、
+               タッチが rail にラッチする原因になる
+             ・.cs-slider に data-mo-stagger を付けないこと（rail と操作行まで
+               分解されてしまう）
+             ・自動送り間隔は data-cs-interval(ms)。端止めにする場合は
+               data-cs-loop="0" を追加する
+             ・カード末尾に dl 以外（ボタン等）を足す場合は common.css §15 の
+               高さ揃え2行を必ず見直すこと -->
+      <div class="cs-slider" data-cs-interval="5000" data-cfi-todo="掲載事例6件の内容確定・守秘確認／works-04〜06.webp の用意">
+        <div class="cs-rail" id="cs-rail" tabindex="0" role="region" aria-roledescription="カルーセル"
+          aria-label="事例（左右に送れます）">
 
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp" alt="小売業のクラウド活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat">RETAIL / CLOUD</p>
-          <h3>繁忙期だけ落ちる基幹を、作り直さずに解く</h3>
-          <dl class="cs-steps">
-            <div><dt>課題</dt><dd>ピーク時に処理が滞留。ただし全面刷新の規模では投資判断が下りず、毎年その場しのぎで越えていた。</dd></div>
-            <div><dt>打ち手</dt><dd>全面刷新ではなく、負荷が集中する機能だけを切り出して移行。構成をコード管理に置き換えた。</dd></div>
-            <div><dt>変化</dt><dd>繁忙期を、増員ではなく設定変更で越えられる状態になった。</dd></div>
-          </dl>
-        </article>
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-01.webp"
+                alt="製造業のデータ活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">MANUFACTURING / DATA</p>
+            <h3>月次の実績把握では、判断が一手遅れる</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>生産・在庫・原価が別々のシステムに入り、集計は月次の手作業。会議では過去の確認に時間が費われていた。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>何を日次で見るかをKPIから先に決め、必要な範囲だけを集約。BIは既存ツールを流用し、新規導入を避けた。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>会議の議題が「数字の確認」から「打ち手の決定」へ移った。</dd>
+              </div>
+            </dl>
+          </article>
 
-        <article class="case">
-          <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp" alt="サービス業の業務再設計プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
-          <p class="cat">SERVICE / PROCESS</p>
-          <h3>ツールを増やす前に、業務の順番を直す</h3>
-          <dl class="cs-steps">
-            <div><dt>課題</dt><dd>MAは導入済み。しかし営業への引き渡し基準がなく、獲得したリードが実質的に放置されていた。</dd></div>
-            <div><dt>打ち手</dt><dd>追加開発は行わず、商談化の定義と引き渡しルールを先に整備。既存ツールの設定変更のみで運用へ乗せた。</dd></div>
-            <div><dt>変化</dt><dd>施策の良否を週次で判断でき、改善が現場側で回り始めた。</dd></div>
-          </dl>
-        </article>
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-02.webp"
+                alt="小売業のクラウド活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">RETAIL / CLOUD</p>
+            <h3>繁忙期だけ落ちる基幹を、作り直さずに解く</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>ピーク時に処理が滞留。ただし全面刷新の規模では投資判断が下りず、毎年その場しのぎで越えていた。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>全面刷新ではなく、負荷が集中する機能だけを切り出して移行。構成をコード管理に置き換えた。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>繁忙期を、増員ではなく設定変更で越えられる状態になった。</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-03.webp"
+                alt="サービス業の業務再設計プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">SERVICE / PROCESS</p>
+            <h3>ツールを増やす前に、業務の順番を直す</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>MAは導入済み。しかし営業への引き渡し基準がなく、獲得したリードが実質的に放置されていた。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>追加開発は行わず、商談化の定義と引き渡しルールを先に整備。既存ツールの設定変更のみで運用へ乗せた。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>施策の良否を週次で判断でき、改善が現場側で回り始めた。</dd>
+              </div>
+            </dl>
+          </article>
+
+          <!-- ▼ 04〜06 は構成確認用の仮置き。文言・写真を差し替えること -->
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-04.webp"
+                alt="物流業のセキュリティ整備プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">LOGISTICS / SECURITY</p>
+            <h3>外注先が増えるほど、情報の置き場が分からなくなる</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>協力会社ごとに共有方法が異なり、どの資料が誰まで見えているかを社内で把握できていなかった。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>ツール統一より先に、扱う情報の区分と持ち出しの可否を定義。既存SaaSの権限設計だけで運用へ落とした。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>新しい協力会社の受け入れが、判断を挟まず手順で完了するようになった。</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-05.webp"
+                alt="人材サービス業の業務標準化プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">HR / STANDARDIZATION</p>
+            <h3>採用を増やす前に、育成の手順を残す</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>業務手順が口伝で、立ち上がり期間が担当者ごとに大きく違っていた。増員のたびに既存メンバーの工数が削られていた。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>全業務の文書化は狙わず、離脱が起きている工程のみを特定して先に標準化。以降は現場が追記できる形に整えた。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>増員の判断が、教育工数の見積りとセットで行えるようになった。</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="case rv rv-f">
+            <figure class="ph-fig"><img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/works-06.webp"
+                alt="建設業の生成AI活用プロジェクト" loading="lazy" decoding="async" width="800" height="450"></figure>
+            <p class="cat">CONSTRUCTION / AI</p>
+            <h3>生成AIを、試用のままで終わらせない</h3>
+            <dl class="cs-steps">
+              <div>
+                <dt>課題</dt>
+                <dd>各部署が個別に試用しており、効果も入力してよい情報の線引きも社内で共有されていなかった。</dd>
+              </div>
+              <div>
+                <dt>打ち手</dt>
+                <dd>用途を書類作成の一工程に絞り、入力可否のルールと確認者を決めてから展開。結果の検証手順も同時に用意した。</dd>
+              </div>
+              <div>
+                <dt>変化</dt>
+                <dd>「試したが続かない」状態を抜け、対象業務を広げる判断ができるようになった。</dd>
+              </div>
+            </dl>
+          </article>
+
+        </div>
+
+        <div class="cs-foot rv">
+          <p class="v-hint">← SWIPE →</p>
+          <div class="cs-nav">
+            <button class="cs-btn" type="button" data-cs-prev aria-controls="cs-rail" aria-label="前の事例へ">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
+            <button class="cs-btn" type="button" data-cs-next aria-controls="cs-rail" aria-label="次の事例へ">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
-      <p class="v-hint">← SWIPE →</p>
     </div>
   </section>
 
-  <!-- ENGAGEMENT -->
+  <!-- ENGAGEMENT / カード枠は CASES と同じ .case（common.css §12）を流用。
+       下部メタのみ .eng-meta（§14）が担当する。
+       ※ 器は .works / .v-scroll のまま。CASES の .cs-slider を流用しないこと -->
   <section class="sec sec-grid" id="engagement">
     <div class="wrap">
       <div class="sec-head rv" data-mo-stagger>
@@ -389,17 +579,24 @@
         <p>最初から大きく始める必要はありません。現状評価だけ、開発だけ、といった単独のご依頼にも対応します。</p>
       </div>
 
-      <!-- ▼ カード枠は CASES と同じ .case（common.css §12）を流用。
-             下部メタのみ .eng-meta（§14）が担当する -->
       <div class="works v-scroll rv" data-mo-stagger="s" data-cfi-todo="標準期間・体制・費用レンジの確定">
         <article class="case">
           <p class="cat">01 / ASSESSMENT</p>
           <h3>スポット診断</h3>
           <p>現状の可視化と課題の切り分けまでを行い、優先順位と概算を提示します。実行フェーズへ進むかは、その結果を見てご判断ください。</p>
           <dl class="eng-meta">
-            <div><dt>主な成果物</dt><dd>現状評価レポート／課題の優先順位／実行時の概算</dd></div>
-            <div><dt>標準期間</dt><dd>2〜4週間</dd></div>
-            <div><dt>費用</dt><dd class="is-todo-text" data-cfi-todo="スポット診断の費用レンジ">※要記入</dd></div>
+            <div>
+              <dt>主な成果物</dt>
+              <dd>現状評価レポート／課題の優先順位／実行時の概算</dd>
+            </div>
+            <div>
+              <dt>標準期間</dt>
+              <dd>2〜4週間</dd>
+            </div>
+            <div>
+              <dt>費用</dt>
+              <dd class="is-todo-text" data-cfi-todo="スポット診断の費用レンジ">※要記入</dd>
+            </div>
           </dl>
         </article>
 
@@ -408,9 +605,18 @@
           <h3>プロジェクト支援</h3>
           <p>計画策定から実装、運用定着までを一つのチームで担います。不足するポジションはBPプラットフォームのネットワークから組成します。</p>
           <dl class="eng-meta">
-            <div><dt>主な成果物</dt><dd>To-Be設計／実行計画／実装・移行／運用設計</dd></div>
-            <div><dt>標準期間</dt><dd>3〜6ヶ月〜</dd></div>
-            <div><dt>費用</dt><dd class="is-todo-text" data-cfi-todo="プロジェクト支援の費用レンジ">※要記入</dd></div>
+            <div>
+              <dt>主な成果物</dt>
+              <dd>To-Be設計／実行計画／実装・移行／運用設計</dd>
+            </div>
+            <div>
+              <dt>標準期間</dt>
+              <dd>3〜6ヶ月〜</dd>
+            </div>
+            <div>
+              <dt>費用</dt>
+              <dd class="is-todo-text" data-cfi-todo="プロジェクト支援の費用レンジ">※要記入</dd>
+            </div>
           </dl>
         </article>
 
@@ -419,9 +625,18 @@
           <h3>顧問・伴走支援</h3>
           <p>CxO機能として、経営・IT・業務の判断に継続的に同席します。社内に判断できる人が足りない状態を、外側から埋めます。</p>
           <dl class="eng-meta">
-            <div><dt>主な役割</dt><dd>投資判断の助言／ベンダー評価／推進の伴走</dd></div>
-            <div><dt>契約形態</dt><dd>月額・継続</dd></div>
-            <div><dt>費用</dt><dd class="is-todo-text" data-cfi-todo="顧問契約の費用レンジ">※要記入</dd></div>
+            <div>
+              <dt>主な役割</dt>
+              <dd>投資判断の助言／ベンダー評価／推進の伴走</dd>
+            </div>
+            <div>
+              <dt>契約形態</dt>
+              <dd>月額・継続</dd>
+            </div>
+            <div>
+              <dt>費用</dt>
+              <dd class="is-todo-text" data-cfi-todo="顧問契約の費用レンジ">※要記入</dd>
+            </div>
           </dl>
         </article>
       </div>
@@ -439,32 +654,59 @@
         <h2>会社概要</h2>
       </div>
 
-      <!-- ▼ 表と写真を別タイミングで出す。
-             tbody 側の data-mo-stagger="f" は行を1つずつフェードさせる指定
-             （common.css §19 の .rv-f）。行の順次表示が不要なら
-             tbody の属性のみ外せばよい -->
+      <!-- ▼ tbody の data-mo-stagger="f" は行を1つずつフェードさせる指定。
+             順次表示が不要なら tbody の属性のみ外す -->
       <div class="cmp-wrap rv" data-mo-stagger="s">
         <table class="tbl">
           <tbody data-mo-stagger="f">
-            <tr><th>商号</th><td>株式会社CFI</td></tr>
-            <tr><th>英文表記</th><td>CFI Inc.</td></tr>
-            <tr><th>設立</th><td class="is-todo-text" data-cfi-todo="設立年月">※要記入</td></tr>
-            <tr><th>資本金</th><td class="is-todo-text" data-cfi-todo="資本金">※要記入</td></tr>
-            <tr><th>代表者</th><td class="is-todo-text" data-cfi-todo="代表者氏名・役職">※要記入</td></tr>
-            <tr><th>所在地</th><td class="is-todo-text" data-cfi-todo="本社所在地（郵便番号含む）">※要記入</td></tr>
-            <tr><th>従業員数</th><td class="is-todo-text" data-cfi-todo="従業員数・基準日">※要記入</td></tr>
-            <tr><th>事業内容</th><td>事業・DX戦略コンサルティング／IT・セキュリティコンサルティング／業務コンサルティング／自社サービス運営／BPプラットフォーム事業／Webシステム開発</td></tr>
-            <tr><th>取引銀行</th><td class="is-todo-text" data-cfi-todo="取引銀行（不要なら行ごと削除）">※要記入</td></tr>
+            <tr>
+              <th>商号</th>
+              <td>株式会社CFI</td>
+            </tr>
+            <tr>
+              <th>英文表記</th>
+              <td>CFI Inc.</td>
+            </tr>
+            <tr>
+              <th>設立</th>
+              <td class="is-todo-text" data-cfi-todo="設立年月">※要記入</td>
+            </tr>
+            <tr>
+              <th>資本金</th>
+              <td class="is-todo-text" data-cfi-todo="資本金">※要記入</td>
+            </tr>
+            <tr>
+              <th>代表者</th>
+              <td class="is-todo-text" data-cfi-todo="代表者氏名・役職">※要記入</td>
+            </tr>
+            <tr>
+              <th>所在地</th>
+              <td class="is-todo-text" data-cfi-todo="本社所在地（郵便番号含む）">※要記入</td>
+            </tr>
+            <tr>
+              <th>従業員数</th>
+              <td class="is-todo-text" data-cfi-todo="従業員数・基準日">※要記入</td>
+            </tr>
+            <tr>
+              <th>事業内容</th>
+              <td>事業・DX戦略コンサルティング／IT・セキュリティコンサルティング／業務コンサルティング／自社サービス運営／BPプラットフォーム事業／Webシステム開発</td>
+            </tr>
+            <tr>
+              <th>取引銀行</th>
+              <td class="is-todo-text" data-cfi-todo="取引銀行（不要なら行ごと削除）">※要記入</td>
+            </tr>
           </tbody>
         </table>
         <figure class="ph-fig">
-          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp" alt="株式会社CFIのオフィス" loading="lazy" decoding="async" width="800" height="600">
+          <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/company-office.webp" alt="株式会社CFIのオフィス"
+            loading="lazy" decoding="async" width="800" height="600">
         </figure>
       </div>
     </div>
   </section>
 
-  <!-- FAQ -->
+  <!-- FAQ / 開閉の高さアニメーションは common.js §9 が担当（JS無効時は素の開閉）。
+       .a の中身を別要素で包み直さないこと（実測対象が変わる） -->
   <section class="sec sec-grid" id="faq">
     <div class="wrap">
       <div class="sec-head rv" data-mo-stagger>
@@ -472,9 +714,6 @@
         <h2>お問い合わせの前に。</h2>
       </div>
 
-      <!-- ▼ 開閉の高さアニメーションは common.js §9 initFaq が担当。
-             JS無効時・動きを減らす設定では素の details 開閉に戻る。
-             .a の中身を別要素で包み直さないこと（実測対象が変わる） -->
       <div class="faq rv" data-mo-stagger data-cfi-todo="回答内容の社内確認（費用・NDA・対応地域は特に要確認）">
         <details>
           <summary>相談だけでも可能ですか。</summary>
@@ -530,16 +769,15 @@
         <div class="rv">
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
             <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
-                 width="36" height="32" loading="lazy" decoding="async" alt="">
+              src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png" width="36"
+              height="32" loading="lazy" decoding="async" alt="">
             <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
-                 width="59" height="31" loading="lazy" decoding="async" alt="">
+              src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
+              width="59" height="31" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
         </div>
 
-        <!-- ▼ 4列を左から順に。子の .rv はそのまま活きる -->
         <div class="ft-nav" data-mo-stagger>
           <div class="rv">
             <h4>SERVICE</h4>
@@ -565,6 +803,8 @@
             <a href="/contact" data-cfi-nav="contact">お問い合わせ</a>
           </div>
           <div class="rv">
+            <!-- data-cfi-todo：href 未設定のものだけを common.js §2 が無効化する。
+                 URLが決まったら属性を外し href を入れるだけで通常表示に戻る -->
             <h4>LEGAL</h4>
             <a href="#" data-cfi-todo="プライバシーポリシーURL">プライバシーポリシー</a>
             <a href="#" data-cfi-todo="情報セキュリティ方針URL">情報セキュリティ方針</a>
@@ -582,14 +822,10 @@
 
 </div>
 
-<!-- ============================================================
-     SCRIPTS
-     ・window.CFI_CONFIG は HEAD の先頭インラインで宣言している。
-       ここでは宣言しないこと（二重管理になる）
-     ・リンク解決 / DOM配置 / クローク解除 / フォールバック判定は
-       すべて common.js が担う。ここにインライン処理を足さないこと
-     ・#cfi-root より後に置くこと（DOM が揃っていないと配置が走らない）
-     ・parking.js は本番では読み込まない。
-       [data-count] / [data-rail] を試す場合のみ common.js の後に追加する
-     ============================================================ -->
+<!-- SCRIPTS
+     ・window.CFI_CONFIG は HEAD で宣言済み。ここでは宣言しないこと
+     ・リンク解決／DOM配置／クローク解除／フォールバック判定は common.js が担う。
+       ここにインライン処理を足さないこと
+     ・#cfi-root より後に置くこと（DOMが揃っていないと配置が走らない）
+     ・parking.js は本番では読み込まない（[data-count] / [data-rail] を試す時のみ） -->
 <script src="https://cfi-dev.github.io/homepage_STUDIO_assets/common.js"></script>
