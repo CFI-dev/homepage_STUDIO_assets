@@ -767,6 +767,12 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 /* 循環送り（既定）では付かない。data-cs-loop="0" 運用時のみ有効 */
 .cs-btn[disabled]{opacity:.35;pointer-events:none}
 
+/* ▼ 左右のカードはクリックで中央へ送れる（判定は common.js §14）。
+     カード内にリンク等を足す場合、JS側がその要素のクリックを除外している
+     （a,button,input,select,textarea,summary,[tabindex]）ことを前提とする */
+.cs-rail.cs-ready > .case:not(.is-cs-active){cursor:pointer}
+.cs-rail.cs-ready > .case.is-cs-active{cursor:default}
+
 /* ------------------------------------------------------------
    ≥769px：送りボタンをカード枠の左右端へ重ねる
    ・containing block は .cs-slider（position:relative）。
