@@ -1261,6 +1261,9 @@
       var down = false;        /* 指が触れている */
       var touched = false;     /* 触って以降＝慣性が残る可能性がある */
       var animAt = 0;          /* スムーススクロール開始時刻 */
+      var downX = 0;           /* クリック／ドラッグ判定用の押下座標 */
+      var downSL = 0;          /* 同：押下時の scrollLeft */
+      var dragged = false;     /* 押下後に動いた＝クリックとして扱わない */
 
       /* ---- 実測。送り幅は2枚目との左端差から取るため gap を参照しない ---- */
       function geo() {
