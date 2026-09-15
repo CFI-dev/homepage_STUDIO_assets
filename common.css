@@ -121,9 +121,15 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 
 /* ============================================================
    3. 起動クローク / 土台（home = .cfi-on ／ contact = .cfi-sub）
-      ・ページHEADの役割は「html へクラス付与」「--cfi-boot-label の指定」
-        「3.5秒の保険解除」だけ。見た目はここを唯一の正とする
-      ・文言は --cfi-boot-label で切り替える（既定 = CREATE FROM IDEAS）
+      ・幕・バー・％の見た目はここが唯一の正。ページHEADで <style> を書かないこと
+      ・最低表示時間（2秒）と進捗値の供給は common.js §4 が担当。
+        CSSは「与えられた値を描く」だけに留める
+      ・進捗バーは transform:scaleX（--cfi-boot-p:0〜1）で動かす。
+        width / background-size の連続変化は使わないこと
+      ・#cfi-boot-ui は common.js §4 が body 直下へ生成する。JSが落ちた場合は
+        この要素が存在せず、幕＋文言だけが出る（＝従来どおりの見た目）
+      ・文言の実寸は --cfi-boot-fs が唯一の正。#cfi-boot-ui の縦位置が
+        この値を参照しているため、body::after 側だけ変えないこと
       ・演出値（.28s / top:44%）は両ページで必ず同一に保つこと
    ============================================================ */
 html:is(.cfi-on,.cfi-sub){
@@ -131,6 +137,8 @@ html:is(.cfi-on,.cfi-sub){
      STUDIO側が実値を前提にしているため var() にしないこと */
   --rebranding-loading-bg:#071019;
   --rebranding-loading-bar:#00c2a8;
+
+  --cfi-boot-fs:clamp(40px,8vw,82px);   /* クローク文言の実寸 */
 }
 html:is(.cfi-on,.cfi-sub) body{margin:0;padding:0;background:var(--ink);
   height:auto;overflow-x:hidden;overflow-y:visible;position:static;display:block}
@@ -155,10 +163,36 @@ html.cfi-boot body::after{
   position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
   text-align:center;
   font-family:var(--f-en),system-ui,-apple-system,sans-serif;font-weight:700;
-  font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;
+  font-size:var(--cfi-boot-fs);line-height:1.02;letter-spacing:.02em;
   color:var(--muted);opacity:.9;transition:opacity .28s ease}
 html.cfi-boot.cfi-boot-out body::before,
 html.cfi-boot.cfi-boot-out body::after{opacity:0}
+
+/* ---- 進捗バー／パーセンテージ（common.js §4 が生成・更新する） ----
+   ・縦位置は文言（body::after）の直下。1.02 は文言の line-height と対。
+     どちらか一方だけを変えると重なる
+   ・fill は transform:scaleX。--cfi-boot-p は 0〜1（JSが i 要素へ直接書く）
+   ・transition は .28s linear。バーの更新は 50ms 間隔なので、
+     ここを 0 にすると値の刻みがそのまま段差として見える
+   ・tabular-nums は必須。桁が変わるたびに％の幅が跳ねるのを防ぐ */
+#cfi-boot-ui{
+  position:fixed;left:0;right:0;top:44%;z-index:2147483602;pointer-events:none;
+  padding-top:calc(var(--cfi-boot-fs,64px) * 1.02 + 30px);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  opacity:1;transition:opacity .28s ease}
+#cfi-boot-ui .bar{position:relative;overflow:hidden;
+  width:min(420px,62vw);height:2px;border-radius:2px;
+  background:rgba(255,255,255,.14)}
+#cfi-boot-ui .bar i{position:absolute;inset:0;display:block;border-radius:inherit;
+  background:var(--grad);
+  transform:scaleX(var(--cfi-boot-p,0));transform-origin:0 50%;
+  will-change:transform;transition:transform .28s linear}
+#cfi-boot-ui .pct{font-family:var(--f-mono);font-size:11px;font-weight:500;
+  letter-spacing:.18em;line-height:1;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+html.cfi-boot.cfi-boot-out #cfi-boot-ui{opacity:0}
+/* ▼ 保険：JSが途中で落ちて要素が残った場合でも、幕が無い状態では出さない */
+html:not(.cfi-boot) #cfi-boot-ui{display:none}
 
 /* ============================================================
    4. ヘッダー / ナビ / ボタン
@@ -1263,6 +1297,11 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .ph-fig img{transition:none!important;transform:none!important}
   .faq summary::after{transform:none!important}
   .btn::after{display:none}
+  /* 起動クローク */
+  html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
+  /* 進捗バーはスナップ更新にする（最低表示2秒と％表示自体は維持する） */
+  #cfi-boot-ui,#cfi-boot-ui .bar i{transition:none!important}
+
   .ticker ul,.v-hint{animation:none!important}
 
   /* CASESスライダー：自動送りの停止は common.js §14 が担当。ここは残る動きを消す */
