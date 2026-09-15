@@ -740,44 +740,6 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 @media (max-width:768px){.cs-rail{--cs-view:1.15}}
 @media (max-width:480px){.cs-rail{--cs-view:1.06}}
 
-/* ── §15-3 CASES: 課題/打ち手/変化 の行位置を全カードで揃える ──────
-   subgrid 対応環境のみ rail を grid 化し、カード→dl へ行トラックを継承する。
-   これによりテキスト量が違っても各行の開始位置が完全に一致する。
-   ※未対応環境は §15-2 の flex のまま（行はズレるがレイアウトは崩れない）。
-   ※【重要】repeat() の数 = .case の直接の子の数 +2。
-     dl を3行ぶんに展開するため、子が figure/h3/p/dl の4つなら 3+3=6。
-     HTML の子要素を増減したら必ずこの数値を直すこと。
-   ※行間は row-gap:0 のまま margin で作る。row-gap を入れると
-     figure〜h3 の間隔まで一律になり既存の余白設計が壊れる。 */
-@supports (grid-template-rows: subgrid){
-  .cs-rail{
-    display:grid;
-    grid-auto-flow:column;
-    grid-template-rows:repeat(6,auto);
-    grid-auto-columns:calc((100% - (var(--cs-view) - 1) * var(--gap)) / var(--cs-view));
-    column-gap:var(--gap);
-    row-gap:0;
-  }
-  .cs-rail > .case{
-    display:grid;
-    grid-row:1 / -1;
-    grid-template-rows:subgrid;
-    flex:none;              /* flex 用の基準幅指定を無効化 */
-  }
-  .cs-rail .cs-steps{
-    grid-row:span 3;        /* dl が rail の下3トラックを占有 */
-    display:grid;
-    grid-template-rows:subgrid;
-    grid-template-columns:max-content 1fr;
-    column-gap:12px;
-  }
-  /* 行間は dt/dd 双方に同値を入れる（行高＝dt・dd の大きい方で決まる） */
-  .cs-rail .cs-steps dt,
-  .cs-rail .cs-steps dd{margin:0 0 8px}
-  .cs-rail .cs-steps dt:nth-last-of-type(1),
-  .cs-rail .cs-steps dd:nth-last-of-type(1){margin-bottom:0}
-}
-
 /* ============================================================
    16. FAQ
        details/summary で構成。JS不要・キーボード操作は §20 が担保。
