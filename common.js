@@ -1202,7 +1202,17 @@
         （--cs-view）を知らない
       ・window スクロールは購読しない（§6 の1本のみという原則を守る）
 
-      ■ 無限ループの仕組み（触る前に必ず読むこと）
+      ■ 位置の数え方（ここを取り違えると主役が1枚ずれる）
+      ・idx は「左端に来るカードのDOM番号」。主役（中央）は idx + coff。
+        coff は左端から中央までの枚数差で、表示幅とカード幅の実測から出す
+        （3枚表示なら1、2枚・1枚表示なら0）。
+      ・したがって「実カード r を主役にする」ときの idx は
+        sets*N + r − coff。符号を逆にすると主役が隣のカードになる。
+      ・coff と center() は同じ ε で左へ倒す。2枚表示のように
+        ちょうど .5 になる配置で判定が振れるのを防ぐため、
+        片方だけ丸め方を変えないこと。
+
+      ■ 無限ループの仕組み
       ・実カードの前後に同じ並びを複製し、1周期（実カード枚数ぶん）進んだら
         scrollLeft を瞬間的に巻き戻す。内容が周期的なので見た目は変化しない
       ・したがって複製カードは実カードと「完全に同一の見た目」でなければ
@@ -1211,12 +1221,10 @@
       ・巻き戻しはスムーススクロール中と指が触れている間は行わない。
         scrollLeft への代入はスムーススクロールを打ち切るため、
         アニメーション中に走らせるとカードが中途半端な位置で止まる
-      ・ホイール／キー操作は指の慣性が無いため、区間を越えた時点で即時に
-        巻き戻す（そうしないと連続ホイールでレールの端に到達してしまう）
-      ・data-cs-loop="0" の場合は複製せず、従来どおりの端止め（ボタン
-        disabled 付き）になる
-      ・カードの出現は §8 の監視がそのまま担う。複製分は監視対象外なので
-        生成時に .on を付けている。ここにリビール処理を足さないこと
+      ・ホイール／キー操作は慣性が無いため、区間を越えた時点で即時に巻き戻す
+      ・data-cs-loop="0" の場合は複製せず、従来どおりの端止めになる
+      ・複製は §8 の監視外。実カードと同時に出すため、セクションが画面に
+        入った時点で .on を付ける（生成時に付けると減光側だけが先に出る）
   ------------------------------------------------------------ */
   (function initCarousel() {
     each(document.querySelectorAll(".cs-slider"), function (box) {
@@ -1230,11 +1238,14 @@
          INTERVAL         … 自動送り間隔(ms)。HTMLの data-cs-interval が優先
          LOOP             … 無限ループ。data-cs-loop="0" で端止め
          STOP_ON_INTERACT … 操作後に自動送りを恒久停止する（既定 true）
-         START_CENTERED   … 初期表示で1枚目を「中央」に置く。
-                             false にすると1枚目が左端＝2枚目が強調される */
+         START_AT         … 初期表示で主役にする実カード番号（0 = 1枚目）
+         START_CENTERED   … true  : START_AT を中央に置く（＝1枚目が主役）
+                             false : START_AT を左端に置く（3枚表示では
+                                     中央に来る2枚目が主役になる） */
       var INTERVAL = Math.max(2500, parseInt(box.getAttribute("data-cs-interval"), 10) || 5000);
       var LOOP = box.getAttribute("data-cs-loop") !== "0";
       var STOP_ON_INTERACT = true;
+      var START_AT = 0;
       var START_CENTERED = true;
       /* ▲▲ 調整はここまで ▲▲ */
 
@@ -1243,9 +1254,9 @@
       var N = real.length;
 
       var sets = 0;            /* 片側の複製セット数（0＝複製なし＝端止め動作） */
-      var idx = 0;             /* 左端に来る予定のカード番号（送りの意図） */
-      var act = -1;            /* 現在強調しているカード番号 */
-      var timer = null, hold = false, vis = false;
+      var idx = 0;             /* 左端に来るカードのDOM番号（送りの意図） */
+      var act = -1;            /* 現在強調しているDOM番号 */
+      var timer = null, hold = false, vis = false, opened = false;
       var dead = rm.matches, ticking = false, rzT = null, idleT = null;
       var down = false;        /* 指が触れている */
       var touched = false;     /* 触って以降＝慣性が残る可能性がある */
@@ -1267,23 +1278,28 @@
       function span() { return Math.max(0, rail.scrollWidth - rail.clientWidth); }
       function last(g) { return Math.max(0, Math.round(span() / (g || geo()).st)); }
 
-      /* 左端カードから中央カードまでの枚数差。2枚表示など割り切れる配置では
-         端数 .5 になるため、必ず center() と同じ ε を使って左側へ倒す */
+      /* 左端から中央までの枚数差。center() と同じ ε で左へ倒すこと */
       function coff(g) {
+        if (!START_CENTERED) return 0;
         return Math.floor((rail.clientWidth - g.w) / 2 / g.st + 0.5 - 1e-6);
       }
-      /* 表示領域の中心にいちばん近いカード番号（--cs-view を見ない） */
+      /* 表示領域の中心にいちばん近いDOM番号（--cs-view を見ない） */
       function center(g) {
         var n = rail.children.length;
         var c = rail.scrollLeft + rail.clientWidth / 2;
         var i = Math.floor((c - g.w / 2) / g.st + 0.5 - 1e-6);
         return i < 0 ? 0 : (i > n - 1 ? n - 1 : i);
       }
+      /* いま主役になっている実カード番号（0..N-1）。複製分を折り返して求める */
+      function real0() {
+        var i = center(geo()) - sets * N;
+        return ((i % N) + N) % N;
+      }
 
       /* ---- 複製（前後同数）。必要数は実測から出すので枚数変更に追従する ---- */
       function dup(el) {
         var c = el.cloneNode(true);
-        c.classList.add("on");                  /* §8 の監視外なので自前で開く */
+        c.dataset.csClone = "1";
         c.classList.remove(ACTIVE);
         c.removeAttribute("id");
         c.setAttribute("aria-hidden", "true");  /* 読み上げに二重で載せない */
@@ -1291,6 +1307,13 @@
         each(c.querySelectorAll("a,button,input,select,textarea,[tabindex]"),
           function (f) { f.setAttribute("tabindex", "-1"); });
         return c;
+      }
+      /* 複製を実カードと同じタイミングで開く（§8 の監視外のため自前で行う） */
+      function openClones() {
+        opened = true;
+        each(rail.querySelectorAll("[data-cs-clone]"), function (el) {
+          el.classList.add("on");
+        });
       }
       function mount() {
         if (!LOOP || N < 2) return false;
@@ -1310,6 +1333,7 @@
         rail.insertBefore(head, rail.firstChild);
         rail.appendChild(tail);
         sets = need;
+        if (opened) openClones();               /* 後から足した分も開く */
         return true;
       }
 
@@ -1327,24 +1351,32 @@
         next.disabled = idx >= mx;
       }
 
-      /* ---- 中央セットへの巻き戻し（1周期ぶん＝見た目は完全に同じ） ---- */
+      /* ---- 中央セットへの巻き戻し（1周期ぶん＝見た目は完全に同じ） ----
+         idx を [base, base+N) に保つ。base を coff ぶんずらしておかないと
+         初期位置がいきなり区間外になり、無用な巻き戻しが1回走る */
       function normalize() {
         if (!sets) return;
         var g = geo();
-        var unit = N * g.st;
-        var k = Math.floor((rail.scrollLeft - sets * unit) / unit + 1e-4);
+        var base = sets * N - coff(g);
+        var k = Math.floor((idx - base) / N);
         if (!k) return;
         idx -= k * N;
-        rail.scrollLeft = rail.scrollLeft - k * unit;
+        rail.scrollLeft = rail.scrollLeft - k * N * g.st;
       }
-      /* 実カード番号を保ったまま即時アンカー（初期化・リサイズ・複製追加後） */
-      function anchor() {
+      /* 実カード r を主役にして即時アンカー（初期化・リサイズ・複製追加後）。
+         複製が無い（data-cs-loop="0"）場合は端でクランプされるため、
+         3枚表示では左端が0のまま＝2枚目が主役になる */
+      function anchor(r) {
         var g = geo();
-        var r = ((idx - (START_CENTERED ? coff(g) : 0)) % N + N) % N;
-        idx = sets * N + r + (START_CENTERED ? coff(g) : 0);
-        var left = Math.min(Math.max(idx * g.st, 0), span());
+        r = ((r % N) + N) % N;
+        idx = sets * N + r - coff(g);
+        var mx = last(g);
+        if (idx < 0) idx = 0;
+        if (idx > mx) idx = mx;
+        var left = Math.min(idx * g.st, span());
         try { rail.scrollTo({ left: left, behavior: "auto" }); }
         catch (e) { rail.scrollLeft = left; }
+        sync(g);
         paint(center(geo()));
       }
 
@@ -1446,12 +1478,14 @@
         });
       }, { passive: true });
 
-      /* 幅が変われば --cs-view も変わる。必要なら複製を足して再アンカー */
+      /* 幅が変われば --cs-view も変わる。主役のカードを保って再整列する */
       addEventListener("resize", function () {
         clearTimeout(rzT);
         rzT = setTimeout(function () {
-          if (sets) { mount(); anchor(); }
-          else go(Math.min(idx, last()), false);
+          if (!sets) { go(Math.min(idx, last()), false); return; }
+          var cur = real0();
+          mount();
+          anchor(cur);
         }, 180);
       }, { passive: true });
 
@@ -1465,17 +1499,24 @@
       if (HAS_IO) {
         new IntersectionObserver(function (es) {
           vis = es[0].isIntersecting;
+          if (vis) openClones();
           vis ? play() : halt();
         }, { threshold: 0.2 }).observe(box);
       } else {
         vis = true;
+        openClones();
         play();
       }
 
       mount();
-      if (sets) anchor(); else update();
-      /* 初期化時に幅が測れなかった場合の再試行 */
-      addEventListener("load", function () { if (mount()) anchor(); });
+      anchor(START_AT);
+      /* 初期化時に幅が測れなかった場合の再試行（複製が増えたときだけ再整列） */
+      addEventListener("load", function () {
+        var cur = sets ? real0() : START_AT;
+        if (mount()) anchor(cur);
+      });
+      /* 保険：§8 のフォールバック（4.2秒）より後に必ず複製を開く */
+      setTimeout(openClones, 4600);
     });
   })();
 })();
