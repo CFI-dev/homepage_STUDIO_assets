@@ -717,6 +717,12 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 /* ▼ §21 のパララックスを rail 内だけ無効化（縦の進捗が取れないため） */
 .cs-rail .case .ph-fig img{animation:none;scale:1;translate:none}
 
+/* ▼ 無限ループ用の複製カードが前後に入る（common.js §14 が生成／aria-hidden）。
+     巻き戻しは「1周期ずらしても同じ絵になる」ことが前提のため、
+     :first-child / :last-child / :nth-child による装飾を
+     .cs-rail > .case に足さないこと（巻き戻しの瞬間に絵が飛ぶ）。
+     枚数や順序の指定が必要な場合は JS 側で属性を振ること */
+
 /* ------------------------------------------------------------
    中央カードの強調（.is-cs-active は common.js §14 が付与）
    ・条件に .on を含めるのは §19 のリビール（opacity:0）を殺さないため。
