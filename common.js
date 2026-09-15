@@ -6,9 +6,10 @@
    ■ 触る前に必ず読むこと
    ・ハンバーガー切替点 960px（MQ_DESK）は common.css §23 と必ず一致させること
    ・common.css と対になっている。片方だけ更新しないこと
-     §5 → .hd-prog の --p / header.hd-up / .hero .wrap の translate
-     §7 → .rv に .on ／ nav.mo-ready ／ 各要素の --i
-     §8 → .faq .mo-a の実測 height
+     §5  → .hd-prog の --p / header.hd-up / .hero .wrap の translate
+     §7  → .rv に .on ／ nav.mo-ready ／ 各要素の --i
+     §8  → .faq .mo-a の実測 height
+     §14 → .cs-rail の .cs-ready ／ .case の .is-cs-active（common.css §15-2）
    ・window スクロールの購読は §5 の1本のみ。他所で
      addEventListener('scroll') を増やさないこと（rAF の間引きが効かなくなる）
    ・ページ側HTMLに必要なのは window.CFI_CONFIG の宣言のみ。
@@ -344,6 +345,8 @@
         (d) 段差の遅延は setTimeout ではなく CSS の --i（§19）が担う。
             JSでずらすと transition の途中で class が付き、
             要素ごとに速度が不揃いに見えるため。ここを戻さないこと
+        ※ CASES の複製カード（§14 が生成）はこの監視の対象外。
+          §14 が自前で .on を付ける
      ------------------------------------------------------------ */
   (function initReveal() {
     /* 非対応環境／動きを減らす設定では即時表示 */
@@ -1194,7 +1197,7 @@
       each(nuxt.querySelectorAll(".rv"), function (el) { el.classList.add("on"); });
     }, 5000);
   })();
-   
+
   /* ------------------------------------------------------------
   14. CASES スライダー（.cs-slider / .cs-rail）
       ・器・幅・強調の見た目は common.css §15-2 が唯一の正。JSは「送り幅」
@@ -1205,12 +1208,11 @@
       ■ 位置の数え方（ここを取り違えると主役が1枚ずれる）
       ・idx は「左端に来るカードのDOM番号」。主役（中央）は idx + coff。
         coff は左端から中央までの枚数差で、表示幅とカード幅の実測から出す
-        （3枚表示なら1、2枚・1枚表示なら0）。
+        （3枚表示なら1、2枚・1枚表示なら0）
       ・したがって「実カード r を主役にする」ときの idx は
-        sets*N + r − coff。符号を逆にすると主役が隣のカードになる。
-      ・coff と center() は同じ ε で左へ倒す。2枚表示のように
-        ちょうど .5 になる配置で判定が振れるのを防ぐため、
-        片方だけ丸め方を変えないこと。
+        sets*N + r − coff。符号を逆にすると主役が隣のカードになる
+      ・coff と center() は同じ ε で左へ倒す。2枚表示のようにちょうど .5 に
+        なる配置で判定が振れるのを防ぐため、片方だけ丸め方を変えないこと
 
       ■ 無限ループの仕組み
       ・実カードの前後に同じ並びを複製し、1周期（実カード枚数ぶん）進んだら
@@ -1225,6 +1227,14 @@
       ・data-cs-loop="0" の場合は複製せず、従来どおりの端止めになる
       ・複製は §8 の監視外。実カードと同時に出すため、セクションが画面に
         入った時点で .on を付ける（生成時に付けると減光側だけが先に出る）
+
+      ■ 左右カードのクリック送り
+      ・送り量は「クリックされたDOM番号 − いま中央のDOM番号」。idx や coff を
+        再計算しないため、複製カードを押しても正しい向きに動く
+      ・押下時の scrollLeft と比較し、動いていたらクリックとして扱わない。
+        ドラッグ直後に click が飛ぶ環境があるためこの判定を外さないこと
+      ・カードは tabindex を持たない。キーボード経路は rail の
+        ArrowLeft / ArrowRight が担う（二重フォーカスを作らない）
   ------------------------------------------------------------ */
   (function initCarousel() {
     each(document.querySelectorAll(".cs-slider"), function (box) {
@@ -1241,12 +1251,16 @@
          START_AT         … 初期表示で主役にする実カード番号（0 = 1枚目）
          START_CENTERED   … true  : START_AT を中央に置く（＝1枚目が主役）
                              false : START_AT を左端に置く（3枚表示では
-                                     中央に来る2枚目が主役になる） */
+                                     中央に来る2枚目が主役になる）
+         CLICK_TO_CENTER  … 左右のカードをクリックして中央へ送る
+         DRAG_PX          … この距離を越えて動いたらドラッグと判定(px) */
       var INTERVAL = Math.max(2500, parseInt(box.getAttribute("data-cs-interval"), 10) || 5000);
       var LOOP = box.getAttribute("data-cs-loop") !== "0";
       var STOP_ON_INTERACT = true;
       var START_AT = 0;
       var START_CENTERED = true;
+      var CLICK_TO_CENTER = true;
+      var DRAG_PX = 8;
       /* ▲▲ 調整はここまで ▲▲ */
 
       var ACTIVE = "is-cs-active";
@@ -1261,6 +1275,9 @@
       var down = false;        /* 指が触れている */
       var touched = false;     /* 触って以降＝慣性が残る可能性がある */
       var animAt = 0;          /* スムーススクロール開始時刻 */
+      var downX = 0;           /* クリック／ドラッグ判定用の押下座標 */
+      var downSL = 0;          /* 同：押下時の scrollLeft */
+      var dragged = false;     /* 押下後に動いた＝クリックとして扱わない */
 
       /* ---- 実測。送り幅は2枚目との左端差から取るため gap を参照しない ---- */
       function geo() {
@@ -1446,18 +1463,60 @@
         go(idx + (e.key === "ArrowRight" ? 1 : -1));
       });
 
-      each(["pointerdown", "touchstart"], function (ev) {
-        rail.addEventListener(ev, function () {
-          down = true; touched = true;
-          if (STOP_ON_INTERACT) kill();
-        }, { passive: true });
-      });
-      each(["pointerup", "pointercancel", "touchend", "touchcancel"], function (ev) {
+      /* ▼ 押下時に座標と位置を控える。下の click 判定がこれを使う。
+           pointerdown と touchstart を1つのループにまとめないこと
+           （座標が要るのは pointerdown だけ。TouchEvent には clientX が
+             直接無く、touches[0] を辿る必要があるため経路を分ける） */
+      rail.addEventListener("pointerdown", function (e) {
+        down = true; touched = true; dragged = false;
+        downX = e.clientX;
+        downSL = rail.scrollLeft;
+        if (STOP_ON_INTERACT) kill();
+      }, { passive: true });
+
+      rail.addEventListener("touchstart", function () {
+        down = true; touched = true;
+        if (STOP_ON_INTERACT) kill();
+      }, { passive: true });
+
+      /* 横に動いた時点でドラッグと確定する。
+         touch でスクロールが始まると pointercancel が飛ぶ環境があるため両方拾う */
+      rail.addEventListener("pointermove", function (e) {
+        if (!down || dragged) return;
+        if (Math.abs(e.clientX - downX) > DRAG_PX) dragged = true;
+      }, { passive: true });
+      rail.addEventListener("pointercancel", function () { dragged = true; });
+
+      each(["pointerup", "touchend", "touchcancel"], function (ev) {
         addEventListener(ev, function () { down = false; idle(); }, { passive: true });
       });
       rail.addEventListener("wheel", function () {
         if (STOP_ON_INTERACT) kill();
       }, { passive: true });
+
+      /* ▼ 左右のカードをクリックして中央へ送る
+           ・カード内の操作要素（将来リンクを足した場合）は対象外。
+             除外リストは common.css §15-2 のコメントと揃えること */
+      if (CLICK_TO_CENTER) {
+        rail.addEventListener("click", function (e) {
+          if (dragged) return;
+          if (Math.abs(rail.scrollLeft - downSL) > 4) return;
+          var t = e.target;
+          if (!t || typeof t.closest !== "function") return;
+          if (t.closest("a,button,input,select,textarea,summary,[tabindex]")) return;
+
+          var card = t.closest(".case");
+          if (!card || card.parentNode !== rail) return;
+
+          var g = geo();
+          var c = center(g);
+          var i = Array.prototype.indexOf.call(rail.children, card);
+          if (i < 0 || i === c) return;         /* 中央のカードは動かさない */
+
+          if (STOP_ON_INTERACT) kill();
+          go(idx + (i - c));
+        });
+      }
 
       /* 読んでいる間は送らない */
       box.addEventListener("mouseenter", function () { hold = true; });
