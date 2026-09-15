@@ -1194,4 +1194,145 @@
       each(nuxt.querySelectorAll(".rv"), function (el) { el.classList.add("on"); });
     }, 5000);
   })();
+  /* ------------------------------------------------------------
+  14. CASES スライダー（.cs-slider / .cs-rail）
+      ・器と幅は common.css §15-2 が唯一の正。JSは1枚目の実測幅から
+        送り幅を取るだけで、同時表示枚数を知らない
+      ・window スクロールは購読しない（§6 の1本のみという原則を守る）。
+        購読するのは rail 自身の scroll（手動スワイプ後の位置同期）だけ
+      ・位置は「idx × 送り幅」を毎回指定する。scrollBy の相対加算に
+        しないこと（snap:proximity 下でズレが累積する）
+      ・自動送りは 画面内 かつ 非ホバー／非フォーカス かつ タブ表示中 の
+        ときだけ動く。ユーザーが操作した時点で恒久停止（STOP_ON_INTERACT）
+      ・動きを減らす設定では最初から動かさない（common.css §24 と対）
+      ・カードの出現は §8 の監視がそのまま担う。横にはみ出したカードは
+        祖先のクリップにより交差しないため発火せず、送られて見えた
+        時点で .on が付く。ここにリビール処理を足さないこと
+  ------------------------------------------------------------ */
+  (function initCarousel() {
+    each(document.querySelectorAll(".cs-slider"), function (box) {
+      var rail = box.querySelector(".cs-rail");
+      if (!rail || rail.children.length < 2) return;
+
+      var prev = box.querySelector("[data-cs-prev]");
+      var next = box.querySelector("[data-cs-next]");
+
+      /* ▼▼ 調整ダイヤル ▼▼
+         INTERVAL         … 自動送り間隔(ms)。HTMLの data-cs-interval が優先
+         LOOP             … 末尾の次で先頭へ戻す。data-cs-loop="0" で端止め
+         STOP_ON_INTERACT … 操作後に自動送りを恒久停止する（既定 true） */
+      var INTERVAL = Math.max(2500, parseInt(box.getAttribute("data-cs-interval"), 10) || 5000);
+      var LOOP = box.getAttribute("data-cs-loop") !== "0";
+      var STOP_ON_INTERACT = true;
+      /* ▲▲ 調整はここまで ▲▲ */
+
+      var idx = 0, timer = null, hold = false, vis = false;
+      var dead = rm.matches, ticking = false, rzT = null;
+
+      /* 送り幅＝カード幅＋gap。2枚目との左端差から取るため gap を参照しない */
+      function step() {
+        var a = rail.children[0], b = rail.children[1];
+        if (!a) return 1;
+        var w = a.getBoundingClientRect().width;
+        if (b) {
+          var d = b.getBoundingClientRect().left - a.getBoundingClientRect().left;
+          if (d > 1) return d;
+        }
+        return w > 1 ? w : 1;
+      }
+      function span() { return Math.max(0, rail.scrollWidth - rail.clientWidth); }
+      function last() { return Math.max(0, Math.round(span() / step())); }
+
+      function sync() {
+        if (LOOP || !prev || !next) return;
+        prev.disabled = idx <= 0;
+        next.disabled = idx >= last();
+      }
+
+      function go(i, smooth) {
+        var mx = last();
+        if (LOOP) i = i < 0 ? mx : (i > mx ? 0 : i);
+        else i = i < 0 ? 0 : (i > mx ? mx : i);
+        idx = i;
+        var left = Math.min(i * step(), span());
+        var mode = (smooth === false || rm.matches) ? "auto" : "smooth";
+        try { rail.scrollTo({ left: left, behavior: mode }); }
+        catch (e) { rail.scrollLeft = left; }   /* 古いSafari等の保険 */
+        sync();
+      }
+
+      function play() {
+        if (timer || dead) return;
+        timer = setInterval(function () {
+          if (dead || hold || !vis || document.hidden) return;
+          go(idx + 1);
+        }, INTERVAL);
+      }
+      function halt() { if (timer) { clearInterval(timer); timer = null; } }
+      function kill() { dead = true; halt(); }
+
+      if (prev) prev.addEventListener("click", function () {
+        if (STOP_ON_INTERACT) kill();
+        go(idx - 1);
+      });
+      if (next) next.addEventListener("click", function () {
+        if (STOP_ON_INTERACT) kill();
+        go(idx + 1);
+      });
+
+      rail.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();                     /* 1枚単位に揃える */
+        if (STOP_ON_INTERACT) kill();
+        go(idx + (e.key === "ArrowRight" ? 1 : -1));
+      });
+
+      each(["pointerdown", "wheel", "touchstart"], function (ev) {
+        rail.addEventListener(ev, function () { if (STOP_ON_INTERACT) kill(); },
+          { passive: true });
+      });
+
+      /* 読んでいる間は送らない */
+      box.addEventListener("mouseenter", function () { hold = true; });
+      box.addEventListener("mouseleave", function () { hold = false; });
+      box.addEventListener("focusin",  function () { hold = true; });
+      box.addEventListener("focusout", function () { hold = false; });
+
+      /* 手動スワイプ後の位置を idx へ取り込む（rAF で1フレーム1回に間引く） */
+      rail.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          ticking = false;
+          idx = Math.min(Math.round(rail.scrollLeft / step()), last());
+          sync();
+        });
+      }, { passive: true });
+
+      /* 幅が変われば --cs-view も変わる。現在位置へ即時で再整列する */
+      addEventListener("resize", function () {
+        clearTimeout(rzT);
+        rzT = setTimeout(function () { go(Math.min(idx, last()), false); }, 180);
+      }, { passive: true });
+
+      document.addEventListener("visibilitychange", function () {
+        document.hidden ? halt() : play();
+      });
+
+      onMQ(rm, function (e) { if (e.matches) kill(); });
+
+      /* 画面外では止める（省電力。§10 / §11 と同じ方針） */
+      if (HAS_IO) {
+        new IntersectionObserver(function (es) {
+          vis = es[0].isIntersecting;
+          vis ? play() : halt();
+        }, { threshold: 0.2 }).observe(box);
+      } else {
+        vis = true;
+        play();
+      }
+
+      sync();
+    });
+  })();
 })();
