@@ -707,6 +707,13 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 
 /* 横スクローラ内は逃げ量に合わせて持ち上がり／影を控えめにする */
 .cs-rail .case:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.34)}
+/* ▼ カード内部は上揃え。§15 の「最終子を下端へ寄せる」を rail 内だけ打ち消す。
+     CASES は本文量の差が大きく、下端揃えだと見出し直下に空白が開くため。
+     ENGAGEMENT（.works）は下端揃えのままにするので、必ず .cs-rail 配下に
+     限定すること（詳細度 0-3-0 で §15 の 0-2-0 に後勝ちする）。
+     §15 の .case > :nth-last-child(2){margin-bottom:22px} は残す
+     ＝見出しと区切り線の間隔はこの 22px が唯一の正 */
+.cs-rail > .case > :last-child{margin-top:0}
 
 /* ▼ §21 のパララックスを rail 内だけ無効化。
      view() は「最も近いスクロールポート」を基準に取るが、この rail は
