@@ -121,7 +121,24 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 
 /* ============================================================
    3. 起動クローク / 土台（home = .cfi-on ／ contact = .cfi-sub）
-      ・幕・バー・％の見た目はここが唯一の正。ページHEADで <style> を書かないこと
+      ・幕・文言・バー・％の見た目はここが唯一の正。ページHEADで <style> を
+        書かないこと
+      ・文言は2系統ある。どちらも同じトークン（--cfi-boot-label /
+        --cfi-boot-fs / --cfi-boot-lh）を参照させること。値をずらすと
+        (a)→(b) の切替フレームで文字が跳ぶ
+          (a) body::after         … JSが落ちた場合のフェイルセーフ
+                                    （CSS単独で出る。幕＋文言だけの表示）
+          (b) #cfi-boot-ui .lbl   … 実DOM。common.js §4 が生成し、同時に
+                                    html.cfi-boot-ui を立てて (a) を伏せる
+      ・(b) は文言・バー・％を1本の縦フレックスに積む。文言が2行以上に
+        折り返してもバーが下へ押し出されるため重ならない。
+        ※ #cfi-boot-ui の padding-top に文言の実寸（--cfi-boot-fs × 行数）を
+          書いて位置を合わせないこと。行数はCSSから知り得ないため、
+          スマホ幅で折り返した瞬間に文字とバーが重なる（旧実装の不具合）
+      ・左右の padding は両系統に必ず同値で入れること。片方だけだと
+        狭幅で折り返し位置が変わり、切替フレームで行が動く
+      ・文言の実寸 --cfi-boot-fs は contact の .hero-sub h1（§22）と同値。
+        幕→ヒーローの文字サイズを繋ぐ対になっているため片方だけ変えないこと
       ・最低表示時間（MIN_MS）・上限打ち切り（HARD_MS）・進捗値の算出は
         すべて common.js §4 が担当。CSSは「与えられた値を描く」だけに留め、
         タイマーの実数値をCSS側へ二重に持たせないこと
@@ -129,8 +146,6 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
         width / background-size の連続変化は使わないこと
       ・#cfi-boot-ui は common.js §4 が body 直下へ生成する。JSが落ちた場合は
         この要素が存在せず、幕＋文言だけが出る（＝従来どおりの見た目）
-      ・文言の実寸は --cfi-boot-fs が唯一の正。#cfi-boot-ui の縦位置が
-        この値を参照しているため、body::after 側だけ変えないこと
       ・演出値（フェード .28s / top:44%）は両ページで必ず同一に保つこと。
         .28s は common.js の OUT_MS（=300ms）より必ず短く保つ。
         長くすると幕の除去がフェード完了より先に来て最後にカクつく
@@ -142,6 +157,8 @@ html:is(.cfi-on,.cfi-sub){
   --rebranding-loading-bar:#00c2a8;
 
   --cfi-boot-fs:clamp(40px,8vw,82px);   /* クローク文言の実寸 */
+  --cfi-boot-lh:1.08;                   /* 折り返し時の行間。2系統で同値 */
+  --cfi-boot-gap:30px;                  /* 文言 ⇄ 進捗バーの間隔 */
 }
 html:is(.cfi-on,.cfi-sub) body{margin:0;padding:0;background:var(--ink);
   height:auto;overflow-x:hidden;overflow-y:visible;position:static;display:block}
@@ -161,19 +178,24 @@ html.cfi-boot body::before{
     radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
     #071019;
   opacity:1;transition:opacity .28s ease}
+
+/* ---- 文言(a)：フェイルセーフ。JSが生成した実DOM(b)が出たら伏せる ---- */
 html.cfi-boot body::after{
   content:var(--cfi-boot-label,"CREATE FROM IDEAS");
   position:fixed;left:0;right:0;top:44%;z-index:2147483601;pointer-events:none;
-  text-align:center;
+  padding:0 var(--pad,24px);
+  text-align:center;text-wrap:balance;
   font-family:var(--f-en),system-ui,-apple-system,sans-serif;font-weight:700;
-  font-size:var(--cfi-boot-fs);line-height:1.02;letter-spacing:.02em;
+  font-size:var(--cfi-boot-fs);line-height:var(--cfi-boot-lh);letter-spacing:.02em;
   color:var(--muted);opacity:.9;transition:opacity .28s ease}
+html.cfi-boot.cfi-boot-ui body::after{content:none}   /* (b) と二重に出さない */
+
 html.cfi-boot.cfi-boot-out body::before,
 html.cfi-boot.cfi-boot-out body::after{opacity:0}
 
-/* ---- 進捗バー／パーセンテージ（common.js §4 が生成・更新する） ----
-   ・縦位置は文言（body::after）の直下。1.02 は文言の line-height と対。
-     どちらか一方だけを変えると重なる
+/* ---- 文言(b) ＋ 進捗バー／％（common.js §4 が生成・更新する） ----
+   ・縦位置は top:44% を「文言1行目の位置」として使う。下はフロー任せ
+   ・.lbl は空要素。テキストは --cfi-boot-label が唯一の正なので ::before で流す
    ・fill は transform:scaleX。--cfi-boot-p は 0〜1（JSが i 要素へ直接書く）
    ・transition は .18s linear。進捗は「完了リソース件数 ÷ 想定件数」を
      主軸に刻むため、1件完了ごとに値が階段状に跳ぶ。
@@ -184,9 +206,17 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
      100% には到達させず CAP（0.92）で止め、幕のフェードで着地させる */
 #cfi-boot-ui{
   position:fixed;left:0;right:0;top:44%;z-index:2147483602;pointer-events:none;
-  padding-top:calc(var(--cfi-boot-fs,64px) * 1.02 + 30px);
-  display:flex;flex-direction:column;align-items:center;gap:12px;
+  padding:0 var(--pad,24px);
+  display:flex;flex-direction:column;align-items:center;
+  gap:var(--cfi-boot-gap,30px);
   opacity:1;transition:opacity .28s ease}
+#cfi-boot-ui .lbl{display:block;text-align:center;text-wrap:balance;
+  font-family:var(--f-en),system-ui,-apple-system,sans-serif;font-weight:700;
+  font-size:var(--cfi-boot-fs);line-height:var(--cfi-boot-lh);letter-spacing:.02em;
+  color:var(--muted);opacity:.9}
+#cfi-boot-ui .lbl::before{content:var(--cfi-boot-label,"CREATE FROM IDEAS")}
+/* バーと％だけを近接させるための入れ子（親の gap は文言用のため流用しない） */
+#cfi-boot-ui .meter{display:flex;flex-direction:column;align-items:center;gap:12px}
 #cfi-boot-ui .bar{position:relative;overflow:hidden;
   width:min(420px,62vw);height:2px;border-radius:2px;
   background:rgba(255,255,255,.14)}
@@ -978,7 +1008,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 .rv-s{transform:translateY(var(--mo-shift)) scale(.96)}   /* 縮み＋上げ */
 .rv-s.on{transform:none}
 .rv-f{transform:none}                                     /* フェードのみ（table 行など） */
-/* 段差表示の親コンテナ用。.on を受け取るだけで自身は動かさない
+/* 段差表示の親コンテナ用。.on を受け取るだけで自身は動かない
    （§8 のアイコン描画や §11 の接続線が親の .on を参照している） */
 .rv-hold{opacity:1;transform:none}
 html.cfi-fallback .rv{opacity:1;transform:none}
@@ -1141,7 +1171,9 @@ html.cfi-sub #cfi-top{position:relative;z-index:2}
 html.cfi-sub #cfi-bottom{position:relative;z-index:2;margin-top:0 !important}
 html.cfi-sub header#hd{z-index:2147483000}
 
-/* 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める） */
+/* 下層ページ用ヒーロー（トップと同じ .hero を高さだけ縮める）
+   ※ h1 の font-size は §3 の --cfi-boot-fs と同値。クローク文言から
+     ヒーロー見出しへ文字サイズを繋ぐ対になっているため片方だけ変えないこと */
 html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
 html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
   line-height:1.02;letter-spacing:.02em;font-weight:700;max-width:none}
@@ -1166,6 +1198,8 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
       ※ 960px はハンバーガー切替点。JSの MQ_DESK と必ず一致させること
       ※ コンポーネント固有のブレークポイントは各節の末尾にある
         （CASESスライダーの --cs-view は §15-2 の末尾）
+      ※ --pad の変更はクローク（§3）の左右余白にも波及する。
+        文言の折り返し位置が変わるため、狭幅で必ず実機確認すること
    ============================================================ */
 
 /* ---- ~1280px：小型デスクトップ ---- */
@@ -1251,6 +1285,8 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .ft-top{gap:32px}
   .ft-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 18px;width:100%}
   .ft-btm{flex-direction:column;gap:8px;margin-top:32px}
+  /* クローク：文言が2行になるため間隔を詰める（§3 と対） */
+  html:is(.cfi-on,.cfi-sub){--cfi-boot-gap:24px}
 }
 
 /* ---- 360px：最小幅 ---- */
