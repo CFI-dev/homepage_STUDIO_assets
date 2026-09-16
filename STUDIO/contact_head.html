@@ -1,16 +1,29 @@
 <!-- ============================================================
-     contact_head.html   rev:2026-09-14（common.css / common.js 分離版）
+     contact_head.html
      ────────────────────────────────────────────────────────────
      ■ このHEADの役割は3つだけ
        ① html へ cfi-sub / cfi-boot を付与（クローク開始）
        ② window.CFI_CONFIG の宣言（common.js の唯一の入力）
-       ③ 3.5秒の保険解除（common.js §4 の3秒より必ず後に発火させる）
+       ③ 保険解除（common.js §4 のタイマー序列に従う）
      ■ ここに <style> を書かないこと。見た目は common.css が唯一の正
        ・クローク・土台            → common.css §3
        ・cfi-sub 一式（黒帯除去・hero-sub・フォーム操作反応）→ §22
        ・クローク文言 "CONTACT"    → §22 の --cfi-boot-label
        ・#form のオフセット        → §2 の scroll-padding-top
          （旧版の負 top は二重掛けになるため削除済み）
+     ■ 保険解除（4000ms）は common.js §4 のタイマー序列の一部。
+       序列の一覧は common.js §4 冒頭が唯一の正。単独で変えないこと
+         common.js 完全解除 約3520（HARD_MS 3000＋HOLD_MS 220＋OUT_MS 300）
+         ↓
+         このHEADの保険 4000（＋280 = 約4280 で完全解除）
+         ↓
+         §8 リビール保険 4700 ／ §14 複製オープン保険 5100
+         ↓
+         §13 フォーム強制表示 5500
+       ※ §8 より後ろへ倒すと「幕が引き始めてから監視を開始する」前提が
+         崩れ、幕の裏でリビールが走り終わる。4700 を越えさせないこと
+       ※ 解除の 280ms は common.css §3 の transition .28s と対
+       ※ home_head と値を必ず同値に保つこと
      ■ Google Fonts は使用ウェイトのみ（Barlow 400 は未使用のため除外）。
        家族・ウェイトを変える場合は home 側と必ず同一URLに保つこと
      ============================================================ -->
@@ -31,16 +44,14 @@
   };
   /* ▲▲ 設定はここまで ▲▲ */
 
-  /* 保険：BODY側（common.js §4）が読み込まれなくても5秒で必ず幕を上げる。
-     common.js の完全解除（約4.52秒＝HARD_MS 4000＋HOLD 220＋OUT 300）より
-     後であることが条件。片方だけ数値を変えないこと。
-     解除の 280ms は common.css §3 の transition .28s と対 */
+  /* 保険：BODY側（common.js §4）が読み込まれなくても必ず幕を上げる。
+     数値の序列は冒頭のコメント（および common.js §4）が唯一の正 */
   setTimeout(function(){
     h.classList.add('cfi-boot-out');
     setTimeout(function(){
       h.classList.remove('cfi-boot','cfi-boot-out');
     }, 280);
-  }, 5000);
+  }, 4000);
 })();
 </script>
 
