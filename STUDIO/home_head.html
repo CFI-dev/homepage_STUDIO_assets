@@ -5,15 +5,30 @@
      ・このHEADの役割は4つだけ。見た目の指定は一切持たない
        (1) preconnect
        (2) window.CFI_CONFIG の宣言（サイト設定の唯一の正）
-       (3) html へのクラス付与（.cfi-on / .cfi-boot）と3.5秒の保険解除
+       (3) html へのクラス付与（.cfi-on / .cfi-boot）と保険解除
        (4) common.css / フォントの読み込み
      ・土台・起動クローク・a.is-todo・.rv・scroll-padding-top は
        common.css §2〜§4 / §19 / §20 を唯一の正とする。
        ここで <style> を書いて再定義しないこと
-     ・クローク文言は common.css の --cfi-boot-label が正（既定
-       "CREATE FROM IDEAS"／contact は §22 で "CONTACT" に上書き）。
+     ・通常読み込みのクローク文言は common.css §3 の --cfi-boot-label が正
+       （既定 "CREATE FROM IDEAS"／contact は §22 で "CONTACT" に上書き）。
        下の bootLabel は戻る／進む用オーバーレイ専用。値を揃えること
-     ・3.5秒の保険は common.js §4 の最終保険（3秒）より必ず後にすること
+     ・オーバーレイの文字組み（font-size / line-height / padding / text-wrap）は
+       common.css §3 の文言と必ず同一に保つこと。ずらすと bfcache 復元後に
+       reload() が走った瞬間、オーバーレイ→幕の切替フレームで文字が跳ぶ
+     ・下の保険解除（4000ms）は common.js §4 のタイマー序列の一部。
+       序列の一覧は common.js §4 冒頭が唯一の正。単独で変えないこと
+         common.js 完全解除 約3520（HARD_MS 3000＋HOLD_MS 220＋OUT_MS 300）
+         ↓
+         このHEADの保険 4000（＋280 = 約4280 で完全解除）
+         ↓
+         §8 リビール保険 4700 ／ §14 複製オープン保険 5100
+         ↓
+         §13 フォーム強制表示 5500（contact のみ）
+       ※ §8 より後ろへ倒すと「幕が引き始めてから監視を開始する」前提が
+         崩れ、幕の裏でリビールが走り終わる。4700 を越えさせないこと
+     ・解除の 280ms は common.css §3 の transition .28s と対
+     ・home_head と contact_head の保険値は必ず同値に保つこと
      ============================================================ -->
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,16 +59,14 @@
   h.classList.add('cfi-on');
   h.classList.add('cfi-boot');
 
-  /* 保険：BODY側（common.js §4）が読み込まれなくても5秒で必ず幕を上げる。
-     common.js の完全解除（約4.52秒＝HARD_MS 4000＋HOLD 220＋OUT 300）より
-     後であることが条件。片方だけ数値を変えないこと。
-     解除の 280ms は common.css §3 の transition .28s と対 */
+  /* 保険：BODY側（common.js §4）が読み込まれなくても必ず幕を上げる。
+     数値の序列は冒頭のコメント（および common.js §4）が唯一の正 */
   setTimeout(function(){
     h.classList.add('cfi-boot-out');
     setTimeout(function(){
       h.classList.remove('cfi-boot','cfi-boot-out');
     }, 280);
-  }, 5000);
+  }, 4000);
 
   var OV_ID = 'cfi-ov';
 
@@ -61,7 +74,12 @@
      擬似要素はbfcache復元フレームでの再現が不確実なため、
      実DOM要素＋インラインスタイルで構成する。
      ※ここだけは common.css のカスタムプロパティに依存させないこと。
-       復元フレームで変数が未解決だと幕が透明になる */
+       復元フレームで変数が未解決だと幕が透明になる
+     ※文字組みは common.css §3 の文言と同値に保つこと。
+       左右 padding（24px）は狭幅で文字が端に張り付くのを防ぐためのもので、
+       §3 側の padding:0 var(--pad) と対。片方だけ外すと折り返し位置がずれる
+     ※ここに進捗バーは置かない。復元直後は読み込みが始まっておらず
+       進捗値が存在しないため、置くと 0% のまま静止して見える */
   function cloak(){
     var el = document.getElementById(OV_ID);
     if (!el){
@@ -76,9 +94,10 @@
           'radial-gradient(900px 500px at 92% 18%,rgba(0,194,168,.18),transparent 62%),' +
           '#071019;';
       el.innerHTML =
-        '<div style="position:absolute;left:0;right:0;top:44%;text-align:center;' +
+        '<div style="position:absolute;left:0;right:0;top:44%;padding:0 24px;' +
+        'text-align:center;text-wrap:balance;' +
         'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
-        'font-size:clamp(40px,8vw,82px);line-height:1.02;letter-spacing:.02em;' +
+        'font-size:clamp(40px,8vw,82px);line-height:1.08;letter-spacing:.02em;' +
         'color:#a5b7c9;opacity:.9"></div>';
       el.firstChild.textContent = label;
       (document.body || h).appendChild(el);
@@ -109,7 +128,7 @@
 
 <!-- ② フォント。Barlow の 400 は未使用（500/600/700 のみ使用）
         ※ 増減させる場合は common.css の --f-en / .flow .dot /
-          .hero-sub h1 の font-weight を確認すること -->
+          .hero-sub h1 / #cfi-boot-ui .lbl の font-weight を確認すること -->
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
 <!-- ③ 共通スタイル。土台・クローク・全コンポーネントの唯一の正。
