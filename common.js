@@ -173,14 +173,24 @@
       box.setAttribute("aria-valuemin", "0");
       box.setAttribute("aria-valuemax", "100");
       box.setAttribute("aria-valuenow", "0");
-      box.innerHTML = '<span class="bar"><i></i></span><span class="pct">0%</span>';
+      /* 文言は common.css §3 の --cfi-boot-label が唯一の正。
+         .lbl は空要素で、::before がテキストを流し込む（JSに文言を持たせない）。
+         .meter でバーと％を包むのは、親の gap（文言用）と分けるため */
+      box.innerHTML =
+        '<span class="lbl" aria-hidden="true"></span>' +
+        '<span class="meter"><span class="bar"><i></i></span>' +
+        '<span class="pct">0%</span></span>';
       document.body.appendChild(box);
       fill = box.querySelector("i");
       pctEl = box.querySelector(".pct");
+      /* フェイルセーフ側の文言（body::after）を伏せる。
+         この1行と drop() の remove は必ず対で扱うこと（外すと文言が二重になる） */
+      html.classList.add("cfi-boot-ui");
     }
     function drop() {
       if (box && box.parentNode) box.parentNode.removeChild(box);
       box = fill = pctEl = null;
+      html.classList.remove("cfi-boot-ui");
     }
 
     /* ---- 実測：サブリソースの完了件数で進捗を作る ----
