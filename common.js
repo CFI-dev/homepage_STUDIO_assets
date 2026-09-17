@@ -835,12 +835,12 @@
       upper = mk(0, 0);                     /* 上端から出て右下へ */
       lower = mk(1, 0.5);                   /* 下端から出て右上へ（半ピッチずらす） */
 
-      /* 色は左=accent → 右=accent-2。--grad の 115deg と進行方向を揃える。
-         中間シアンを挟むのは blue→teal の継ぎ目が濁るのを避けるため */
+      /* 色は左=金・淡 → 右=金・深。common.css の --grad（115deg）と進行方向を
+         揃える。中間に主役の金を挟んで継ぎ目の濁りを避ける */
       grad = g.createLinearGradient(0, 0, W, 0);
-      grad.addColorStop(0.00, "rgba(210,215,220,1)");  /* プラチナ */
-      grad.addColorStop(0.55, "rgba(226,209,170,1)");  /* シャンパン（継ぎ目の濁り回避） */
-      grad.addColorStop(1.00, "rgba(201,162,39,1)");   /* ゴールド */
+      grad.addColorStop(0.00, "rgba(217,185,120,1)");
+      grad.addColorStop(0.52, "rgba(201,166,104,1)");
+      grad.addColorStop(1.00, "rgba(178,138,76,1)");
     }
 
     function resize() {
