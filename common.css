@@ -20,16 +20,34 @@
      （JSが落ちても要素が消えないようにするため）
    ・未使用化したブロック（KPI表示 / NUMBERS / TECHNOLOGY / RAIL）は
      parking.css へ退避してある。本番では読み込まないこと
+
+   ■ 配色（ゴールド／プラチナ）について
+   ・--accent = プラチナ（銀）、--accent-2 = ゴールド。
+     --accent-2 はアイブロウ装飾線・.cat・dt・.dot・チェックマーク・
+     .ft-nav h4 など「アクセント記号」全般が参照している。ここを
+     プラチナにすると --txt / --muted と見分けがつかず全体が沈むため、
+     2つの役割を入れ替えないこと
+   ・§1 のトークンだけでは配色は完結しない。以下は計算済みの実値を
+     ハードコードしているため、テーマ変更時は必ずセットで見直すこと
+       §3 幕の3層（home_head.html のオーバーレイと同値に保つ）
+       §4 ヘッダー地色／ボタンの影／光沢
+       §5 ヒーローの地色とスクリム
+       §10 WHY CFI の下部スクリム（alpha は動かさない。§10 の注意書き参照）
+       §17 CTA の地色／円光／§18 帯のティント
+       §9・§12・§15-2 のホバー／強調ボーダー（3箇所同値）
+   ・SVGアイコンの #gBrand（home_body.html の defs）と
+     ヒーロー斜線のグラデ（common.js §10 build()）もここと対。
+     片方だけ変えると線とアイコンの色が食い違う
    ============================================================ */
 
 /* ============================================================
    1. トークン（調整ダイヤルはすべてここ。各ページで再定義しない）
    ============================================================ */
 :root{
-  --ink:#071019; --navy:#0d1b2a; --navy-2:#16304a;
-  --accent:#0f6be0; --accent-2:#00c2a8;
-  --txt:#e9eff6; --muted:#a5b7c9; --line:rgba(255,255,255,.11);
-  --panel:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  --ink:#0c0b09; --navy:#14120f; --navy-2:#1f1c17;
+  --accent:#d2d7dc; --accent-2:#c9a227;
+  --txt:#eae7e1; --muted:#bab5aa; --line:rgba(240,232,214,.12);
+  --panel:linear-gradient(160deg,rgba(255,248,232,.055),rgba(255,248,232,.018));
 
   /* 静止用（ボタン・進捗バー・アイブロウ装飾線・上端アクセント） */
   --grad:linear-gradient(115deg,var(--accent) 0%,var(--accent-2) 100%);
@@ -123,6 +141,9 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
    3. 起動クローク / 土台（home = .cfi-on ／ contact = .cfi-sub）
       ・幕・文言・バー・％の見た目はここが唯一の正。ページHEADで <style> を
         書かないこと
+      ・幕の3層（body::before）は home_head.html の cloak() が持つ
+        インラインスタイルと必ず同値に保つこと。ずれると bfcache 復元後の
+        reload() で切替フレームに色段差が出る
       ・文言は2系統ある。どちらも同じトークン（--cfi-boot-label /
         --cfi-boot-fs / --cfi-boot-lh）を参照させること。値をずらすと
         (a)→(b) の切替フレームで文字が跳ぶ
@@ -153,8 +174,8 @@ h1,h2,h3{word-break:auto-phrase} /* 日本語の折り返しを自然に */
 html:is(.cfi-on,.cfi-sub){
   /* STUDIO内部変数の上書き（ローディング地色 #e5e5e5 を打ち消す）。
      STUDIO側が実値を前提にしているため var() にしないこと */
-  --rebranding-loading-bg:#071019;
-  --rebranding-loading-bar:#00c2a8;
+  --rebranding-loading-bg:#0c0b09;
+  --rebranding-loading-bar:#c9a227;
 
   --cfi-boot-fs:clamp(40px,8vw,82px);   /* クローク文言の実寸 */
   --cfi-boot-lh:1.08;                   /* 折り返し時の行間。2系統で同値 */
@@ -174,9 +195,9 @@ html.cfi-boot body::before{
   content:"";
   position:fixed;inset:0;z-index:2147483600;pointer-events:none;
   background:
-    radial-gradient(1200px 600px at 18% 0%,  rgba(15,107,224,.28), transparent 62%),
-    radial-gradient(900px 500px  at 92% 18%, rgba(0,194,168,.18), transparent 62%),
-    #071019;
+    radial-gradient(1200px 600px at 18% 0%,  rgba(201,162,39,.22), transparent 62%),
+    radial-gradient(900px 500px  at 92% 18%, rgba(210,215,220,.12), transparent 62%),
+    #0c0b09;
   opacity:1;transition:opacity .28s ease}
 
 /* ---- 文言(a)：フェイルセーフ。JSが生成した実DOM(b)が出たら伏せる ---- */
@@ -219,7 +240,7 @@ html.cfi-boot.cfi-boot-out body::after{opacity:0}
 #cfi-boot-ui .meter{display:flex;flex-direction:column;align-items:center;gap:12px}
 #cfi-boot-ui .bar{position:relative;overflow:hidden;
   width:min(420px,62vw);height:2px;border-radius:2px;
-  background:rgba(255,255,255,.14)}
+  background:rgba(240,232,214,.14)}
 #cfi-boot-ui .bar i{position:absolute;inset:0;display:block;border-radius:inherit;
   background:var(--grad);
   transform:scaleX(var(--cfi-boot-p,0));transform-origin:0 50%;
@@ -235,13 +256,15 @@ html:not(.cfi-boot) #cfi-boot-ui{display:none}
    4. ヘッダー / ナビ / ボタン
       ・進捗バーの --p、格納用 .hd-up は common.js の initScroll が供給
       ・ロゴ実寸はここを唯一の正とする（各ページHEADで再定義しない）
+      ・ヘッダー地色の rgba は --ink（#0c0b09）の実値。var() にしないこと
+        （backdrop-filter との合成前提で不透明度を詰めている）
    ============================================================ */
 header{position:fixed;inset:0 0 auto 0;z-index:100;height:var(--hd);
-  background:rgba(7,16,25,.72);backdrop-filter:blur(14px);
+  background:rgba(12,11,9,.74);backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
   /* ▼ transition はここが唯一の正。transform は下方向スクロール格納用 */
   transition:background .3s,box-shadow .3s,transform .42s var(--mo-ease)}
-header.scr{background:rgba(7,16,25,.94);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+header.scr{background:rgba(12,11,9,.95);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 header.hd-up{transform:translateY(-100%)}
 .hd-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;z-index:2;
   background:var(--grad);transform:scaleX(var(--p,0));transform-origin:0 50%;
@@ -267,22 +290,25 @@ nav a.gnav::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2p
   background:var(--grad);transition:.3s}
 nav a.gnav:hover::after{width:100%}
 
-/* ▼ ボタン。transition / :hover / 光沢スイープはここに集約している */
+/* ▼ ボタン。transition / :hover / 光沢スイープはここに集約している
+     ・.btn-p の文字色は金地に載る前提の暗色。--ink を使わないこと
+       （ゴールド上では黒すぎてエッジが硬く見える）
+     ・影の色はゴールド系。光沢は暖色寄りの白 */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   font-size:13.5px;font-weight:700;line-height:1.5;
   padding:13px 26px;border-radius:3px;transition:.3s;border:1px solid transparent;
   cursor:pointer;white-space:nowrap;
   position:relative;overflow:hidden;isolation:isolate}
 .btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+  background:linear-gradient(100deg,transparent,rgba(255,248,232,.45),transparent);
   transform:skewX(-18deg);translate:-170% 0;pointer-events:none}
 .btn:hover::after{animation:moSheen .8s var(--mo-ease)}
 @keyframes moSheen{from{translate:-170% 0}to{translate:240% 0}}
 .btn:active{transform:translateY(0) scale(.98)}
-.btn-p{background:var(--grad);color:#04121c;box-shadow:0 6px 24px rgba(15,107,224,.32)}
+.btn-p{background:var(--grad);color:#171208;box-shadow:0 6px 24px rgba(201,162,39,.26)}
 .btn-p:hover{transform:translateY(-2px) scale(1.015);
-  box-shadow:0 10px 32px rgba(0,194,168,.4)}
-.btn-g{border-color:rgba(255,255,255,.28);color:var(--txt)}
+  box-shadow:0 10px 32px rgba(232,214,160,.40)}
+.btn-g{border-color:rgba(240,232,214,.30);color:var(--txt)}
 .btn-g:hover{transform:translateY(-2px);border-color:var(--accent-2);color:var(--accent-2)}
 
 .burger{display:none;width:28px;height:20px;position:relative;background:none;
@@ -297,10 +323,12 @@ nav a.gnav:hover::after{width:100%}
 
 /* ============================================================
    5. ヒーロー
+      ・地色は3段の暖色ダーク（墨→焦茶→金褐色）。canvas の斜線が
+        プラチナ→ゴールドで走るため、地色を寒色に戻すと線が浮く
    ============================================================ */
 .hero{position:relative;min-height:100svh;display:flex;align-items:center;
   padding:calc(var(--hd) + 60px) 0 72px;
-  background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);
+  background:linear-gradient(115deg,#14120f 0%,#241f18 55%,#2e2418 100%);
   overflow:hidden}
 /* ・ヒーロー用 canvas は #heroCv の1枚のみ（描画は common.js §10 の SHEAR）。
      home / contact で共通。同一ページに2枚置かないこと（rAF が二重に走る）
@@ -326,7 +354,7 @@ nav a.gnav:hover::after{width:100%}
           mask-image:radial-gradient(120% 90% at 22% 45%,#000 0,rgba(0,0,0,.3) 62%,transparent 100%)}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(120% 90% at 20% 50%,
-    rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
+    rgba(12,11,9,.86) 0%,rgba(12,11,9,.35) 55%,transparent 100%)}
 /* ▼ パララックスの実値は common.js が translate / opacity へ直接書き込む。
      ここに初期値を書かないこと（JS無効時は静止表示に落ちる） */
 .hero .wrap{position:relative;z-index:2;will-change:translate,opacity}
@@ -354,7 +382,7 @@ nav a.gnav:hover::after{width:100%}
 
 .hero h1{font-size:clamp(26px,5.6vw,60px);line-height:1.3;font-weight:700;
   letter-spacing:-.01em;max-width:16em}
-.hero p.lead{margin-top:26px;max-width:34em;color:#c8d6e4;font-size:15.5px}
+.hero p.lead{margin-top:26px;max-width:34em;color:#d8d2c8;font-size:15.5px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
 .scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;
   font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);
@@ -387,7 +415,7 @@ nav a.gnav:hover::after{width:100%}
 .ticker ul{display:flex;gap:52px;width:max-content;animation:tk 38s linear infinite}
 .ticker:hover ul{animation-play-state:paused}
 .ticker li{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;
-  color:#7d94ab;white-space:nowrap;transition:color .3s ease}
+  color:#948c7e;white-space:nowrap;transition:color .3s ease}
 .ticker li:hover{color:var(--accent-2)}
 .ticker li::before{content:"◆";color:var(--accent-2);margin-right:14px;
   font-size:8px;vertical-align:middle}
@@ -439,6 +467,8 @@ nav a.gnav:hover::after{width:100%}
      ・color/currentColor は使わない。strokeをブランドグラデ #gBrand へ直接指定
      ・#gBrand は同一ドキュメント内のSVG（home_body.html 内 defs）に必須。
        gradientUnits="userSpaceOnUse" / viewBox 0 0 24 24 を前提とする
+     ・#gBrand の stop 色は §1 の --accent / --accent-2 と対。
+       テーマ変更時は必ず同時に差し替えること
      ・stroke-dasharray / stroke-dashoffset は継承プロパティのため
        <use> のシャドウツリー内の path にも効く。
        --ico-len はアイコン形状に対する概算値。実機で詰める調整点
@@ -464,7 +494,7 @@ nav a.gnav:hover::after{width:100%}
   color:var(--muted);letter-spacing:.1em;margin-top:6px}
 .svc p{margin-top:16px;font-size:13.5px;color:var(--muted);line-height:1.95}
 .svc ul.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
-.svc ul.tags li{font-family:var(--f-mono);font-size:10px;color:#8ba3ba;
+.svc ul.tags li{font-family:var(--f-mono);font-size:10px;color:#a09889;
   border:1px solid var(--line);border-radius:2px;padding:3px 8px}
 
 /* ============================================================
@@ -476,6 +506,7 @@ nav a.gnav:hover::after{width:100%}
         本文の箇条書き（.chl-pts > li）は入れ子リストだが、子結合子の
         おかげで枠・チェックは描かれない。子孫セレクタへ戻さないこと。
         §24 も同じ形に揃えること
+      ・:hover の border-color は §12 / §15-2 と同値。3箇所そろえること
    ============================================================ */
 .chl{
   /* ▼ 位置決めダイヤル（触るのはここだけ）
@@ -494,7 +525,7 @@ nav a.gnav:hover::after{width:100%}
 .chl > li{position:relative;background:var(--navy);border:1px solid var(--line);
   border-radius:3px;padding:26px 24px 24px var(--chl-pl);
   transition:border-color .3s,transform .3s}
-.chl > li:hover{border-color:rgba(0,194,168,.45);transform:translateY(-3px)}
+.chl > li:hover{border-color:rgba(201,162,39,.50);transform:translateY(-3px)}
 /* ▼ チェックマーク（装飾）。削除しないこと。
      §24 の打ち消しは rotate(-45deg) を保持したまま scale だけを戻す */
 .chl > li::before{content:"";position:absolute;left:22px;top:34px;
@@ -540,6 +571,10 @@ nav a.gnav:hover::after{width:100%}
      どちらか一方だけを変更すると AA(4.5:1) を割る。必ずセットで調整すること。
      写真が純白(255,255,255)という最悪条件でも、48%地点 5.7:1 /
      66%地点 8.9:1 / 100%地点 11.5:1 を確保している。
+   ※ テーマ変更で置換したのはスクリムの RGB のみ。alpha は一切動かして
+     いないため、上記の計算はそのまま有効。alpha を触らないこと。
+   ※ 写真が寒色寄りで金と喧嘩する場合、調整して良いのは .vw-bg の
+     saturate() だけ（輝度がほぼ動かない）。brightness と sepia は不可。
    ※ .v-why にも data-mo-stagger を付けないこと（隙間 gap:2px の地色が --line）。
    ※ hover は transform:scale、リビールは独立プロパティ scale を使い分けている。
      同じプロパティに寄せると互いを打ち消す
@@ -572,11 +607,11 @@ nav a.gnav:hover::after{width:100%}
 .v-why > div::after{content:"";position:absolute;inset:0;z-index:1;
   pointer-events:none;
   background:linear-gradient(180deg,
-    rgba(7,16,25,.06)  0%,
-    rgba(7,16,25,.16) 30%,
-    rgba(7,16,25,.52) 48%,
-    rgba(7,16,25,.80) 66%,
-    rgba(7,16,25,.92) 100%)}
+    rgba(12,11,9,.06)  0%,
+    rgba(12,11,9,.16) 30%,
+    rgba(12,11,9,.52) 48%,
+    rgba(12,11,9,.80) 66%,
+    rgba(12,11,9,.92) 100%)}
 
 /* 上端のアクセント（カードの独立性を出す） */
 .v-why > div::before{content:"";position:absolute;top:0;left:0;
@@ -667,7 +702,7 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
 .flow p{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.9}
 /* ▼ 高さ揃えの本体。margin-top:auto を通すため間隔は padding-top で作る */
 .flow .dur{margin-top:auto;padding-top:14px;
-  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;color:#7d94ab}
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;color:#948c7e}
 
 /* ============================================================
    12. 事例カード（.case ＝ CASES / ENGAGEMENT 共通の器）
@@ -675,6 +710,7 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
          同じ変数で負マージンを作るため、padding を直接書かないこと
        ・.works は grid（PC）。≤768px は .v-scroll で flex 化される
        ・CASES は §15-2 の .cs-rail 配下に置き、並べ方だけを上書きしている
+       ・:hover の border-color は §9 / §15-2 と同値。3箇所そろえること
    ============================================================ */
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .case{--cpx:28px;--cpy:32px;
@@ -682,7 +718,7 @@ html.cfi-fallback .v-why .vw-body{opacity:1;translate:0}
   padding:var(--cpy) var(--cpx);overflow:hidden;
   display:flex;flex-direction:column;
   transition:transform .4s var(--mo-ease),border-color .3s,box-shadow .4s ease}
-.case:hover{border-color:rgba(0,194,168,.45);transform:translateY(-5px);
+.case:hover{border-color:rgba(201,162,39,.50);transform:translateY(-5px);
   box-shadow:0 18px 44px rgba(0,0,0,.34)}
 .case .cat{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;
   color:var(--accent-2)}
@@ -816,8 +852,9 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
    ・条件に .on を含めるのは §19 のリビール（opacity:0）を殺さないため。
      .cs-ready はJSが中央判定に成功したときだけ立つ＝JSが落ちた環境では
      条件が揃わず、全カードが通常表示になる（フェイルセーフ）
-   ・非強調側の opacity は .7 が下限。本文色 --muted(#a5b7c9) が --ink 上で
-     約4.6:1、.65 まで落とすと約4.4:1 で AA(4.5:1) を割る（概算値）
+   ・非強調側の opacity は .7 が下限。本文色 --muted(#bab5aa) が --ink 上で
+     約5.1:1、.65 まで落とすと AA(4.5:1) を割る（概算値）。
+     --muted を暗くする場合はこの下限を必ず再計算すること
    ・縮小は独立プロパティ scale で行う。transform は hover の
      translateY(-3px) 用に空けておくこと（同じプロパティに寄せると打ち消す）
    ・強調側を 1 より大きくしないこと。端の位置で scrollport にクリップされる
@@ -830,7 +867,7 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 .cs-rail.cs-ready > .case.on:not(.is-cs-active){opacity:.7;scale:.97}
 .cs-rail.cs-ready > .case.on:not(.is-cs-active):hover{opacity:.9;scale:.985}
 .cs-rail.cs-ready > .case.is-cs-active{
-  border-color:rgba(0,194,168,.45);box-shadow:0 16px 38px rgba(0,0,0,.38)}
+  border-color:rgba(201,162,39,.50);box-shadow:0 16px 38px rgba(0,0,0,.38)}
 .cs-rail.cs-ready > .case.is-cs-active:hover{box-shadow:0 20px 44px rgba(0,0,0,.42)}
 /* 上端アクセント（写真の上辺に重ねる。::after は .case 内で未使用） */
 .cs-rail > .case::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
@@ -873,6 +910,7 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
      同じ transform に寄せると中央寄せが消える
    ・rail に左右 padding を足して「ボタンのぶんを空ける」ことはしない。
      スナップ位置とカード幅計算（--cs-view）が両方ずれる
+   ・地色の rgba は §4 のヘッダーと同系（--ink 実値）。揃えること
    ------------------------------------------------------------ */
 @media (min-width:769px){
   .cs-foot{margin-top:0}     /* 中身が空になる（v-hint は §19-3 で非表示） */
@@ -880,14 +918,14 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
     top:calc(50% - (var(--cs-shadow,20px) - var(--cs-lift,8px)) / 2);
     translate:0 -50%;
     width:48px;height:48px;
-    background:rgba(7,16,25,.72);
+    background:rgba(12,11,9,.74);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-    border-color:rgba(255,255,255,.3);
+    border-color:rgba(240,232,214,.30);
     box-shadow:0 8px 24px rgba(0,0,0,.38)}
   .cs-btn[data-cs-prev]{left:12px}
   .cs-btn[data-cs-next]{right:12px}
   .cs-btn:hover{transform:none;scale:1.08;
-    background:rgba(7,16,25,.92);border-color:var(--accent-2);color:var(--accent-2)}
+    background:rgba(12,11,9,.93);border-color:var(--accent-2);color:var(--accent-2)}
   .cs-btn:active{transform:none;scale:.96}
 }
 
@@ -923,7 +961,7 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 .faq .a{position:relative;padding:0 6px 26px 32px;
   font-size:13.5px;line-height:1.95;color:var(--muted)}
 .faq .a::before{content:"A";position:absolute;left:0;top:0;
-  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#7d94ab}
+  font-family:var(--f-en);font-size:13.5px;font-weight:700;color:#948c7e}
 /* JSが開閉時のみ付与するクラス */
 .faq .mo-a{overflow:hidden;
   transition:height .38s var(--mo-ease),padding-bottom .38s var(--mo-ease)}
@@ -936,18 +974,19 @@ html.cfi-fallback .case .eng-meta > div{opacity:1;translate:0}
 
 /* ============================================================
    17. 会社概要 / CTA / フッター
+       ・CTA の地色は §5 のヒーローと同じ3段。片方だけ変えないこと
    ============================================================ */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{text-align:left;padding:18px 4px;border-bottom:1px solid var(--line);
   vertical-align:top}
 .tbl th{width:180px;font-weight:500;color:var(--muted);font-size:13px;letter-spacing:.06em}
-.cta{background:linear-gradient(115deg,#0d1b2a,#16304a 55%,#0a3a5c);
+.cta{background:linear-gradient(115deg,#14120f,#241f18 55%,#2e2418);
   position:relative;overflow:hidden;text-align:center}
 .cta::before{content:"";position:absolute;width:620px;height:620px;right:-160px;top:-260px;
   border-radius:50%;
-  background:radial-gradient(circle,rgba(0,194,168,.18),transparent 65%)}
+  background:radial-gradient(circle,rgba(201,162,39,.20),transparent 65%)}
 .cta h2{font-size:clamp(21px,3.4vw,36px);line-height:1.55;font-weight:700;position:relative}
-.cta p{margin:20px auto 0;max-width:38em;color:#c8d6e4;font-size:14.5px;position:relative}
+.cta p{margin:20px auto 0;max-width:38em;color:#d8d2c8;font-size:14.5px;position:relative}
 .cta .hero-cta{justify-content:center;position:relative}
 footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32px}
 .ft-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
@@ -959,16 +998,18 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 .ft-nav a:hover{color:var(--txt)}
 .ft-btm{margin-top:52px;padding-top:24px;border-top:1px solid var(--line);
   display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
-  font-family:var(--f-mono);font-size:10.5px;color:#6e849a;letter-spacing:.06em}
+  font-family:var(--f-mono);font-size:10.5px;color:#857e72;letter-spacing:.06em}
 
 /* ============================================================
    18. 写真
+       ・.band::after のティントはプラチナ→ゴールド。--grad の 115deg と
+         同じ方向に揃えている
    ============================================================ */
 .ph-fig{position:relative;overflow:hidden;line-height:0;background:var(--navy-2)}
 .ph-fig img{width:100%;height:100%;object-fit:cover;
   transition:transform .7s cubic-bezier(.22,1,.36,1)}
 .ph-fig::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(7,16,25,0) 40%,rgba(7,16,25,.5) 100%)}
+  background:linear-gradient(180deg,rgba(12,11,9,0) 40%,rgba(12,11,9,.5) 100%)}
 
 /* ---- 事例サムネイル（§12 の --cpx / --cpy に完全追従） ---- */
 .case .ph-fig{aspect-ratio:16/9;
@@ -988,7 +1029,7 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
 .band img{width:100%;height:100%;object-fit:cover;
   opacity:.3;filter:saturate(.55) contrast(1.05)}
 .band::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,rgba(15,107,224,.26),rgba(0,194,168,.16))}
+  background:linear-gradient(115deg,rgba(210,215,220,.16),rgba(201,162,39,.22))}
 
 /* ---- Approach ステップ写真 ---- */
 .flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
@@ -1089,7 +1130,9 @@ nav a.gnav:focus-visible::after{width:100%}
 
 /* 20-2 未確定リンク／未記入項目
         ここを唯一の正とする（各ページHEADで再定義しない）
-        URLや値が決まったら data-cfi-todo を外して通常表示に戻す */
+        URLや値が決まったら data-cfi-todo を外して通常表示に戻す
+        ※ .is-todo-text は「警告色」であってテーマ色ではない。
+          ゴールドへ寄せると --accent-2 と混同されるため変更しないこと */
 a.is-todo{opacity:.5;cursor:not-allowed;pointer-events:none}
 a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
   font-size:10px;letter-spacing:.06em}
@@ -1158,6 +1201,10 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
        ・ページHEADで再定義しないこと。ここを唯一の正とする
        ・アンカーのオフセットは §2 の scroll-padding-top が担当する。
          #form に負の top を与えないこと（二重にかかる）
+       ・STUDIOフォーム内部（#__nuxt 配下）の入力欄の地色・文字色は
+         STUDIO側の管理。ここでは focus の反応色だけを与えている。
+         実ページで明るい入力欄が残る場合のみ、汎用セレクタで
+         色指定を追加すること（生成クラスに依存させない）
    ============================================================ */
 html.cfi-sub{
   /* ▼▼ 間隔の調整ダイヤル（黒帯の量はここだけで変わる） ▼▼
@@ -1195,7 +1242,7 @@ html.cfi-sub .hero-sub{min-height:56svh;padding:calc(var(--hd) + 78px) 0 78px}
 html.cfi-sub .hero-sub h1{font-family:var(--f-en);font-size:clamp(40px,8vw,82px);
   line-height:1.02;letter-spacing:.02em;font-weight:700;max-width:none}
 html.cfi-sub .hero-sub h1 span{display:block;font-family:var(--f-jp);
-  font-size:clamp(15px,2.2vw,20px);font-weight:700;color:#c8d6e4;
+  font-size:clamp(15px,2.2vw,20px);font-weight:700;color:#d8d2c8;
   letter-spacing:.08em;margin-top:18px}
 html.cfi-sub .hero-sub p.lead{margin-top:24px}
 
@@ -1204,7 +1251,7 @@ html.cfi-sub .hero-sub p.lead{margin-top:24px}
 html.cfi-sub #__nuxt :is(input,textarea,select){
   transition:box-shadow .3s ease,border-color .3s ease}
 html.cfi-sub #__nuxt :is(input,textarea,select):focus{
-  box-shadow:0 0 0 3px rgba(0,194,168,.22)}
+  box-shadow:0 0 0 3px rgba(201,162,39,.26)}
 html.cfi-sub #__nuxt button{transition:transform .3s var(--mo-ease),box-shadow .3s ease}
 html.cfi-sub #__nuxt button:hover{transform:translateY(-2px)}
 html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
@@ -1248,7 +1295,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 /* ---- ~960px：ここからハンバーガーメニュー（JSのMQ_DESKと同値） ---- */
 @media (max-width:960px){
   .burger{display:block}
-  nav{position:fixed;inset:var(--hd) 0 auto 0;background:rgba(7,16,25,.98);
+  nav{position:fixed;inset:var(--hd) 0 auto 0;background:rgba(12,11,9,.98);
     border-bottom:1px solid var(--line);padding:8px var(--pad) 30px;
     max-height:calc(100svh - var(--hd));overflow-y:auto;
     transform:translateY(-150%);transition:transform .42s cubic-bezier(.22,1,.36,1)}
