@@ -89,16 +89,16 @@
       el.setAttribute('aria-hidden','true');
       el.style.cssText =
         'position:fixed;inset:0;z-index:2147483640;pointer-events:none;' +
-     'background:' +
-       'radial-gradient(1200px 600px at 18% 0%,rgba(201,162,39,.22),transparent 62%),' +
-       'radial-gradient(900px 500px at 92% 18%,rgba(210,215,220,.12),transparent 62%),' +
-       '#0c0b09;';
+        'background:' +
+          'radial-gradient(1200px 600px at 18% 0%,rgba(201,166,104,.20),transparent 62%),' +
+          'radial-gradient(900px 500px at 92% 18%,rgba(106,143,176,.14),transparent 62%),' +
+          '#060a14;';
       el.innerHTML =
         '<div style="position:absolute;left:0;right:0;top:44%;padding:0 24px;' +
         'text-align:center;text-wrap:balance;' +
         'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
         'font-size:clamp(40px,8vw,82px);line-height:1.08;letter-spacing:.02em;' +
-        'color:#a5b7c9;opacity:.9"></div>';
+        'color:#b4ac98;opacity:.9"></div>';
       el.firstChild.textContent = label;
       (document.body || h).appendChild(el);
     }
