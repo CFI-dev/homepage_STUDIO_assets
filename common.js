@@ -745,546 +745,211 @@
     });
   })();
 
-  /* ------------------------------------------------------------
-     10. ヒーロー背景A：ノードネットワーク＋アパーチャー（#heroCv）
-         ※ #heroFx（SILK＝§11）とは排他。同一ページに両方の canvas を
-           置かないこと。置くと rAF が二重に走り、pointermove も二重登録される
-         ▼ スクロール負荷対策。以下2点を戻さないこと
-           ・リンク判定の距離比較は二乗のまま行う。総当たり最大
-             72*71/2 = 2,556 組ぶんの平方根が毎フレーム走るため、
-             Math.hypot を内側ループで呼ばない
-           ・狭い画面では DPR 上限とノード数を引き下げる
-     ------------------------------------------------------------ */
+ /* ------------------------------------------------------------
+  10. ヒーロー背景：SHEAR（上下端から出る斜線／home・contact 共通）
+      ■ 触る前に必ず読むこと
+      ・ヒーロー用 canvas は #heroCv の1枚のみ。旧 #heroFx（SILK）は
+        parking.js へ退避した。2枚置かないこと（rAF が二重に走る）
+      ・グラデーションは resize 時に1本だけ作る。毎フレーム
+        createLinearGradient を呼ぶとGCが跳ねる。濃度は globalAlpha で作る
+      ・setTransform(DPR,…) を掛けているため lineWidth の単位はCSSピクセル。
+        W_BASE の数値がそのまま見た目の太さになる（Retinaでも同じ）
+      ・交差判定は「上側×下側」のみ。交差点は NODE_MAX で打ち切る
+      ・経過時間は acc へ積む（rAF のタイムスタンプを直接使わない）。
+        背面タブからの復帰やリサイズで絵が飛ぶのを防ぐため dt は 50ms で
+        頭打ちにしている。ts を直接 /1000 する形に戻さないこと
+      ・prefers-reduced-motion では1フレームだけ描いて静止させる。
+        frame() 末尾の分岐を無条件にしないこと
+      ■ 画の意味
+        上端から出た線は右下へ、下端から出た線は右上へ流れる。どちらも
+        右向きなのでせん断しながら一方向へ進む（＝推進力）。上下の線が
+        交差した瞬間だけ点が光る（＝線＝形が出会って点＝価値が生まれる）
+  ------------------------------------------------------------ */
   (function initHeroCanvas() {
     var cv = document.getElementById("heroCv");
-    var hero = document.querySelector(".hero");
-    if (!cv || !hero || typeof cv.getContext !== "function") return;
-
+    if (!cv || typeof cv.getContext !== "function") return;
+    var hero = (cv.closest && cv.closest(".hero")) || cv.parentNode;
     var g = cv.getContext("2d", { alpha: true });
-    if (!g) return;
+    if (!g || !hero) return;
 
     var TAU = Math.PI * 2;
-    var W = 0, H = 0, DPR = 1, nodes = [], raf = null, visible = true, rzTimer = null;
 
-    /* ▼ ポインタ追従（マウス環境のみ。タッチでは追従させない） */
-    var HOVER = matchMedia("(hover:hover) and (pointer:fine)");
-    var pt = { x: 0, y: 0, on: false };
-    var pulses = [], lastSpawn = 0;
+    /* ▼▼ 調整ダイヤル ▼▼
+       TILT   … 斜線の傾き(rad)。0.42≒24°。0 で垂直、0.6 で寝すぎる
+       LINES  … 片側の本数（PC）。狭幅では自動で 9 本へ落ちる
+       LEN    … 線の長さ（画面高比）
+       SPD    … 進み。0.055 で1本が約18秒かけて通過する
+       W_BASE … 線の最小太さ(px)   W_VAR … 個体差の上乗せ幅(px)
+                  控えめ 1.2 / 1.4   既定（中太）2.0 / 1.4
+                  太い   3.0 / 1.8   極太     4.0 / 2.4
+         ※ 太くすると見た目の明度が上がる。W_BASE を上げたら A_LINE を下げて
+           釣り合わせること（片方だけ動かすと見出しの可読性が崩れる）
+           目安 … 1.2→0.30 ／ 2.0→0.24 ／ 3.0→0.19 ／ 4.0→0.15
+       A_LINE … 線の基準濃度      A_NODE … 交差点の濃度
+       NODE_MAX … 1フレームに描く交差点の上限 */
+    var TILT     = 0.42;
+    var LINES    = 16;
+    var LEN      = 0.46;
+    var SPD      = 0.055;
+    var W_BASE   = 2.0;
+    var W_VAR    = 1.4;
+    var A_LINE   = 0.24;
+    var A_NODE   = 0.85;
+    var NODE_MAX = 40;
+    /* ▲▲ 調整はここまで ▲▲ */
 
-    if (HOVER.matches) {
-      hero.addEventListener("pointermove", function (e) {
-        var r = cv.getBoundingClientRect();
-        pt.x = e.clientX - r.left;
-        pt.y = e.clientY - r.top;
-        pt.on = true;
-      }, { passive: true });
-      hero.addEventListener("pointerleave", function () { pt.on = false; });
-    }
+    var sinT = Math.sin(TILT), cosT = Math.cos(TILT);
+    var W = 0, H = 0, DPR = 1, raf = null, vis = true, rzT = null;
+    var acc = 0, prev = 0;                  /* 経過時間の積算／直前のタイムスタンプ */
+    var upper = [], lower = [], grad = null;
+    var pa = [], pb = [], nodes = [];
 
     /* 再現性のある擬似乱数（線形合同法）。静止画を毎回同じ絵にするため */
     function seeded(seed) {
       var v = seed % 2147483647;
       if (v <= 0) v += 2147483646;
-      return function () {
-        v = (v * 16807) % 2147483647;
-        return (v - 1) / 2147483646;
-      };
+      return function () { v = (v * 16807) % 2147483647; return (v - 1) / 2147483646; };
     }
 
     function build() {
-      var rnd = seeded(20160202);
-      /* 画面が小さいほどノードを減らしてモバイルの負荷を抑える。
-         リンク描画は O(n^2) なので、ここの上限が効き幅として最も大きい */
-      var narrow = W < 768;
-      var cap = narrow ? 40 : 72;
-      var div = narrow ? 30000 : 22000;
-      var n = Math.round(Math.min(cap, Math.max(18, (W * H) / div)));
-      nodes = Array.from({ length: n }, function () {
-        return {
-          x: rnd() * W,
-          y: rnd() * H,
-          dx: 0,                          /* 描画用オフセット（追従分） */
-          dy: 0,
-          vx: (rnd() - 0.5) * 0.22,
-          vy: (rnd() - 0.5) * 0.22,
-          r: 0.9 + rnd() * 1.9,
-          c: rnd() > 0.62 ? "0,194,168" : "15,107,224"
-        };
-      });
-      pulses = [];
+      var n = W < 768 ? 9 : LINES;          /* 狭幅は本数だけ落とす（太さは維持） */
+      var r = seeded(20260917);
+      function mk(side, shift) {
+        var a = [], i, u;
+        for (i = 0; i < n; i++) {
+          u = (i + shift) / n;
+          a.push({
+            side: side,
+            x0: (-0.45 + 1.75 * u) * W + (r() - 0.5) * W * 0.05,  /* 端の助走ぶん余裕を持たせる */
+            len: H * LEN * (0.60 + r() * 0.85),
+            spd: SPD * (0.72 + r() * 0.62),
+            off: r(),
+            w: W_BASE + r() * W_VAR
+          });
+        }
+        return a;
+      }
+      upper = mk(0, 0);                     /* 上端から出て右下へ */
+      lower = mk(1, 0.5);                   /* 下端から出て右上へ（半ピッチずらす） */
+
+      /* 色は左=accent → 右=accent-2。--grad の 115deg と進行方向を揃える。
+         中間シアンを挟むのは blue→teal の継ぎ目が濁るのを避けるため */
+      grad = g.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0.00, "rgba(15,107,224,1)");
+      grad.addColorStop(0.55, "rgba(0,160,220,1)");
+      grad.addColorStop(1.00, "rgba(0,194,168,1)");
     }
 
     function resize() {
       /* 狭い画面は DPR を 1.5 で頭打ちにする（塗り面積が約44%減る） */
       DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
       var r = cv.getBoundingClientRect();
-      W = r.width;
-      H = r.height;
-      if (!W || !H) return;               /* 非表示時の 0 サイズを回避 */
+      W = r.width; H = r.height;
+      if (!W || !H) return;                 /* 非表示時の 0 サイズを回避 */
       cv.width = Math.round(W * DPR);
       cv.height = Math.round(H * DPR);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
       build();
     }
 
-    /* アパーチャーマーク（3分割リング） */
-    function aperture(cx, cy, R, rot, alpha) {
-      var grd = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
-      grd.addColorStop(0, "rgba(15,107,224," + alpha + ")");
-      grd.addColorStop(1, "rgba(0,194,168," + alpha + ")");
-      g.save();
-      g.translate(cx, cy);
-      g.rotate(rot);
-      g.strokeStyle = grd;
-      g.lineWidth = R * 0.2;
-      g.lineCap = "round";
-      for (var i = 0; i < 3; i++) {
-        var s = (i * TAU) / 3;
-        g.beginPath();
-        g.arc(0, 0, R, s, s + 1.38);
-        g.stroke();
-      }
-      g.restore();
-      g.fillStyle = grd;
-      g.beginPath();
-      g.arc(cx, cy, R * 0.09, 0, TAU);
-      g.fill();
+    /* 1本ぶんの端点と濃度を求める。M は画面外の助走ぶん */
+    function solve(L, t, out) {
+      var M = H * 0.34;
+      var S = (H + M * 2) / cosT + L.len;   /* 1周期で進む距離 */
+      var p = (t * L.spd + L.off) % 1;
+      var s = p * S;
+      var oy = L.side ? H + M : -M;         /* 出発点（下端の外／上端の外） */
+      var vy = L.side ? -cosT : cosT;       /* 上側は下へ、下側は上へ */
+      out.bx = L.x0 + sinT * s;             /* 先端。x はどちらも右へ進む */
+      out.by = oy + vy * s;
+      out.ax = L.x0 + sinT * (s - L.len);   /* 後端 */
+      out.ay = oy + vy * (s - L.len);
+      /* 出入りのフェード。端で線が唐突に切れて見えないようにする */
+      out.a = Math.min(1, p / 0.10) * Math.min(1, (1 - p) / 0.18);
+      out.w = L.w;
+      return out;
     }
 
-    /* animate=false のときは1フレームだけ描いて終了（静止画） */
-    function draw(t, animate) {
-      g.clearRect(0, 0, W, H);
-
-      /* 狭い画面ではアパーチャーを中央寄り・小さめに配置 */
-      var narrow = W < 768;
-      var cx = narrow ? W * 0.5 : W * 0.74;
-      var cy = narrow ? H * 0.3 : H * 0.46;
-      var R0 = Math.min(W, H) * (narrow ? 0.16 : 0.22);
-
-      var LINK = Math.min(150, Math.max(80, W * 0.11));
-      var LINK2 = LINK * LINK;          /* 二乗比較用 */
-
-      /* 追加演出（追従・パルス・呼吸）を出してよい状態か */
-      var live = animate !== false && !rm.matches;
-      var i, j, p;
-
-      /* 静止描画では座標を進めない（毎回同じ絵になる） */
-      if (animate !== false) {
-        for (i = 0; i < nodes.length; i++) {
-          p = nodes[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          if (p.x < 0 || p.x > W) p.vx *= -1;
-          if (p.y < 0 || p.y > H) p.vy *= -1;
-        }
-      }
-
-      /* ▼ カーソルへの引き寄せ。表示位置(dx,dy)だけを補間で動かし、
-           離脱時は 0 へ緩やかに戻す。座標本体(x,y)は書き換えない */
-      var PR = 190, PR2 = PR * PR;
-      for (i = 0; i < nodes.length; i++) {
-        p = nodes[i];
-        var tx = 0, ty = 0;
-        if (live && pt.on) {
-          var ax0 = pt.x - p.x, ay0 = pt.y - p.y, d20 = ax0 * ax0 + ay0 * ay0;
-          if (d20 < PR2) {
-            var f = (1 - d20 / PR2) * 0.18;
-            tx = ax0 * f;
-            ty = ay0 * f;
-          }
-        }
-        p.dx += (tx - p.dx) * 0.12;
-        p.dy += (ty - p.dy) * 0.12;
-      }
-
-      /* ノード間の接続線
-         ※ 距離は二乗で判定し、閾値内の組だけ平方根を取る。
-           Math.hypot を総当たりで呼ばないこと */
-      g.lineWidth = 1;
-      for (i = 0; i < nodes.length; i++) {
-        var a = nodes[i];
-        var ax = a.x + a.dx, ay = a.y + a.dy;
-        for (j = i + 1; j < nodes.length; j++) {
-          var b = nodes[j];
-          var bx = b.x + b.dx, by = b.y + b.dy;
-          var ux = ax - bx, uy = ay - by;
-          var d2 = ux * ux + uy * uy;
-          if (d2 > LINK2) continue;
-          var d = Math.sqrt(d2);
-          g.strokeStyle = "rgba(0,194,168," + (0.16 * (1 - d / LINK)).toFixed(3) + ")";
-          g.beginPath();
-          g.moveTo(ax, ay);
-          g.lineTo(bx, by);
-          g.stroke();
-        }
-      }
-
-      /* カーソルから近傍ノードへの線 */
-      if (live && pt.on) {
-        var CR = 150, CR2 = CR * CR;
-        for (i = 0; i < nodes.length; i++) {
-          p = nodes[i];
-          var px = p.x + p.dx, py = p.y + p.dy;
-          var cux = pt.x - px, cuy = pt.y - py;
-          var cd2 = cux * cux + cuy * cuy;
-          if (cd2 > CR2) continue;
-          var cd = Math.sqrt(cd2);
-          g.strokeStyle = "rgba(15,107,224," + (0.3 * (1 - cd / CR)).toFixed(3) + ")";
-          g.beginPath();
-          g.moveTo(pt.x, pt.y);
-          g.lineTo(px, py);
-          g.stroke();
-        }
-      }
-
-      /* ノード本体 */
-      for (i = 0; i < nodes.length; i++) {
-        p = nodes[i];
-        g.fillStyle = "rgba(" + p.c + ",0.55)";
-        g.beginPath();
-        g.arc(p.x + p.dx, p.y + p.dy, p.r, 0, TAU);
-        g.fill();
-      }
-
-      /* ▼ 信号パルス：ランダムな1点から最近傍へ光を走らせる
-           （1.5秒に1回のみの探索なので二乗比較のままでよい） */
-      if (live && t - lastSpawn > 1500 && nodes.length > 2) {
-        lastSpawn = t;
-        var si = Math.floor(Math.random() * nodes.length);
-        var sa = nodes[si];
-        var best = -1, bd2 = Infinity;
-        for (j = 0; j < nodes.length; j++) {
-          if (j === si) continue;
-          var sux = sa.x - nodes[j].x, suy = sa.y - nodes[j].y;
-          var sd2 = sux * sux + suy * suy;
-          if (sd2 < bd2 && sd2 > 576) { bd2 = sd2; best = j; }   /* 576 = 24^2 */
-        }
-        var lim = LINK * 1.3;
-        if (best >= 0 && bd2 < lim * lim) pulses.push({ a: sa, b: nodes[best], t0: t });
-      }
-      if (!live) pulses = [];
-      for (var k = pulses.length - 1; k >= 0; k--) {
-        var q = pulses[k];
-        var pr = (t - q.t0) / 1200;
-        if (pr >= 1) { pulses.splice(k, 1); continue; }
-        var e = pr * pr * (3 - 2 * pr);                 /* smoothstep */
-        var qax = q.a.x + q.a.dx, qay = q.a.y + q.a.dy;
-        var x = qax + (q.b.x + q.b.dx - qax) * e;
-        var y = qay + (q.b.y + q.b.dy - qay) * e;
-        var al = Math.sin(pr * Math.PI);                /* 出て消える */
-        g.strokeStyle = "rgba(0,194,168," + (0.28 * al).toFixed(3) + ")";
-        g.beginPath();
-        g.moveTo(qax, qay);
-        g.lineTo(x, y);
-        g.stroke();
-        g.fillStyle = "rgba(0,194,168," + (0.9 * al).toFixed(3) + ")";
-        g.beginPath();
-        g.arc(x, y, 2.2, 0, TAU);
-        g.fill();
-      }
-
-      /* 背面グロー */
-      var halo = g.createRadialGradient(cx, cy, R0 * 0.2, cx, cy, R0 * 1.9);
-      halo.addColorStop(0, "rgba(0,194,168,0.11)");
-      halo.addColorStop(0.55, "rgba(15,107,224,0.07)");
-      halo.addColorStop(1, "rgba(15,107,224,0)");
-      g.fillStyle = halo;
+    function strokeSeg(o, alpha) {
+      g.globalAlpha = alpha;
+      g.lineWidth = o.w;
       g.beginPath();
-      g.arc(cx, cy, R0 * 1.9, 0, TAU);
-      g.fill();
+      g.moveTo(o.ax, o.ay);
+      g.lineTo(o.bx, o.by);
+      g.stroke();
+    }
 
-      /* 二重リング：外周はゆっくり逆回転。
-         呼吸（±3.5%）とスクロールによる微小ドリフトを加える。
-         ※ window.scrollY の読み取りはレイアウトを起こさない（合成済み値） */
-      var R = R0 * (live ? 1 + Math.sin(t / 3800) * 0.035 : 1);
-      var sy = live ? Math.min(window.scrollY || 0, H) * 0.06 : 0;
-      var rot = (t / 26000) * TAU;
-      aperture(cx, cy + sy, R * 1.42, -rot * 0.55, 0.16);
-      aperture(cx, cy + sy, R, rot, 0.5);
+    /* 上側×下側の交差点。線分同士の交点をそのまま解く */
+    function intersect(P, Q, out) {
+      var r1x = P.bx - P.ax, r1y = P.by - P.ay;
+      var r2x = Q.bx - Q.ax, r2y = Q.by - Q.ay;
+      var den = r1x * r2y - r1y * r2x;
+      if (den > -1e-6 && den < 1e-6) return false;   /* 平行 */
+      var sx = Q.ax - P.ax, sy = Q.ay - P.ay;
+      var u = (sx * r2y - sy * r2x) / den;
+      if (u < 0 || u > 1) return false;
+      var v = (sx * r1y - sy * r1x) / den;
+      if (v < 0 || v > 1) return false;
+      out.x = P.ax + r1x * u;
+      out.y = P.ay + r1y * u;
+      out.a = Math.min(P.a, Q.a);
+      return true;
+    }
 
-      /* ▼ この分岐を無条件にしないこと。
-           動きを減らす設定でもアニメーションが止まらなくなる */
-      if (animate === false || rm.matches) {
-        raf = null;
+    function frame(ts) {
+      var live = !rm.matches;
+      if (!grad || !W || !H) {              /* 幅が測れない間は次フレームへ送る */
+        raf = live ? requestAnimationFrame(frame) : null;
         return;
       }
-      raf = requestAnimationFrame(draw);
+      var now = ts || 0;
+      if (!prev) prev = now;
+      var dt = (now - prev) / 1000;
+      prev = now;
+      if (dt > 0.05) dt = 0.05;             /* 復帰時の大ジャンプを抑える */
+      if (live) acc += dt;
+      var t = live ? acc : 6.2;             /* 静止時は見栄えのする時刻で固定 */
+
+      g.clearRect(0, 0, W, H);
+      g.strokeStyle = grad; g.fillStyle = grad; g.lineCap = "round";
+      /* lineCap を 'butt' にすると切り口が平らになり格子と馴染むが、
+         出入りのフェード中に端が硬く見える。実機で比較して決めること */
+
+      var i, j, k;
+      for (i = 0; i < upper.length; i++) pa[i] = solve(upper[i], t, pa[i] || {});
+      for (i = 0; i < lower.length; i++) pb[i] = solve(lower[i], t, pb[i] || {});
+
+      for (i = 0; i < pa.length; i++) strokeSeg(pa[i], A_LINE * pa[i].a);
+      for (i = 0; i < pb.length; i++) strokeSeg(pb[i], A_LINE * pb[i].a * 0.92);
+
+      /* 交差点（線と線が出会って点になる＝形→価値） */
+      var m = 0, o = {};
+      for (i = 0; i < pa.length && m < NODE_MAX; i++) {
+        for (j = 0; j < pb.length && m < NODE_MAX; j++) {
+          if (!intersect(pa[i], pb[j], o)) continue;
+          nodes[m] = nodes[m] || {};
+          nodes[m].x = o.x; nodes[m].y = o.y; nodes[m].a = o.a; m++;
+        }
+      }
+      /* 半径は線幅に連動させる。固定値にすると W_BASE を上げた時に
+         点が線に埋もれて「点」に見えなくなる */
+      var r0 = (W_BASE + W_VAR * 0.5) * 1.15;
+      for (k = 0; k < m; k++) {
+        g.globalAlpha = A_NODE * nodes[k].a;
+        g.beginPath();
+        g.arc(nodes[k].x, nodes[k].y, r0, 0, TAU);
+        g.fill();
+      }
+      g.globalAlpha = 1;
+
+      /* ▼ この分岐を無条件にしないこと（動きを減らす設定で止まらなくなる） */
+      if (!live) { raf = null; return; }
+      raf = requestAnimationFrame(frame);
     }
 
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-    function still() { stop(); draw(0, false); }
-    function start() { if (!raf && visible && !rm.matches) raf = requestAnimationFrame(draw); }
-    function render() { rm.matches ? still() : start(); }
-
-    resize();
-
-    /* モバイルのアドレスバー開閉による微小リサイズを間引く */
-    addEventListener("resize", function () {
-      clearTimeout(rzTimer);
-      rzTimer = setTimeout(function () { stop(); resize(); render(); }, 180);
-    }, { passive: true });
-
-    addEventListener("orientationchange", function () { stop(); resize(); render(); });
-
-    document.addEventListener("visibilitychange", function () {
-      document.hidden ? stop() : render();
-    });
-
-    /* 動きを減らす設定が実行中に切り替わった場合も追従 */
-    onMQ(rm, render);
-
-    /* ヒーローが画面外なら停止（省電力） */
-    if (HAS_IO) {
-      new IntersectionObserver(function (es) {
-        visible = es[0].isIntersecting;
-        visible ? render() : stop();
-      }, { threshold: 0 }).observe(hero);
-    }
-
-    /* 初期描画（動きを減らす設定では静止画1枚） */
-    render();
-  })();
-
-  /* ------------------------------------------------------------
-     11. ヒーロー背景B：SILK（#heroFx／contact が使用）
-         ※ #heroCv（§10）とは排他。canvas は id で切り替える
-         ※ マスクは common.css §5 の .hfx-cv が担当（セットで扱うこと）
-         ・canvas は透明のまま。.hero の背景グラデ（§5）が常に透ける
-         ・配色は5点の階調ランプから帯ごとに別位置をサンプリングする。
-           ブランド2色を直接置くと色相差40度の段差が加算合成で濁る
-     ------------------------------------------------------------ */
-  (function initHeroSilk() {
-    var cv = document.getElementById("heroFx");
-    if (!cv || typeof cv.getContext !== "function") return;
-    var hero = (cv.closest && cv.closest(".hero")) || cv.parentNode;
-    var g = cv.getContext("2d", { alpha: true });
-    if (!g || !hero) return;
-
-    var HOVER = matchMedia("(hover:hover) and (pointer:fine)");
-
-    /* ============================================================
-       調整ダイヤル
-       ============================================================ */
-    /* PALETTE  'deep'（既定・重厚）/ 'brand'（ブランド2色に忠実）
-                / 'aurora'（淡アクア強め・明るい） */
-    var PALETTE = "deep";
-
-    var AMP   = 0.18;   /* 振幅（画面高比）。0.24 まで上げると相当に暴れる   */
-    var RATE  = 1.0;    /* 時間の進み。1.6 あたりから「速い」と感じ始める     */
-    var BANDS = 6;      /* 帯の本数（PC）。塗り面積は本数にほぼ比例する       */
-    var ALPHA = 0.115;  /* 帯の基準濃度。上げすぎると重なりが白飛びする       */
-    var SHEEN = 0.09;   /* 上縁の艶。0 で無効                                 */
-    var GLOW  = 0.10;   /* 交差部を底上げするベール。0 で無効                 */
-
-    /* ▼ 配色ランプ
-         ・端から端まで色相が単調に進むよう並べること。
-           順序を入れ替えると帯の途中で色が折り返し、段差になる
-         ・中間シアン（3点目）が blue→teal の継ぎ目を埋める要。
-           これを抜くと濁りが再発する */
-    var PALETTES = {
-      deep: [                /* 深藍 → accent → 中間シアン → accent-2 → 淡アクア */
-        [ 16,  58, 132],
-        [ 15, 107, 224],
-        [  0, 160, 220],
-        [  0, 194, 168],
-        [126, 236, 216]
-      ],
-      brand: [               /* ブランド2色に忠実。中間色は最小限 */
-        [ 12,  74, 170],
-        [ 15, 107, 224],
-        [  6, 156, 200],
-        [  0, 194, 168],
-        [ 92, 216, 198]
-      ],
-      aurora: [              /* 明るめ。濃色ヒーロー以外へ流用する場合向け */
-        [ 34,  92, 190],
-        [ 28, 132, 236],
-        [  0, 182, 226],
-        [ 26, 214, 186],
-        [162, 246, 228]
-      ]
-    };
-    var RAMP = PALETTES[PALETTE] || PALETTES.deep;
-
-    /* ランプ上の位置 p(0..1) から色を線形補間で取り出す */
-    function ramp(p) {
-      p = p < 0 ? 0 : (p > 1 ? 1 : p);
-      var x = p * (RAMP.length - 1);
-      var i = Math.min(Math.floor(x), RAMP.length - 2);
-      var f = x - i, a = RAMP[i], b = RAMP[i + 1];
-      return [ (a[0] + (b[0] - a[0]) * f) | 0,
-               (a[1] + (b[1] - a[1]) * f) | 0,
-               (a[2] + (b[2] - a[2]) * f) | 0 ];
-    }
-    function rgba(c, a) {
-      return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a.toFixed(3) + ")";
-    }
-
-    var SEG = 18;                                   /* 帯1本あたりの頂点数 */
-    var W = 0, H = 0, DPR = 1, rb = [], raf = null, vis = true, rzT = null;
-    var pt = { x: .5, y: .5, tx: .5, ty: .5, on: false };
-
-    if (HOVER.matches) {
-      hero.addEventListener("pointermove", function (e) {
-        var r = cv.getBoundingClientRect();
-        pt.tx = (e.clientX - r.left) / (r.width  || 1);
-        pt.ty = (e.clientY - r.top ) / (r.height || 1);
-        pt.on = true;
-      }, { passive: true });
-      hero.addEventListener("pointerleave", function () { pt.on = false; });
-    }
-
-    /* ▼ 帯の生成。グラデーションと頂点バッファはここで一度だけ作る。
-         毎フレーム createLinearGradient を呼ぶとGCが跳ねる */
-    function build() {
-      var narrow = W < 768;
-      var n = narrow ? 4 : BANDS;
-      var N = SEG + 1;
-      rb = [];
-
-      for (var i = 0; i < n; i++) {
-        var u = n > 1 ? i / (n - 1) : .5;           /* 0=上 1=下 */
-
-        /* ▼ 帯ごとにランプ上の位置をずらす。
-             上の帯＝深藍寄り、下の帯＝ティール寄りになり、
-             ヒーロー全体に縦方向の色相グラデーションが生まれる */
-        var h  = 0.06 + u * 0.70;
-        var cL = ramp(h - 0.14);                    /* 左端 */
-        var cM = ramp(h + 0.04);                    /* 中央 */
-        var cR = ramp(h + 0.22);                    /* 右端 */
-        var a  = ALPHA * (0.80 + u * 0.35);
-
-        /* 横方向にも色相を進める。左右で表情が変わり、平板にならない */
-        var grd = g.createLinearGradient(-W * 0.12, 0, W * 1.12, 0);
-        grd.addColorStop(0.00, rgba(cL, 0));
-        grd.addColorStop(0.18, rgba(cL, a * 0.72));
-        grd.addColorStop(0.50, rgba(cM, a));
-        grd.addColorStop(0.82, rgba(cR, a * 0.58));
-        grd.addColorStop(1.00, rgba(cR, 0));
-
-        rb.push({
-          base: H * (0.16 + u * 0.62),              /* 定位置 */
-          a1: H * AMP * (0.55 + 0.45 * ((i * 0.37) % 1)),  /* 乱数を使わず再現性を持たせる */
-          a2: H * AMP * 0.34,
-          k1: 1.1 + u * 0.9,                        /* 横方向の波数 */
-          k2: 2.4 + u * 1.6,
-          s1: (0.06 + u * 0.05) * RATE,             /* 位相速度。小さいほど優雅 */
-          s2: (0.09 - u * 0.03) * RATE,
-          ph: u * 4.1,
-          th: H * (0.05 + 0.055 * (1 - u)),         /* 帯の厚み */
-          tilt: (u - 0.5) * H * 0.22,               /* 傾き。平行を避けて動きを出す */
-          grad: grd,
-          sheen: rgba(ramp(Math.min(h + 0.30, 1)), SHEEN * (0.55 + u * 0.45)),
-          top: new Float32Array(N * 2),             /* 頂点バッファ（使い回す） */
-          bot: new Float32Array(N * 2)
-        });
-      }
-    }
-
-    function resize() {
-      DPR = Math.min(devicePixelRatio || 1, innerWidth < 768 ? 1.5 : 2);
-      var r = cv.getBoundingClientRect();
-      W = r.width; H = r.height;
-      if (!W || !H) return;                         /* 非表示時の 0 サイズを回避 */
-      cv.width  = Math.round(W * DPR);
-      cv.height = Math.round(H * DPR);
-      g.setTransform(DPR, 0, 0, DPR, 0, 0);
-      build();
-    }
-
-    /* ▼ 点列を二次ベジェで結ぶ（中点をアンカーにする定番手法）。
-         上辺と下辺は必ず1本の連続パスとして繋ぐこと。
-         下辺の描き始めに moveTo を使うと新しいサブパスが立ち、
-         closePath が上下を閉じないまま塗りに回る
-         rev  … true で配列を逆順に辿る（下辺の復路用）
-         first… true なら moveTo、false なら lineTo で開始する */
-    function curveArr(arr, n, first, rev) {
-      var s = rev ? n - 1 : 0, d = rev ? -1 : 1, k, i0, i1, mx, my;
-      i0 = s * 2;
-      if (first) g.moveTo(arr[i0], arr[i0 + 1]);
-      else       g.lineTo(arr[i0], arr[i0 + 1]);
-      for (k = 1; k < n - 1; k++) {
-        i0 = (s + d * k) * 2;
-        i1 = (s + d * (k + 1)) * 2;
-        mx = (arr[i0] + arr[i1]) * 0.5;
-        my = (arr[i0 + 1] + arr[i1 + 1]) * 0.5;
-        g.quadraticCurveTo(arr[i0], arr[i0 + 1], mx, my);
-      }
-      i0 = (s + d * (n - 1)) * 2;
-      g.lineTo(arr[i0], arr[i0 + 1]);
-    }
-
-    function band(r, T, warp) {
-      var N = SEG + 1, x0 = -W * 0.12, span = W * 1.24, i;
-      for (i = 0; i < N; i++) {
-        var u = i / SEG;
-        var x = x0 + span * u;
-        var y = r.base
-              + r.tilt * (u - 0.5) * 2
-              + r.a1 * Math.sin(u * 6.28318 * r.k1 + T * r.s1 + r.ph)
-              + r.a2 * Math.sin(u * 6.28318 * r.k2 - T * r.s2)
-              + warp * Math.sin(u * 6.28318 + r.ph);          /* ポインタによる歪み */
-        var th = r.th * (0.55 + 0.45 * Math.sin(u * 6.28318 * 1.7 + T * r.s2 * 1.3 + r.ph));
-        r.top[i * 2] = x; r.top[i * 2 + 1] = y;
-        r.bot[i * 2] = x; r.bot[i * 2 + 1] = y + th;
-      }
-
-      /* 本体（上辺 → 下辺の復路 → 閉じる。単一サブパス） */
-      g.beginPath();
-      curveArr(r.top, N, true,  false);
-      curveArr(r.bot, N, false, true);
-      g.closePath();
-      g.fillStyle = r.grad;
-      g.fill();
-
-      /* 上縁の艶。光が布の稜線を走る表現 */
-      if (SHEEN > 0) {
-        g.beginPath();
-        curveArr(r.top, N, true, false);
-        g.strokeStyle = r.sheen;
-        g.lineWidth = 1;
-        g.stroke();
-      }
-    }
-
-    function draw(t) {
-      var live = !rm.matches;
-      var T = live ? t / 1000 : 0;
-
-      /* ポインタ追従は慣性付き。値を直に入れると帯が痙攣する */
-      pt.x += ((pt.on ? pt.tx : .5) - pt.x) * 0.045;
-      pt.y += ((pt.on ? pt.ty : .5) - pt.y) * 0.045;
-      var warp = live ? (pt.y - 0.5) * H * 0.20 : 0;
-
-      g.clearRect(0, 0, W, H);
-
-      /* 加算合成。帯が重なった部分だけが光る＝交差が主役になる */
-      g.globalCompositeOperation = "lighter";
-      g.lineCap  = "round";
-      g.lineJoin = "round";
-      for (var i = 0; i < rb.length; i++) band(rb[i], T, warp);
-
-      /* 交差の輝きを底上げする薄いベール。色はランプ中央から取り、
-         帯と同じ色系に収める（別色を置くと途端に安っぽくなる） */
-      if (GLOW > 0) {
-        var cx = W * (0.30 + pt.x * 0.40);
-        var cy = H * (0.30 + pt.y * 0.30);
-        var v  = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.62);
-        v.addColorStop(0.0, rgba(ramp(0.64), GLOW));
-        v.addColorStop(0.55, rgba(ramp(0.30), GLOW * 0.38));
-        v.addColorStop(1.0, rgba(ramp(0.10), 0));
-        g.fillStyle = v;
-        g.fillRect(0, 0, W, H);
-      }
-      g.globalCompositeOperation = "source-over";
-
-      if (!live) { raf = null; return; }             /* 動きを減らす設定＝静止1枚 */
-      raf = requestAnimationFrame(draw);
-    }
-
-    function stop()   { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-    function start()  { if (!raf && vis) raf = requestAnimationFrame(draw); }
-    function render() { if (rm.matches) { stop(); draw(0); } else start(); }
+    function start() { if (!raf && vis && !rm.matches) { prev = 0; raf = requestAnimationFrame(frame); } }
+    function render() { if (rm.matches) { stop(); prev = 0; frame(0); } else start(); }
 
     resize(); render();
 
@@ -1300,15 +965,16 @@
       document.hidden ? stop() : render();
     });
 
-    /* ヒーローが画面外なら停止（省電力。§10 と同じ方針） */
+    /* 動きを減らす設定が実行中に切り替わった場合も追従 */
+    onMQ(rm, render);
+
+    /* ヒーローが画面外なら停止（省電力） */
     if (HAS_IO) {
       new IntersectionObserver(function (es) {
-        vis = es[0].isIntersecting; vis ? render() : stop();
+        vis = es[0].isIntersecting;
+        vis ? render() : stop();
       }, { threshold: 0 }).observe(hero);
     }
-
-    /* 設定が実行中に切り替わった場合も追従 */
-    onMQ(rm, render);
   })();
 
   /* ------------------------------------------------------------
