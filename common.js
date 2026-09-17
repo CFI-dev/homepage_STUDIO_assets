@@ -835,9 +835,9 @@
       /* 色は左=accent → 右=accent-2。--grad の 115deg と進行方向を揃える。
          中間シアンを挟むのは blue→teal の継ぎ目が濁るのを避けるため */
       grad = g.createLinearGradient(0, 0, W, 0);
-      grad.addColorStop(0.00, "rgba(15,107,224,1)");
-      grad.addColorStop(0.55, "rgba(0,160,220,1)");
-      grad.addColorStop(1.00, "rgba(0,194,168,1)");
+      grad.addColorStop(0.00, "rgba(210,215,220,1)");  /* プラチナ */
+      grad.addColorStop(0.55, "rgba(226,209,170,1)");  /* シャンパン（継ぎ目の濁り回避） */
+      grad.addColorStop(1.00, "rgba(201,162,39,1)");   /* ゴールド */
     }
 
     function resize() {
