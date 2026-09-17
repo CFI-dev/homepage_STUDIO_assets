@@ -65,9 +65,11 @@
   <!-- HERO（下層ページ用。高さと見出し組みは common.css §22 が担当） -->
   <section class="hero hero-sub" id="top">
 
-    <!-- ヒーロー背景：SILK。描画は common.js §11、マスクは common.css §5（.hfx-cv）。
-         canvas は透明のまま＝.hero の背景グラデ（§5）が常に透ける -->
-    <canvas id="heroFx" class="hfx-cv" aria-hidden="true"></canvas>
+    <!-- ヒーロー背景：SHEAR。描画は common.js §10、格子の下敷きは
+         common.css §5 の .hero::before。home と同一の背景を使う。
+         ※ 旧 #heroFx（SILK）と class="hfx-cv" は廃止（parking へ退避）。
+           canvas は1枚だけに保つこと -->
+    <canvas id="heroCv" aria-hidden="true"></canvas>
 
     <!-- data-mo-stagger：直下要素を順送りで立ち上げる（値なし＝下から上へ）。
          遅延は common.css §19 の --i が担当。JSで setTimeout を足さないこと -->
