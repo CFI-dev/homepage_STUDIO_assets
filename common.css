@@ -302,14 +302,28 @@ nav a.gnav:hover::after{width:100%}
   padding:calc(var(--hd) + 60px) 0 72px;
   background:linear-gradient(115deg,#0d1b2a 0%,#16304a 55%,#0a3a5c 100%);
   overflow:hidden}
-/* ・#heroCv（§10 ノードネットワーク）と .hfx-cv（§11 SILK）は排他。
-     同一ページに両方の canvas を置かないこと（rAF が二重に走る）
-   ・上下端のマスクは矩形の切り口を隠すための仕上げ。
-     上端 10% はヘッダー（--hd:72px）の背後に隠れる領域に相当する */
-#heroCv,.hfx-cv{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block}
-.hfx-cv{
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%);
-          mask-image:linear-gradient(to bottom,transparent 0,#000 10%,#000 90%,transparent 100%)}
+/* ・ヒーロー用 canvas は #heroCv の1枚のみ（描画は common.js §10 の SHEAR）。
+     home / contact で共通。同一ページに2枚置かないこと（rAF が二重に走る）
+   ・旧 #heroFx（SILK）と .hfx-cv の上下マスクは parking へ退避した。
+     SHEAR は線の出入りを JS 側のフェード（solve() の out.a）で処理するため
+     マスクは不要。復活させると出入りが二重にフェードして端が濁る
+   ・canvas は透明のまま。.hero の背景グラデが常に透ける */
+#heroCv{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block}
+
+/* ▼ 格子の下敷き（装飾）。.sec-grid（§7）と同じ --grid-img / --grid-size を
+     参照し、ヒーローの斜線と本文の直交格子で線の言語を揃える。
+     ・::before は .hero の最初の子として塗られるため、同じ z-index:0 でも
+       DOM 順で canvas が上に来る。この順序を前提に濃度を決めている
+     ・マスクの中心（22% 45%）は下の .hero::after のスクリム（20% 50%）と
+       対。片方だけ動かさないこと
+     ・不要にする場合はこのブロックごと削除する。opacity:0 にしないこと
+       （巨大な合成レイヤーが残る） */
+.hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--grid-img);
+  background-size:var(--grid-size) var(--grid-size);
+  background-position:center;opacity:.45;
+  -webkit-mask-image:radial-gradient(120% 90% at 22% 45%,#000 0,rgba(0,0,0,.3) 62%,transparent 100%);
+          mask-image:radial-gradient(120% 90% at 22% 45%,#000 0,rgba(0,0,0,.3) 62%,transparent 100%)}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(120% 90% at 20% 50%,
     rgba(13,27,42,.86) 0%,rgba(13,27,42,.35) 55%,transparent 100%)}
