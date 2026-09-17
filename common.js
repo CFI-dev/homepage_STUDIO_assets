@@ -793,8 +793,11 @@
     var SPD      = 0.055;
     var W_BASE   = 2.0;
     var W_VAR    = 1.4;
-    var A_LINE   = 0.24;
-    var A_NODE   = 0.85;
+    /* 金は旧ブルー/ティールより輝度が約2.5倍高い。A_LINE / A_NODE を
+       据え置くと線が見出しを喰うため、同じ見え方になるまで落としている。
+       W_BASE を上げる場合は A_LINE をさらに下げること（§10 の目安表と対） */
+    var A_LINE   = 0.14;
+    var A_NODE   = 0.58;
     var NODE_MAX = 40;
     /* ▲▲ 調整はここまで ▲▲ */
 
