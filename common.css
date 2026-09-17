@@ -382,8 +382,9 @@ nav a.gnav:hover::after{width:100%}
 /* ============================================================
    7. セクション共通
       ・格子柄は §1 の --grid-img / --grid-size を参照。§21 のドリフトと共有
-      ・見出し直下の本文は .eyebrow を除外している。除外を外すと
-        アイブロウの font-size がトークンではなくこちらに固定される
+      ・見出し下のリード文（旧 .sec-head > p:not(.eyebrow)）は全セクションで
+        廃止した。HTML側にも置かないこと。復活させる場合は色・サイズ指定と
+        §23（600px）の font-size をセットで戻すこと
    ============================================================ */
 .sec{padding:var(--sec) 0;position:relative}
 .sec-ink{background:var(--ink)}
@@ -394,8 +395,10 @@ nav a.gnav:hover::after{width:100%}
 .sec-head{max-width:44em;margin-bottom:56px}
 .sec-head h2{font-size:clamp(22px,3.4vw,38px);line-height:1.45;font-weight:700;
   margin-top:16px;letter-spacing:-.01em}
+/* ▼ .sec-head 内の <p> はアイブロウのみになった。この margin-top は
+     上方向にマージン相殺し、セクション上端へ実質 18px 加算されている。
+     削るとセクション全体が一律 18px 詰まるため、意図せず触らないこと */
 .sec-head > p{margin-top:18px}
-.sec-head > p:not(.eyebrow){color:var(--muted);font-size:14.5px}
 
 /* ▼ 見出しを1行で組むブロック
    .sec-head の max-width:44em は 15px 基準で実質 660px。clamp 上限 38px の
@@ -1263,7 +1266,6 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   .brpc{display:none}          /* 見出しの強制改行を解除 */
   .brsp{display:inline}
   .svc{grid-template-columns:1fr}
-  .sec-head > p:not(.eyebrow){font-size:14px}
   /* 会社概要テーブルを縦積みに */
   .tbl,.tbl tbody,.tbl tr,.tbl th,.tbl td{display:block;width:100%}
   .tbl tr{padding:16px 0;border-bottom:1px solid var(--line)}
