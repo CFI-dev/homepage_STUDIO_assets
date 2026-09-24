@@ -288,12 +288,10 @@ header.hd-up{transform:translateY(-100%)}
 /* ▼ ロゴは1枚画像。マーク用／文字用の子要素セレクタ（.mark / .logo-name）は
      復活させないこと。復活させると高さの正が2トークンに分岐し、
      フッターの比率（--logo-h-ft）も効かなくなる。
-     ホバーの押し出しは画像全体に掛かる（統合前はマークのみだった点が変わる） */
+     ※ ホバー時の押し出し（旧 .logo:hover .mark / .logo:hover img）は廃止。
+       ロゴは静止させるため、transform / transition をここに戻さないこと */
 .logo{display:flex;align-items:center;flex:0 0 auto}
-.logo img{height:var(--logo-h);width:auto;flex:0 0 auto;object-fit:contain;display:block;
-  transform:translateX(0);
-  transition:transform .35s cubic-bezier(.22,1,.36,1)}
-.logo:hover img{transform:translateX(4px)}
+.logo img{height:var(--logo-h);width:auto;flex:0 0 auto;object-fit:contain;display:block}
 footer .logo img{height:var(--logo-h-ft)}
 
 nav ul{display:flex;align-items:center;gap:26px}
@@ -1395,8 +1393,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   html.cfi-boot body::before,html.cfi-boot body::after{transition:none}
   #cfi-boot-ui,#cfi-boot-ui .bar i{transition:none!important}
 
-  /* ロゴ */
-  .logo img{transition:none!important;transform:none!important}
+  /* ロゴ：ホバー挙動の廃止に伴い、打ち消す対象は無し（ルールを戻さないこと） */
 
   /* リビール */
   .rv,.rv-hold{opacity:1!important;transform:none!important}
