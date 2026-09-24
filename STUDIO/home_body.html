@@ -303,7 +303,11 @@
        .stack / .sec-head-tech のCSSは parking.css に退避してあるため、
        該当ブロックを common.css へ戻すこと（parking.css は本番で読み込まない） -->
 
-  <!-- BAND -->
+  <!-- BAND
+       ※ 画像は common.css §18 でスクロール固定（固定背景）にしている。
+         この div および先祖に transform / filter / will-change を付けると
+         固定が解除される（画像が帯に追従して流れる）。付ける場合は §18 の
+         clip-path / position:fixed とセットで見直すこと -->
   <div class="band" aria-hidden="true">
     <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/img/band-01.webp" alt="" loading="lazy" decoding="async" width="1600" height="600">
   </div>
