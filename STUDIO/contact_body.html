@@ -32,13 +32,12 @@
        data-cfi-nav の 'home#xxx' は common.js §2 が CFI_CONFIG.home + '#xxx' に解決する -->
   <header id="hd">
     <div class="hd-in">
+      <!-- ロゴはマーク＋文字を統合した1枚画像。
+           width/height は新画像の実寸に更新すること（下記は暫定値）。
+           暗いヘッダー背景に乗る透過画像を指定する（文字だけの黒背景版を使わない） -->
       <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
-        <img class="mark"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
-             width="36" height="32" decoding="async" alt="">
-        <img class="logo-name"
-             src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
-             width="64" height="34" decoding="async" alt="">
+        <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/logo_BackClear.png"
+             width="110" height="34" decoding="async" alt="">
       </a>
 
       <button class="burger" id="burger" type="button" aria-controls="nav" aria-expanded="false" aria-label="メニューを開く">
@@ -96,13 +95,10 @@
     <div class="wrap">
       <div class="ft-top">
         <div class="rv">
+          <!-- ロゴは1枚画像。高さは common.css の --logo-h-ft が正 -->
           <a class="logo" href="/" data-cfi-nav="home" aria-label="株式会社CFI｜Create From Ideas　トップへ">
-            <img class="mark"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/header_logo_BackClear.png"
-                 width="36" height="32" loading="lazy" decoding="async" alt="">
-            <img class="logo-name"
-                 src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/Name_BlackBackGroundBackClear.png"
-                 width="59" height="31" loading="lazy" decoding="async" alt="">
+            <img src="https://cfi-dev.github.io/homepage_STUDIO_assets/assets/logo/logo_BackClear.png"
+                 width="110" height="34" loading="lazy" decoding="async" alt="">
           </a>
           <p class="ft-desc">アイデアを、成果につながる仕組みへ。戦略から実装・運用定着までを一貫して支援します。</p>
         </div>
