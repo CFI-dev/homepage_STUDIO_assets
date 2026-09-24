@@ -641,8 +641,7 @@
         kids.forEach(function (el, i) {
           el.classList.add("rv");
           if (v) el.classList.add("rv-" + v);
-          /* 6で折り返す。項目数が多い列で遅延が伸び続けるのを防ぐ */
-          el.style.setProperty("--i", i % 6);
+          el.style.setProperty("--i", Math.min(i, 6));
         });
         observe(kids);
       });
