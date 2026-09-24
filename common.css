@@ -1032,7 +1032,17 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   align-items:start}
 .cmp-wrap .ph-fig{aspect-ratio:4/3;border:1px solid var(--line);border-radius:4px}
 
-/* ---- フルブリード帯 ---- */
+/* ---- フルブリード帯 ----
+   ▼ 帯の画像は「スクロール時に固定」＝固定背景。img を position:fixed にして
+     画面いっぱいに敷き、帯の矩形（clip-path）で切り抜いて窓のように見せる。
+     ・overflow:hidden は fixed 子を切らないため clip-path が必須。
+       clip-path と position:fixed は必ずセットで扱うこと（片方だけ外すと
+       画像が画面全体を覆うか、帯に追従して固定が解除される）
+     ・祖先に transform / filter / will-change / contain:paint があると
+       fixed の基準がそこへ移り固定が解除される。帯の親に付けないこと
+     ・iOS Safari は background-attachment:fixed を無視（スクロール）するため
+       この方式を採用している。background 方式へ戻さないこと
+     ・@supports で囲っているため非対応環境は従来どおり帯内に静止表示 */
 .band{position:relative;overflow:hidden;background:var(--ink);
   height:clamp(190px,28vw,340px);
   border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -1040,6 +1050,12 @@ footer{background:var(--ink);border-top:1px solid var(--line);padding:64px 0 32p
   opacity:.3;filter:saturate(.55) contrast(1.05) sepia(.25)}
 .band::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,rgba(201,166,104,.22),rgba(106,143,176,.14))}
+@supports (clip-path:inset(0)){
+  .band{clip-path:inset(0)}
+  .band img{position:fixed;top:0;left:0;width:100%;
+    height:100vh;   /* 非対応環境用のフォールバック */
+    height:100lvh}  /* モバイルのツールバー伸縮で高さが揺れないよう lvh */
+}
 
 /* ---- Approach ステップ写真 ---- */
 .flow .st .ph-fig{aspect-ratio:4/3;margin-top:22px;border-radius:3px;
@@ -1170,11 +1186,8 @@ a.is-todo::after{content:" (URL未設定)";font-family:var(--f-mono);
       animation-range:cover 0% cover 100%}
     @keyframes moPara{from{translate:0 -3.5%}to{translate:0 3.5%}}
 
-    .band img{scale:1.14;will-change:translate;
-      animation:moBand linear both;
-      animation-timeline:view();
-      animation-range:cover 0% cover 100%}
-    @keyframes moBand{from{translate:0 -5%}to{translate:0 5%}}
+    /* .band は §18 で固定背景に変更したため、ここの視差ドリフトは廃止。
+       @keyframes moBand を戻すと固定背景と二重に動く（戻さないこと） */
   }
 }
 
