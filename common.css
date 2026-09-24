@@ -71,8 +71,13 @@
   --sec:112px;    /* セクション上下余白 */
   --gap:22px;     /* カード間隔 */
 
-  --logo-mark:32px;   /* ロゴマーク高（ヘッダー） */
-  --logo-name:34px;   /* ロゴ文字高（ヘッダー） */
+  /* ▼ ロゴはマーク＋文字を「統合した1枚画像」。
+       分割画像（mark / logo-name）の2トークン構成には戻さないこと。
+       高さの正はこの2トークンだけ。幅は画像の縦横比に従う（width:auto）。
+       ※ 画像を差し替えたら BODY 側 img の width/height 属性も実寸に更新する
+          （暫定値のままだと読み込み前の幅確保が実寸とずれる） */
+  --logo-h:34px;      /* ロゴ高（ヘッダー） */
+  --logo-h-ft:31px;   /* ロゴ高（フッター） */
 
   /* ▼ .sec-grid の格子柄。§7（静止）と §21（ドリフト）が同じ値を
        参照する。サイズ変更はこのトークンだけを触ること
@@ -280,14 +285,16 @@ header.hd-up{transform:translateY(-100%)}
 
 .hd-in{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:100%;
   display:flex;align-items:center;justify-content:space-between;gap:16px}
-.logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-.logo .mark{height:var(--logo-mark);width:auto;flex:0 0 auto;object-fit:contain;
+/* ▼ ロゴは1枚画像。マーク用／文字用の子要素セレクタ（.mark / .logo-name）は
+     復活させないこと。復活させると高さの正が2トークンに分岐し、
+     フッターの比率（--logo-h-ft）も効かなくなる。
+     ホバーの押し出しは画像全体に掛かる（統合前はマークのみだった点が変わる） */
+.logo{display:flex;align-items:center;flex:0 0 auto}
+.logo img{height:var(--logo-h);width:auto;flex:0 0 auto;object-fit:contain;display:block;
   transform:translateX(0);
   transition:transform .35s cubic-bezier(.22,1,.36,1)}
-.logo:hover .mark{transform:translateX(4px)}
-.logo .logo-name{height:var(--logo-name);width:auto;flex:0 0 auto;
-  object-fit:contain;display:block}
-footer .logo .logo-name{height:31px}
+.logo:hover img{transform:translateX(4px)}
+footer .logo img{height:var(--logo-h-ft)}
 
 nav ul{display:flex;align-items:center;gap:26px}
 nav a.gnav{font-family:var(--f-en);font-size:13px;font-weight:500;letter-spacing:.04em;
@@ -1357,10 +1364,9 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 
 /* ---- 360px：最小幅 ---- */
 @media (max-width:360px){
-  :root{--pad:16px;--sec:56px;--hd:60px;--logo-mark:26px;--logo-name:27px;
+  :root{--pad:16px;--sec:56px;--hd:60px;--logo-h:26px;--logo-h-ft:24px;
     --grid-size:48px}
   body{font-size:14px}
-  .logo{gap:8px}
   .hero p.lead{font-size:13.5px}
   .btn{font-size:13px;padding:13px 14px}
   .svc article{padding:26px 18px}
@@ -1390,7 +1396,7 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
   #cfi-boot-ui,#cfi-boot-ui .bar i{transition:none!important}
 
   /* ロゴ */
-  .logo .mark{transition:none!important;transform:none!important}
+  .logo img{transition:none!important;transform:none!important}
 
   /* リビール */
   .rv,.rv-hold{opacity:1!important;transform:none!important}
