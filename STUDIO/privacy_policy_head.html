@@ -1,0 +1,64 @@
+<!-- ============================================================
+     privacy_head.html   rev:2026-09-25（common.css / common.js 分離版）
+     ────────────────────────────────────────────────────────────
+     ■ このHEADの役割は3つだけ
+       ① html へ cfi-sub / cfi-pp / cfi-boot を付与（クローク開始＋PP組版の有効化）
+       ② window.CFI_CONFIG の宣言（common.js の唯一の入力）
+       ③ 保険解除（common.js §4 のタイマー序列に従う）
+     ■ ここに <style> を書かないこと。見た目は common.css が唯一の正
+       ・クローク・土台              → common.css §3
+       ・サブページ一式（cfi-sub）   → common.css §22
+       ・本文の組版（cfi-pp）        → common.css §23-2
+       ・クローク文言 "PRIVACY POLICY"→ §23-2 の --cfi-boot-label
+         （§22 の "CONTACT" を上書きする。値はこのHEADに書かないこと）
+     ■ page は 'contact' を指定する（＝STUDIOラッパーを持つ下層ページの扱い）。
+       'home' にすると common.js §12 のSTUDIO余白打ち消しが動かず、ページの
+       上下に黒帯が出る。変更しないこと
+     ■ 保険解除（4000ms）は common.js §4 のタイマー序列の一部。
+       序列の一覧は common.js §4 冒頭が唯一の正。単独で変えないこと
+         common.js 完全解除 約3520（HARD_MS 3000＋HOLD_MS 220＋OUT_MS 300）
+         ↓
+         このHEADの保険 4000（＋280 = 約4280 で完全解除）
+         ↓
+         §8 リビール保険 4700 ／ §14 複製オープン保険 5100
+         ↓
+         §13 フォーム強制表示 5500（下層ページ扱いのため作動する）
+       ※ §8 より後ろへ倒すと「幕が引き始めてから監視を開始する」前提が
+         崩れ、幕の裏でリビールが走り終わる。4700 を越えさせないこと
+       ※ 解除の 280ms は common.css §3 の transition .28s と対
+       ※ home_head / contact_head と値を必ず同値に保つこと
+     ■ Google Fonts は使用ウェイトのみ。家族・ウェイトを変える場合は
+       home / contact と必ず同一URLに保つこと
+     ============================================================ -->
+
+<!-- ① ② ③ ：インライン＝パース時に即実行（最速で幕を張る） -->
+<script>
+(function(){
+  var h = document.documentElement;
+  h.className += ' cfi-sub cfi-pp cfi-boot';
+
+  /* ▼▼ サイト設定（ここだけ触ればパスが変わる。home / contact と値を揃えること） ▼▼
+       page … 'contact'＝下層ページ扱い（§12 のSTUDIO余白打ち消しに必要） */
+  window.CFI_CONFIG = {
+    page:    'contact',
+    home:    '/',
+    contact: '/contact'
+  };
+  /* ▲▲ 設定はここまで ▲▲ */
+
+  /* 保険：BODY側（common.js §4）が読み込まれなくても必ず幕を上げる。
+     数値の序列は冒頭のコメント（および common.js §4）が唯一の正 */
+  setTimeout(function(){
+    h.classList.add('cfi-boot-out');
+    setTimeout(function(){
+      h.classList.remove('cfi-boot','cfi-boot-out');
+    }, 280);
+  }, 4000);
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cfi-dev.github.io" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cfi-dev.github.io/homepage_STUDIO_assets/common.css">
