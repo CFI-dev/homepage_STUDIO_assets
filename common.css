@@ -1390,6 +1390,58 @@ html.cfi-sub #__nuxt button:active{transform:translateY(0) scale(.98)}
 }
 
 /* ============================================================
+   23-2. プライバシーポリシーページ（html.cfi-pp）専用
+       ・本文の組版はこの節が唯一の正。ページ側HTMLに <style> を戻さないこと
+       ・本文（前文〜第10条・署名）の文言は変更しない。見た目はここで作る
+       ・土台は §22（cfi-sub）と併用する。STUDIOラッパーの余白処理は
+         §22 と common.js §12 が担当するため、ここでは触らない
+       ・--cfi-boot-label は §22 の "CONTACT" を上書きする。
+         ページHEAD（home の bootLabel）と食い違わせないこと。
+         ずらすと bfcache 復元時に文言が跳ぶ
+       ・番号（第◯条の下の各号／a.b.c.）は CSS カウンタで描く。
+         HTML側に番号を書かないこと（二重番号になる）
+   ============================================================ */
+html.cfi-pp{--cfi-boot-label:"PRIVACY POLICY"}
+
+.pp{max-width:860px;margin:0 auto}
+.pp p{font-size:13.5px;line-height:2;color:var(--muted)}
+.pp-lead{color:var(--txt)}
+.pp p + p,.pp ol + p,.pp p + ol{margin-top:16px}
+
+/* ---- 条（article）。上に金の罫線を引いて区切る ---- */
+.pp-art{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+.pp-art h2{display:flex;align-items:baseline;gap:9px;
+  font-size:15.5px;font-weight:700;line-height:1.7;color:var(--txt);
+  margin-bottom:16px}
+.pp-art h2::before{content:"";width:14px;height:1px;flex:0 0 auto;
+  background:var(--accent-2);translate:0 -4px}
+
+/* ---- 号（番号付きリスト）。番号は金の等幅で左に出す ---- */
+.pp ol{list-style:none;counter-reset:pp;margin-top:16px}
+.pp ol > li{counter-increment:pp;position:relative;padding-left:32px;
+  font-size:13.5px;line-height:1.95;color:var(--muted)}
+.pp ol > li + li{margin-top:12px}
+.pp ol > li::before{content:counter(pp);position:absolute;left:0;top:0;
+  font-family:var(--f-mono);font-size:11.5px;line-height:2.3;
+  color:var(--accent-2);letter-spacing:.06em}
+/* 入れ子（a. b. c. …） */
+.pp ol ol{counter-reset:pp-l;margin-top:8px}
+.pp ol ol > li{counter-increment:pp-l;padding-left:28px}
+.pp ol ol > li::before{content:counter(pp-l,lower-alpha) "."}
+
+/* ---- 末尾の署名（制定日・改定日・会社名・代表者） ---- */
+.pp-sign{margin-top:44px;padding-top:26px;border-top:1px solid var(--line);
+  text-align:right}
+.pp-sign p{color:var(--muted)}
+
+@media (max-width:600px){
+  .pp p,.pp ol > li{font-size:13px;line-height:1.9}
+  .pp-art{margin-top:34px;padding-top:22px}
+  .pp-art h2{font-size:15px}
+  .pp ol > li{padding-left:28px}
+}
+
+/* ============================================================
    24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
        ・duration の一括停止だけでは初期状態（opacity:0 / dashoffset 等）
          が残るため、ここで最終状態に固定する
