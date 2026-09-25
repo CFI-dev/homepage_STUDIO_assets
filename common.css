@@ -1474,6 +1474,16 @@ html.cfi-pp :is(#__nuxt,.StudioCanvas,.render-canvas){display:none !important}
    --------------------------------------------------------------- */
 html.cfi-pp body > header.box{min-height:0 !important;height:auto !important}
 
+/* ---------------------------------------------------------------
+   privacy: ヘッダーが本文と重なる問題の修正（home との差分）
+   ・privacy は #cfi-top{z-index:2} がスタッキングコンテキストを作るため、
+     中にある header#hd の z-index が外へ効かず、DOM後方の #cfi-bottom
+     （同じ z-index:2）の本文がヘッダーの上に描画されていた。
+   ・home は #cfi-root が static/z:auto でコンテキストを作らないため発生しない。
+   ・#cfi-top を 3 に上げるだけ（#cfi-bottom より上、STUDIOのオーバーレイより下）。
+   --------------------------------------------------------------- */
+html.cfi-pp #cfi-top{position:relative;z-index:3 !important}
+
 /* ============================================================
    24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
        ・duration の一括停止だけでは初期状態（opacity:0 / dashoffset 等）
