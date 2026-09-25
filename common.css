@@ -1465,6 +1465,15 @@ html.cfi-pp :is(#cfi-top,#cfi-bottom){padding-top:0 !important;padding-bottom:0 
   margin-top:0 !important;margin-bottom:0 !important;min-height:0 !important}
 html.cfi-pp :is(#__nuxt,.StudioCanvas,.render-canvas){display:none !important}
 
+/* ---------------------------------------------------------------
+   privacy: STUDIO側の空ヘッダーブロックを無効化（余白の唯一の原因）
+   ・privacy は body 直下に header.box（min-height:900px・中身なし）が残り、
+     #cfi-top（ヘッダー＋ヒーロー）と #cfi-bottom（本文）の間に 900px の
+     空白を作っていた。home はこのブロックにヘッダー内容が入るため発生しない。
+   ・高さだけを無効化する（内容が入っても壊れないよう display は触らない）。
+   --------------------------------------------------------------- */
+html.cfi-pp body > header.box{min-height:0 !important;height:auto !important}
+
 /* ============================================================
    24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
        ・duration の一括停止だけでは初期状態（opacity:0 / dashoffset 等）
