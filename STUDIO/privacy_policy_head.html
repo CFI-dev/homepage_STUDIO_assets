@@ -1,19 +1,38 @@
 <!-- ============================================================
-     privacy_head.html   rev:2026-09-25（common.css / common.js 分離版）
+     privacy_head.html   rev:2026-09-26
      ────────────────────────────────────────────────────────────
-     ■ このHEADの役割は3つだけ
+     ■ このHEADの役割は4つだけ
        ① html へ cfi-sub / cfi-pp / cfi-boot を付与（クローク開始＋PP組版の有効化）
        ② window.CFI_CONFIG の宣言（common.js の唯一の入力）
        ③ 保険解除（common.js §4 のタイマー序列に従う）
+       ④ 戻る／進む用クローク（pagehide / pageshow。home_head と同一挙動）
      ■ ここに <style> を書かないこと。見た目は common.css が唯一の正
        ・クローク・土台              → common.css §3
        ・サブページ一式（cfi-sub）   → common.css §22
        ・本文の組版（cfi-pp）        → common.css §23-2
-       ・クローク文言 "PRIVACY POLICY"→ §23-2 の --cfi-boot-label
-         （§22 の "CONTACT" を上書きする。値はこのHEADに書かないこと）
+       ・通常読み込みの幕の文言は §23-2 の --cfi-boot-label が正
+         （§22 の "CONTACT" を上書きした "PRIVACY POLICY"）。
+         --cfi-boot-label 自体をこのHEADに書かないこと
+       ・下の bootLabel は④の戻る／進む用オーバーレイ専用。
+         §23-2 の --cfi-boot-label と必ず同値に保つこと。ずらすと
+         bfcache 復元後に reload() が走った瞬間、オーバーレイ→幕の
+         切替フレームで文字が跳ぶ
+     ■ ④のオーバーレイ（home_head と同じ構成）
+       ・擬似要素は bfcache 復元フレームでの再現が不確実なため、
+         実DOM要素＋インラインスタイルで構成する
+       ・ここだけは common.css のカスタムプロパティに依存させないこと。
+         復元フレームで変数が未解決だと幕が透明になる
+       ・文字組み（font-size / line-height / padding / text-wrap）と
+         3層グラデーション（金 .20／冷ブルー .14／#060a14）は
+         common.css §3 の幕と必ず同一に保つこと。
+         片方だけ変えると切替フレームで文字・地色が跳ぶ（§3 冒頭の注意と対）
+       ・ここに進捗バーは置かない。復元直後は読み込みが始まっておらず
+         進捗値が存在しないため、置くと 0% のまま静止して見える
      ■ page は 'contact' を指定する（＝STUDIOラッパーを持つ下層ページの扱い）。
-       'home' にすると common.js §12 のSTUDIO余白打ち消しが動かず、ページの
-       上下に黒帯が出る。変更しないこと
+       'home' にすると common.js §3 のDOM配置（#cfi-root を探す）が不成立になり、
+       §12 のSTUDIO余白打ち消しも動かず、ページの上下に黒帯が出る。変更しないこと
+       ・waitStudio:false は §4 のSTUDIOマウント待ちだけを除外するフラグ。
+         §3 の配置・§12・§13 は page:'contact' の扱いのまま受理される
      ■ 保険解除（4000ms）は common.js §4 のタイマー序列の一部。
        序列の一覧は common.js §4 冒頭が唯一の正。単独で変えないこと
          common.js 完全解除 約3520（HARD_MS 3000＋HOLD_MS 220＋OUT_MS 300）
@@ -31,18 +50,29 @@
        home / contact と必ず同一URLに保つこと
      ============================================================ -->
 
-<!-- ① ② ③ ：インライン＝パース時に即実行（最速で幕を張る） -->
+<!-- ① 〜 ④ ：インライン＝パース時に即実行（最速で幕を張る） -->
 <script>
 (function(){
   var h = document.documentElement;
   h.className += ' cfi-sub cfi-pp cfi-boot';
 
   /* ▼▼ サイト設定（ここだけ触ればパスが変わる。home / contact と値を揃えること） ▼▼
-       page … 'contact'＝下層ページ扱い（§12 のSTUDIO余白打ち消しに必要） */
+        page       … 'contact'＝下層ページ扱い（§3 の配置／§12 の余白打ち消しに必要）
+        home       … トップページのパス（公開先が /test_page なら '/test_page'）
+        contact    … お問い合わせページのパス
+        waitStudio … false＝common.js §4 のSTUDIOマウント待ちをしない。
+                     §23-2 がSTUDIOキャンバスを完全非表示にするため、待つ対象が
+                     存在しない。これで幕の最低表示は home と同じになる
+                     （MIN_MS 1秒＋HOLD 220ms＋OUT 300ms）。
+                     キャンバスを表示する contact では指定しないこと
+        bootLabel  … 戻る／進む用オーバーレイの文言
+                     （common.css §23-2 の --cfi-boot-label と揃えること） */
   window.CFI_CONFIG = {
-    page:    'contact',
-    home:    '/',
-    contact: '/contact'
+    page:       'contact',
+    home:       '/',
+    contact:    '/contact',
+    waitStudio: false,
+    bootLabel:  'PRIVACY POLICY'
   };
   /* ▲▲ 設定はここまで ▲▲ */
 
@@ -54,6 +84,62 @@
       h.classList.remove('cfi-boot','cfi-boot-out');
     }, 280);
   }, 4000);
+
+  var OV_ID = 'cfi-ov';
+
+  /* 戻る／進む用クローク（home_head と同一挙動）：
+     擬似要素はbfcache復元フレームでの再現が不確実なため、
+     実DOM要素＋インラインスタイルで構成する。
+     ※ここだけは common.css のカスタムプロパティに依存させないこと。
+       復元フレームで変数が未解決だと幕が透明になる
+     ※文字組みは common.css §3 の幕と同値に保つこと。
+       左右 padding（24px）は狭幅で文字が端に張り付くのを防ぐためのもので、
+       §3 側の padding:0 var(--pad) と対。片方だけ外すと折り返し位置がずれる
+     ※ここに進捗バーは置かない。復元直後は読み込みが始まっておらず
+       進捗値が存在しないため、置くと 0% のまま静止して見える */
+  function cloak(){
+    var el = document.getElementById(OV_ID);
+    if (!el){
+      var label = (window.CFI_CONFIG && window.CFI_CONFIG.bootLabel) || 'PRIVACY POLICY';
+      el = document.createElement('div');
+      el.id = OV_ID;
+      el.setAttribute('aria-hidden','true');
+      el.style.cssText =
+        'position:fixed;inset:0;z-index:2147483640;pointer-events:none;' +
+        'background:' +
+          'radial-gradient(1200px 600px at 18% 0%,rgba(201,166,104,.20),transparent 62%),' +
+          'radial-gradient(900px 500px at 92% 18%,rgba(106,143,176,.14),transparent 62%),' +
+          '#060a14;';
+      el.innerHTML =
+        '<div style="position:absolute;left:0;right:0;top:44%;padding:0 24px;' +
+        'text-align:center;text-wrap:balance;' +
+        'font-family:Barlow,system-ui,-apple-system,sans-serif;font-weight:700;' +
+        'font-size:clamp(40px,8vw,82px);line-height:1.08;letter-spacing:.02em;' +
+        'color:#b4ac98;opacity:.9"></div>';
+      el.firstChild.textContent = label;
+      (document.body || h).appendChild(el);
+    }
+    el.style.display = 'block';
+    h.style.overflow = 'hidden';
+    return el;
+  }
+
+  /* 離脱時にクロークを貼る。
+     bfcache は pagehide 完了後のDOM状態を保存するため、
+     戻る／進むで復元された最初の描画からクロークが見える */
+  window.addEventListener('pagehide', cloak);
+
+  window.addEventListener('pageshow', function(e){
+    if (e.persisted){
+      cloak();          /* 復元直後に念のため再適用 */
+      location.reload();
+    } else {
+      /* 通常読み込み：DOMオーバーレイは使わない（common.css §3 が担当） */
+      var el = document.getElementById(OV_ID);
+      if (el) el.style.display = 'none';
+      h.style.overflow = '';
+    }
+  });
 })();
 </script>
 
