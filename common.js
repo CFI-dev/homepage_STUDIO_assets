@@ -125,6 +125,9 @@
           CAP を超えさせない
         ・ループは setInterval。requestAnimationFrame は背面タブで停止するため
           戻さないこと（タブを離れている間に幕が上がらなくなる）
+        ・contact 扱いのSTUDIOマウント待ちは CFI_CONFIG.waitStudio:false で
+          除外できる。STUDIOキャンバスを CSS で完全非表示にしているページ
+          （privacy）専用。キャンバスを表示する contact では指定しないこと
         ・タイマーの序列を崩さないこと。数値を変える場合は全部を同時に見直す
             HARD_MS 3000 → 完全解除 約3520
             ページHEADの保険 4000（home_head / contact_head）
@@ -161,7 +164,10 @@
     var box = null, fill = null, pctEl = null;
     var p = 0, shown = -1, aria = -1;
     var fontsDone = false, loaded = false;
-    var studioOK = (PAGE !== "contact");   /* contact はSTUDIOマウントを待つ */
+    /* contact はSTUDIOマウントを待つ。CFI_CONFIG.waitStudio === false を指定した
+       ページだけは待たない。STUDIOキャンバスを CSS で完全非表示にしているページ
+       （privacy）専用で、キャンバスを表示側に載せる contact では指定しないこと */
+    var studioOK = (PAGE !== "contact") || (CFG.waitStudio === false);
     var readyAt = 0, done = false, loop = null;
 
     function build() {
@@ -336,7 +342,7 @@
       fontsDone = true;                 /* 非対応環境では待たない */
     }
 
-    if (PAGE === "contact") {
+    if (PAGE === "contact" && CFG.waitStudio !== false) {
       var waited = 0;
       var poll = setInterval(function () {
         waited += 50;
