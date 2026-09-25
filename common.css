@@ -1441,6 +1441,22 @@ html.cfi-pp{--cfi-boot-label:"PRIVACY POLICY"}
   .pp ol > li{padding-left:28px}
 }
 
+/* ---- 下層ヒーローの詰め（html.cfi-pp 限定）----
+   §22 の .hero-sub は min-height:56svh を確保しており、これはリード文を持つ
+   contact 用の高さ。プライバシーポリシーは見出ししか持たないため、そのまま
+   使うとヘッダー下に大きな空白が残る（＝「ヘッダーと本文の隙間」）。
+   このページだけ高さを内容に合わせ、本文の上余白も詰める。
+   ※ contact の見た目を変えないこと。この上書きは html.cfi-pp 限定にする
+   ※ min-height:auto に戻すと 56svh の空白が復活する。戻さないこと */
+html.cfi-pp .hero-sub{min-height:auto;
+  padding:calc(var(--hd) + 56px) 0 48px}
+html.cfi-pp #policy{padding-top:64px}
+
+@media (max-width:600px){
+  html.cfi-pp .hero-sub{padding:calc(var(--hd) + 40px) 0 34px}
+  html.cfi-pp #policy{padding-top:52px}
+}
+
 /* ============================================================
    24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
        ・duration の一括停止だけでは初期状態（opacity:0 / dashoffset 等）
