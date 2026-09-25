@@ -26,7 +26,6 @@
      テキスト・線・アイコンに使うのは必ず --accent-2。
      --accent / --accent-3 はグラデーション専用。小さな文字に使わないこと
      （--accent-3 は --ink 上で約6.3:1、--accent-2 は約8.6:1）
-   ・--accent-cool（冷ブルー）は面の副光源専用。文字色に使わないこと
    ・金は元のブルー/ティールより輝度が高い。線幅・アルファを上げると
      すぐ主役の見出しを喰う。濃度を上げる場合は §10/§18 の
      スクリムと必ずセットで見直すこと
@@ -43,7 +42,6 @@
   --accent:#d9b978;      /* 金・淡（グラデ始端） */
   --accent-2:#c9a668;    /* 金・主役（線／ラベル／アイコン／フォーカス） */
   --accent-3:#b28a4c;    /* 金・深（グラデ終端専用。小文字には使わない） */
-  --accent-cool:#6a8fb0; /* 冷ブルー（面の副光源専用） */
 
   /* ▼ --muted は theme-noir の #8a8779 ではなく明度を原本に合わせている。
        #8a8779 は §15-2 の非強調カード（opacity:.7）で約3.2:1 まで落ち
@@ -1463,7 +1461,9 @@ html.cfi-pp #policy{padding-top:64px}
    ・STUDIO側に旧本文や空ブロックが残っていても余白・重複表示を出さない。
    ・JSが落ちても効くよう !important は維持する。
    --------------------------------------------------------------- */
-html.cfi-pp #__nuxt{display:none !important}
+html.cfi-pp :is(#cfi-top,#cfi-bottom){padding-top:0 !important;padding-bottom:0 !important;
+  margin-top:0 !important;margin-bottom:0 !important;min-height:0 !important}
+html.cfi-pp :is(#__nuxt,.StudioCanvas,.render-canvas){display:none !important}
 
 /* ============================================================
    24. 動きを減らす設定での一括打ち消し（必ずファイル末尾）
